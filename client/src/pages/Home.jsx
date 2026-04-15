@@ -45,7 +45,6 @@ export default function Home() {
                   </div>
                   <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Course</div>
                   <div className="text-lg font-bold text-slate-900">{c.title}</div>
-                  <p className="text-sm text-slate-600">{c.description}</p>
                   <div className="mt-2">
                     <Link to={`/courses/${c._id}`}>
                       <Button>Detail</Button>

@@ -65,7 +65,6 @@ export default function Courses() {
               </div>
               <div className="text-lg font-bold text-slate-900">{c.title}</div>
               <div className="mt-1 text-sm font-semibold text-slate-900">Rp {formatIdr(c.priceIdr || 0)}</div>
-              <p className="mt-2 text-sm text-slate-600">{c.description}</p>
               <div className="mt-4">
                 <Link to={`/courses/${c._id}`}>
                   <Button className="w-full">Buka</Button>
