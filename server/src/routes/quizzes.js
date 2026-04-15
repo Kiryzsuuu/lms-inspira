@@ -1,9 +1,11 @@
 const express = require('express');
 const { z } = require('zod');
 const { Course } = require('../models/Course');
+const { Lesson } = require('../models/Lesson');
 const { Quiz, Question } = require('../models/Quiz');
 const { Attempt } = require('../models/Attempt');
 const { User } = require('../models/User');
+const { LessonProgress } = require('../models/LessonProgress');
 const { asyncHandler } = require('../utils/asyncHandler');
 const { HttpError } = require('../utils/errors');
 
@@ -246,6 +248,15 @@ function quizzesRouter({ requireAuth, requireRole }) {
 
       await assertStudentCanAccessCourse(quiz.courseId, req.user);
 
+      // Link quiz to lesson (prefer quiz.lessonId; fallback to lesson.quizId for older data)
+      let lesson = null;
+      if (quiz.lessonId) {
+        lesson = await Lesson.findById(quiz.lessonId).select('_id courseId order isPublished');
+      }
+      if (!lesson) {
+        lesson = await Lesson.findOne({ quizId: quiz._id }).select('_id courseId order isPublished');
+      }
+
       const questionsRaw = await Question.find({ quizId: quiz._id }).sort({ order: 1, createdAt: 1 });
       const questions = quiz.randomizeQuestions ? shuffleCopy(questionsRaw) : questionsRaw;
 
@@ -254,6 +265,7 @@ function quizzesRouter({ requireAuth, requireRole }) {
         quiz: {
           _id: quiz._id,
           courseId: quiz.courseId,
+          lessonId: lesson?._id || null,
           title: quiz.title,
           description: quiz.description,
           timeLimitSec: quiz.timeLimitSec,
@@ -299,6 +311,15 @@ function quizzesRouter({ requireAuth, requireRole }) {
       const questions = await Question.find({ quizId: quiz._id });
       const byId = new Map(questions.map((q) => [String(q._id), q]));
 
+      // Link quiz to lesson (prefer quiz.lessonId; fallback to lesson.quizId for older data)
+      let lesson = null;
+      if (quiz.lessonId) {
+        lesson = await Lesson.findById(quiz.lessonId).select('_id courseId order isPublished');
+      }
+      if (!lesson) {
+        lesson = await Lesson.findOne({ quizId: quiz._id }).select('_id courseId order isPublished');
+      }
+
       let score = 0;
       let maxScore = 0;
 
@@ -312,6 +333,26 @@ function quizzesRouter({ requireAuth, requireRole }) {
         const type = q.type || 'mcq';
         if (type !== 'mcq') continue;
         if (q.correctChoiceId && a.choiceId && q.correctChoiceId === a.choiceId) score += 1;
+      }
+
+      const gradingByQuestionId = {};
+      for (const q of questions) {
+        const type = q.type || 'mcq';
+        if (type !== 'mcq') {
+          gradingByQuestionId[String(q._id)] = { type, isAutoGradable: false };
+          continue;
+        }
+        const ans = answers.find((x) => String(x.questionId) === String(q._id));
+        const selectedChoiceId = ans?.choiceId || null;
+        const correctChoiceId = q.correctChoiceId || null;
+        const isCorrect = Boolean(correctChoiceId && selectedChoiceId && correctChoiceId === selectedChoiceId);
+        gradingByQuestionId[String(q._id)] = {
+          type,
+          isAutoGradable: true,
+          selectedChoiceId,
+          correctChoiceId,
+          isCorrect,
+        };
       }
 
       const attempt = await Attempt.create({
@@ -328,6 +369,21 @@ function quizzesRouter({ requireAuth, requireRole }) {
         submittedAt: new Date(),
       });
 
+      // If linked to a lesson, mark it completed and compute next lesson
+      let nextLessonId = null;
+      if (lesson && lesson.isPublished) {
+        await LessonProgress.findOneAndUpdate(
+          { userId: req.user.sub, courseId: lesson.courseId, lessonId: lesson._id },
+          { $set: { isCompleted: true, completedAt: new Date() } },
+          { upsert: true, new: true }
+        );
+
+        const next = await Lesson.findOne({ courseId: lesson.courseId, isPublished: true, order: { $gt: lesson.order } })
+          .sort({ order: 1, createdAt: 1 })
+          .select('_id');
+        nextLessonId = next?._id || null;
+      }
+
       res.json({
         attempt: {
           _id: attempt._id,
@@ -335,6 +391,10 @@ function quizzesRouter({ requireAuth, requireRole }) {
           maxScore: attempt.maxScore,
           submittedAt: attempt.submittedAt,
         },
+        gradingByQuestionId,
+        courseId: quiz.courseId,
+        lessonId: lesson?._id || null,
+        nextLessonId,
       });
     })
   );

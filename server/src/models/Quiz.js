@@ -3,6 +3,8 @@ const mongoose = require('mongoose');
 const quizSchema = new mongoose.Schema(
   {
     courseId: { type: mongoose.Schema.Types.ObjectId, ref: 'Course', required: true, index: true },
+    // Optional: if quiz belongs to a specific lesson
+    lessonId: { type: mongoose.Schema.Types.ObjectId, ref: 'Lesson', index: true },
     title: { type: String, required: true, trim: true },
     description: { type: String, default: '' },
     timeLimitSec: { type: Number, default: 0 },

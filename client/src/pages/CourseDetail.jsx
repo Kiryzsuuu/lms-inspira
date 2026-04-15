@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { Card, Container, Button } from '../components/ui';
 import { useAuth } from '../lib/auth';
 
@@ -29,6 +29,7 @@ function Markdown({ text }) {
 
 export default function CourseDetail() {
   const { id } = useParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { api, role, user, isAuthed } = useAuth();
   const [course, setCourse] = useState(null);
   const [lessons, setLessons] = useState([]);
@@ -40,6 +41,7 @@ export default function CourseDetail() {
   const [assignmentState, setAssignmentState] = useState({ loading: false, attempt: null, error: '' });
   const [assignmentAnswer, setAssignmentAnswer] = useState('');
   const [lockError, setLockError] = useState('');
+  const [openAttachmentUrl, setOpenAttachmentUrl] = useState('');
 
   useEffect(() => {
     api
@@ -48,7 +50,10 @@ export default function CourseDetail() {
         setCourse(res.data.course);
         setLessons(res.data.lessons || []);
         setQuizzes(res.data.quizzes || []);
-        setSelectedLesson((res.data.lessons || [])[0] || null);
+        const list = res.data.lessons || [];
+        const lessonId = searchParams.get('lesson');
+        const picked = lessonId ? list.find((l) => String(l._id) === String(lessonId)) : null;
+        setSelectedLesson(picked || list[0] || null);
       })
       .catch(() => {
         setCourse(null);
@@ -56,7 +61,7 @@ export default function CourseDetail() {
         setQuizzes([]);
         setSelectedLesson(null);
       });
-  }, [id]);
+  }, [id, searchParams]);
 
   useEffect(() => {
     if (role !== 'student') return;
@@ -102,6 +107,45 @@ export default function CourseDetail() {
     return isLessonCompleted(prev._id);
   }
 
+  function isPdfUrl(url) {
+    const u = String(url || '').toLowerCase();
+    if (!u) return false;
+    if (u.endsWith('.pdf')) return true;
+    // Common patterns: query-based PDF links
+    if (u.includes('.pdf?')) return true;
+    if (u.includes('application/pdf')) return true;
+    return false;
+  }
+
+  function getLessonBlocks(lesson) {
+    const blocks = Array.isArray(lesson?.contentBlocks) ? lesson.contentBlocks : [];
+    const hasVideo = Boolean(lesson?.videoEmbedUrl);
+    const hasAttachments = Boolean((lesson?.attachments || []).length);
+
+    if (blocks.length > 0) {
+      const seen = new Set();
+      const cleaned = blocks
+        .filter((b) => b && b.type)
+        .map((b) => ({ type: b.type, title: b.title || '' }))
+        .filter((b) => {
+          if (seen.has(b.type)) return false;
+          seen.add(b.type);
+          return true;
+        });
+
+      if (!seen.has('content')) cleaned.unshift({ type: 'content', title: 'Materi' });
+      if (!hasVideo) return cleaned.filter((b) => b.type !== 'video');
+      return cleaned;
+    }
+
+    // Fallback order
+    return [
+      ...(hasVideo ? [{ type: 'video', title: 'Video' }] : []),
+      { type: 'content', title: 'Materi' },
+      ...(hasAttachments ? [{ type: 'attachments', title: 'Lampiran' }] : []),
+    ];
+  }
+
   async function completeLesson() {
     if (!selectedLesson) return;
     setLockError('');
@@ -116,6 +160,11 @@ export default function CourseDetail() {
     } catch (e) {
       setLockError(e?.response?.data?.error?.message || 'Gagal menyimpan progress lesson');
     }
+  }
+
+  function selectedQuiz() {
+    if (!selectedLesson?.quizId) return null;
+    return quizzes.find((q) => String(q._id) === String(selectedLesson.quizId)) || { _id: selectedLesson.quizId };
   }
 
   async function loadAssignment(lessonId) {
@@ -301,7 +350,7 @@ export default function CourseDetail() {
               </div>
             ) : null}
 
-              <div className="mt-6 grid gap-4 lg:grid-cols-4">
+                <div className="mt-6 grid gap-4 lg:grid-cols-4">
                   <Card className="p-5 lg:col-span-1">
                   <div className="text-sm font-semibold">Materi</div>
                   <div className="mt-3 flex flex-col gap-2">
@@ -328,6 +377,11 @@ export default function CourseDetail() {
                         onClick={() => {
                           if (!allowed) return;
                           setSelectedLesson(l);
+                          setSearchParams((prev) => {
+                            const next = new URLSearchParams(prev);
+                            next.set('lesson', l._id);
+                            return next;
+                          });
                           if (isStudent) loadAssignment(l._id);
                         }}
                         disabled={!allowed}
@@ -358,30 +412,81 @@ export default function CourseDetail() {
                       <div className="text-sm text-slate-600">Materi terkunci sampai pembayaran terkonfirmasi.</div>
                     ) : selectedLesson ? (
                       <>
-                        {selectedLesson.contentHtml ? (
-                          <div className="prose max-w-none" dangerouslySetInnerHTML={{ __html: selectedLesson.contentHtml }} />
-                        ) : (
-                          <Markdown text={selectedLesson.contentMarkdown} />
-                        )}
 
-                        {(selectedLesson.attachments || []).length > 0 ? (
-                          <div className="mt-6 border-t border-slate-200 pt-4">
-                            <div className="text-sm font-semibold">Lampiran</div>
-                            <div className="mt-2 grid gap-2">
-                              {(selectedLesson.attachments || []).map((a, idx) => (
-                                <a
-                                  key={idx}
-                                  href={a.url}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  className="border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-900 hover:bg-slate-50 hover:underline"
-                                >
-                                  {a.name || a.url}
-                                </a>
-                              ))}
+                        {getLessonBlocks(selectedLesson).map((b, blockIdx) => {
+                          if (b.type === 'video') {
+                            if (!selectedLesson.videoEmbedUrl) return null;
+                            return (
+                              <div key={`${b.type}-${blockIdx}`} className="mb-5 border border-slate-200 bg-white">
+                                <div className="border-b border-slate-200 px-3 py-2 text-sm font-semibold">{b.title || 'Video'}</div>
+                                <div className="aspect-video bg-slate-100">
+                                  <iframe
+                                    title="Lesson video"
+                                    src={selectedLesson.videoEmbedUrl}
+                                    className="h-full w-full"
+                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                    allowFullScreen
+                                  />
+                                </div>
+                              </div>
+                            );
+                          }
+
+                          if (b.type === 'attachments') {
+                            if ((selectedLesson.attachments || []).length === 0) return null;
+                            return (
+                              <div key={`${b.type}-${blockIdx}`} className="mt-6 border-t border-slate-200 pt-4">
+                                <div className="text-sm font-semibold">{b.title || 'Lampiran'}</div>
+                                <div className="mt-2 grid gap-2">
+                                  {(selectedLesson.attachments || []).map((a, idx) => {
+                                    const label = a.name || a.url;
+                                    const pdf = isPdfUrl(a.url);
+                                    const isOpen = pdf && openAttachmentUrl && String(openAttachmentUrl) === String(a.url);
+                                    return (
+                                      <div key={idx} className="border border-slate-200 bg-white">
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            if (!pdf) {
+                                              window.open(a.url, '_blank', 'noreferrer');
+                                              return;
+                                            }
+                                            setOpenAttachmentUrl((cur) => (cur === a.url ? '' : a.url));
+                                          }}
+                                          className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-sm font-semibold text-slate-900 hover:bg-slate-50"
+                                        >
+                                          <span className="truncate">{label}</span>
+                                          <span className="text-xs font-semibold text-slate-600">{pdf ? (isOpen ? 'TUTUP' : 'BUKA') : 'LINK'}</span>
+                                        </button>
+                                        {isOpen ? (
+                                          <div className="border-t border-slate-200 bg-slate-50">
+                                            <div className="aspect-video">
+                                              <iframe title={label} src={a.url} className="h-full w-full" />
+                                            </div>
+                                            <div className="px-3 py-2 text-xs text-slate-600">
+                                              Jika PDF tidak tampil, gunakan tombol di atas untuk membuka link.
+                                            </div>
+                                          </div>
+                                        ) : null}
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            );
+                          }
+
+                          // content
+                          return (
+                            <div key={`${b.type}-${blockIdx}`} className={blockIdx === 0 ? '' : 'mt-5'}>
+                              {selectedLesson.contentHtml ? (
+                                <div className="prose max-w-none" dangerouslySetInnerHTML={{ __html: selectedLesson.contentHtml }} />
+                              ) : (
+                                <Markdown text={selectedLesson.contentMarkdown} />
+                              )}
                             </div>
-                          </div>
-                        ) : null}
+                          );
+                        })}
 
                         {isStudent ? (
                           <div className="mt-6 flex flex-col gap-2 border-t border-slate-200 pt-4 sm:flex-row sm:items-center sm:justify-between">
@@ -392,10 +497,25 @@ export default function CourseDetail() {
                               <Button
                                 variant="outline"
                                 onClick={completeLesson}
-                                disabled={isLessonCompleted(selectedLesson._id)}
+                                disabled={isLessonCompleted(selectedLesson._id) || Boolean(selectedLesson?.quizId)}
                               >
                                 Tandai selesai
                               </Button>
+                            </div>
+                          </div>
+                        ) : null}
+
+                        {/* Quiz for this lesson (after the material) */}
+                        {!isPaywalled && selectedLesson?.quizId ? (
+                          <div className="mt-6 border-t border-slate-200 pt-4">
+                            <div className="text-sm font-semibold">Quiz Materi</div>
+                            <div className="mt-2 text-sm text-slate-600">
+                              Kerjakan quiz setelah membaca materi. Setelah submit, kamu akan melihat nilai, benar/salah, dan progress akan tersimpan.
+                            </div>
+                            <div className="mt-3">
+                              <Link to={`/quiz/${selectedLesson.quizId}`}>
+                                <Button className="w-full sm:w-auto">Mulai Quiz</Button>
+                              </Link>
                             </div>
                           </div>
                         ) : null}
@@ -446,43 +566,27 @@ export default function CourseDetail() {
                 </Card>
 
                   <Card className="p-5 lg:col-span-1">
-                    <div className="text-sm font-semibold">Quiz</div>
+                    <div className="text-sm font-semibold">Sertifikat</div>
                     <div className="mt-3 flex flex-col gap-3">
                       {isPaywalled ? (
-                        <div className="text-sm text-slate-600">Quiz terkunci sampai pembayaran terkonfirmasi.</div>
-                      ) : (
+                        <div className="text-sm text-slate-600">Terkunci sampai pembayaran terkonfirmasi.</div>
+                      ) : isStudent ? (
                         <>
-                          {quizzes.map((q) => (
-                            <div key={q._id} className="border border-slate-200 bg-white p-4">
-                              <div className="font-bold text-slate-900">{q.title}</div>
-                              {q.description ? <div className="mt-1 text-sm text-slate-600">{q.description}</div> : null}
-                              <div className="mt-3">
-                                <Link to={`/quiz/${q._id}`}>
-                                  <Button className="w-full">Mulai Quiz</Button>
-                                </Link>
-                              </div>
-                            </div>
-                          ))}
-                          {quizzes.length === 0 && <div className="text-sm text-slate-600">Belum ada quiz.</div>}
-                        </>
-                      )}
-
-                      {isStudent ? (
-                        <div className="mt-3 border-t border-slate-200 pt-3">
-                          <div className="text-sm font-semibold">Sertifikat</div>
-                          <div className="mt-1 text-sm text-slate-600">
+                          <div className="text-sm text-slate-600">
                             Progress: <span className="font-semibold">{cert.completed || 0}/{cert.total || lessons.length}</span>
                           </div>
                           {cert.eligible ? (
-                            <div className="mt-2 grid gap-2">
+                            <div className="grid gap-2">
                               <div className="bg-emerald-50 p-3 text-sm font-semibold text-emerald-800">Kamu eligible sertifikat.</div>
                               <Button variant="outline" onClick={shareCertificateLink}>Share Link</Button>
                             </div>
                           ) : (
-                            <div className="mt-2 bg-slate-50 p-3 text-sm text-slate-700">Selesaikan semua lesson untuk mendapatkan sertifikat.</div>
+                            <div className="bg-slate-50 p-3 text-sm text-slate-700">Selesaikan semua lesson untuk mendapatkan sertifikat.</div>
                           )}
-                        </div>
-                      ) : null}
+                        </>
+                      ) : (
+                        <div className="text-sm text-slate-600">Login sebagai student untuk melihat progress.</div>
+                      )}
                     </div>
                   </Card>
                 </div>

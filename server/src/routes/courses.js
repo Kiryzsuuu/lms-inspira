@@ -181,6 +181,7 @@ function coursesRouter({ requireAuth, requireRole }) {
         title: z.string().min(2),
         contentMarkdown: z.string().optional().default(''),
         contentHtml: z.string().optional().default(''),
+        videoEmbedUrl: z.string().optional().default(''),
         attachments: z
           .array(
             z.object({
@@ -191,7 +192,15 @@ function coursesRouter({ requireAuth, requireRole }) {
           )
           .optional()
           .default([]),
-        videoEmbedUrl: z.string().optional().default(''),
+        contentBlocks: z
+          .array(
+            z.object({
+              type: z.enum(['video', 'content', 'attachments']),
+              title: z.string().optional().default(''),
+            })
+          )
+          .optional()
+          .default([]),
         quizId: z.string().optional().nullable(),
         assignment: z
           .object({
@@ -220,6 +229,7 @@ function coursesRouter({ requireAuth, requireRole }) {
         title: z.string().min(2),
         contentMarkdown: z.string().optional().default(''),
         contentHtml: z.string().optional().default(''),
+        videoEmbedUrl: z.string().optional().default(''),
         attachments: z
           .array(
             z.object({
@@ -230,7 +240,15 @@ function coursesRouter({ requireAuth, requireRole }) {
           )
           .optional()
           .default([]),
-        videoEmbedUrl: z.string().optional().default(''),
+        contentBlocks: z
+          .array(
+            z.object({
+              type: z.enum(['video', 'content', 'attachments']),
+              title: z.string().optional().default(''),
+            })
+          )
+          .optional()
+          .default([]),
         quizId: z.string().optional().nullable(),
         assignment: z
           .object({

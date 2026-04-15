@@ -13,6 +13,8 @@ export default function QuizPlay() {
   const [answers, setAnswers] = useState({});
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState(null);
+  const [gradingByQuestionId, setGradingByQuestionId] = useState({});
+  const [navInfo, setNavInfo] = useState({ courseId: null, lessonId: null, nextLessonId: null });
 
   useEffect(() => {
     if (!isAuthed) return;
@@ -21,6 +23,11 @@ export default function QuizPlay() {
       .then((res) => {
         setQuiz(res.data.quiz);
         setQuestions(res.data.questions || []);
+        setNavInfo({
+          courseId: res.data.quiz?.courseId || null,
+          lessonId: res.data.quiz?.lessonId || null,
+          nextLessonId: null,
+        });
       })
       .catch(() => {
         setQuiz(null);
@@ -63,9 +70,20 @@ export default function QuizPlay() {
       };
       const res = await api.post(`/quizzes/play/${quizId}/submit`, payload);
       setResult(res.data.attempt);
+      setGradingByQuestionId(res.data.gradingByQuestionId || {});
+      setNavInfo({
+        courseId: res.data.courseId || quiz?.courseId || null,
+        lessonId: res.data.lessonId || null,
+        nextLessonId: res.data.nextLessonId || null,
+      });
     } finally {
       setSubmitting(false);
     }
+  }
+
+  function goToLesson(lessonId) {
+    if (!lessonId || !navInfo.courseId) return;
+    nav(`/courses/${navInfo.courseId}?lesson=${lessonId}`);
   }
 
   if (!isAuthed) {
@@ -120,6 +138,18 @@ export default function QuizPlay() {
           {questions.map((q, idx) => (
             <Card key={q._id} className="p-5">
               <div className="text-sm font-semibold text-slate-500">Soal {idx + 1}</div>
+              {result && gradingByQuestionId?.[q._id]?.isAutoGradable ? (
+                <div
+                  className={
+                    'mt-1 inline-flex w-fit items-center border px-2 py-1 text-xs font-semibold ' +
+                    (gradingByQuestionId[q._id].isCorrect
+                      ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
+                      : 'border-rose-200 bg-rose-50 text-rose-800')
+                  }
+                >
+                  {gradingByQuestionId[q._id].isCorrect ? 'BENAR' : 'SALAH'}
+                </div>
+              ) : null}
               {q.promptHtml ? (
                 <div
                   className="mt-1 text-lg font-bold text-slate-900"
@@ -192,6 +222,9 @@ export default function QuizPlay() {
                 <div className="mt-4 grid gap-2">
                   {q.choices.map((c) => {
                     const selected = answers[q._id]?.choiceId === c.id;
+                    const g = gradingByQuestionId?.[q._id];
+                    const isCorrectChoice = Boolean(result && g?.isAutoGradable && g.correctChoiceId === c.id);
+                    const isSelectedWrong = Boolean(result && g?.isAutoGradable && selected && g.correctChoiceId !== c.id);
                     return (
                       <button
                         key={c.id}
@@ -204,9 +237,13 @@ export default function QuizPlay() {
                         }
                         className={
                           'border px-4 py-3 text-left text-sm transition ' +
-                          (selected
-                            ? 'border-slate-900 bg-slate-900 text-white'
-                            : 'border-slate-200 bg-white hover:bg-slate-50')
+                          (isCorrectChoice
+                            ? 'border-emerald-300 bg-emerald-50 text-emerald-900'
+                            : isSelectedWrong
+                              ? 'border-rose-300 bg-rose-50 text-rose-900'
+                              : selected
+                                ? 'border-slate-900 bg-slate-900 text-white'
+                                : 'border-slate-200 bg-white hover:bg-slate-50')
                         }
                       >
                         {c.text}
@@ -234,9 +271,21 @@ export default function QuizPlay() {
               {submitting ? 'Mengirim...' : 'Submit'}
             </Button>
           ) : (
-            <Button className="w-full sm:w-auto" onClick={() => window.location.reload()}>
-              Coba Lagi
-            </Button>
+            <>
+              {navInfo.courseId && navInfo.lessonId ? (
+                <Button variant="outline" className="w-full sm:w-auto" onClick={() => goToLesson(navInfo.lessonId)}>
+                  Kembali ke Materi
+                </Button>
+              ) : null}
+              {navInfo.courseId && navInfo.nextLessonId ? (
+                <Button className="w-full sm:w-auto" onClick={() => goToLesson(navInfo.nextLessonId)}>
+                  Lanjut Materi Berikutnya
+                </Button>
+              ) : null}
+              <Button className="w-full sm:w-auto" onClick={() => window.location.reload()}>
+                Coba Lagi
+              </Button>
+            </>
           )}
         </div>
       </Container>

@@ -40,15 +40,30 @@ export default function CourseManager() {
   }
 
   const [lessons, setLessons] = useState([]);
-  const [lessonForm, setLessonForm] = useState({
-    title: '',
-    contentMarkdown: '',
-    contentHtml:
-      '<h2>Tujuan Pembelajaran</h2><ul><li>Tulis tujuan 1</li><li>Tulis tujuan 2</li></ul><h2>Materi</h2><p>Tulis materi di sini...</p><h2>Ringkasan</h2><ul><li>Point penting 1</li><li>Point penting 2</li></ul><h2>Latihan</h2><ol><li>Pertanyaan latihan 1</li><li>Pertanyaan latihan 2</li></ol>',
-    attachments: [],
-    order: 1,
-    isPublished: false,
-  });
+  const defaultLessonHtml =
+    '<h2>Tujuan Pembelajaran</h2><ul><li>Tulis tujuan 1</li><li>Tulis tujuan 2</li></ul><h2>Materi</h2><p>Tulis materi di sini...</p><h2>Ringkasan</h2><ul><li>Point penting 1</li><li>Point penting 2</li></ul><h2>Latihan</h2><ol><li>Pertanyaan latihan 1</li><li>Pertanyaan latihan 2</li></ol>';
+
+  function getDefaultLessonForm(nextOrder = 1) {
+    return {
+      title: '',
+      contentMarkdown: '',
+      contentHtml: defaultLessonHtml,
+      videoEmbedUrl: '',
+      attachments: [],
+      contentBlocks: [
+        { type: 'content', title: 'Materi' },
+        { type: 'attachments', title: 'Lampiran' },
+      ],
+      order: nextOrder,
+      isPublished: false,
+    };
+  }
+
+  const [editingLessonId, setEditingLessonId] = useState('');
+  const isEditingLesson = Boolean(editingLessonId);
+
+  const [lessonForm, setLessonForm] = useState(() => getDefaultLessonForm(1));
+  const [dragBlockIdx, setDragBlockIdx] = useState(null);
   const [pdfUploading, setPdfUploading] = useState(false);
   const [attachLink, setAttachLink] = useState({ name: '', url: '' });
 
@@ -137,6 +152,13 @@ export default function CourseManager() {
   }, [selectedId]);
 
   useEffect(() => {
+    // When switching course, exit edit mode and reset form
+    setEditingLessonId('');
+    setLessonForm((f) => getDefaultLessonForm(f?.order || 1));
+    setAttachLink({ name: '', url: '' });
+  }, [selectedId]);
+
+  useEffect(() => {
     setSelectedCoverDraft(selected?.coverImageUrl || '');
   }, [selectedId, selected?.coverImageUrl]);
 
@@ -215,21 +237,96 @@ export default function CourseManager() {
     if (!selected) return;
     setError('');
     try {
-      await api.post(`/courses/${selected._id}/lessons`, lessonForm);
-      setLessonForm((f) => ({
-        ...f,
-        title: '',
-        contentMarkdown: '',
-        contentHtml:
-          '<h2>Tujuan Pembelajaran</h2><ul><li>Tulis tujuan 1</li><li>Tulis tujuan 2</li></ul><h2>Materi</h2><p>Tulis materi di sini...</p><h2>Ringkasan</h2><ul><li>Point penting 1</li><li>Point penting 2</li></ul><h2>Latihan</h2><ol><li>Pertanyaan latihan 1</li><li>Pertanyaan latihan 2</li></ol>',
-        attachments: [],
-        order: f.order + 1,
-        isPublished: false,
-      }));
+      const payload = {
+        ...lessonForm,
+        attachments: lessonForm.attachments || [],
+        contentBlocks: normalizeBlocks(lessonForm.contentBlocks, lessonForm.videoEmbedUrl, lessonForm.attachments || []),
+      };
+      await api.post(`/courses/${selected._id}/lessons`, payload);
+
+      setEditingLessonId('');
+      setLessonForm((f) => getDefaultLessonForm((f?.order || 1) + 1));
+      setAttachLink({ name: '', url: '' });
       await loadCourseDetails(selected._id);
     } catch (e) {
       setError(e?.response?.data?.error?.message || 'Gagal tambah materi');
     }
+  }
+
+  async function updateLesson(e) {
+    e.preventDefault();
+    if (!selected) return;
+    if (!editingLessonId) return;
+    setError('');
+    try {
+      const payload = {
+        ...lessonForm,
+        attachments: lessonForm.attachments || [],
+        contentBlocks: normalizeBlocks(lessonForm.contentBlocks, lessonForm.videoEmbedUrl, lessonForm.attachments || []),
+      };
+      await api.put(`/courses/${selected._id}/lessons/${editingLessonId}`, payload);
+      setEditingLessonId('');
+      setLessonForm((f) => getDefaultLessonForm(f?.order || 1));
+      setAttachLink({ name: '', url: '' });
+      await loadCourseDetails(selected._id);
+    } catch (e) {
+      setError(e?.response?.data?.error?.message || 'Gagal update materi');
+    }
+  }
+
+  function beginEditLesson(lesson) {
+    if (!lesson) return;
+    const attachments = lesson.attachments || [];
+    const videoEmbedUrl = lesson.videoEmbedUrl || '';
+    const blocks = normalizeBlocks(lesson.contentBlocks || [], videoEmbedUrl, attachments);
+    setEditingLessonId(lesson._id);
+    setLessonForm({
+      title: lesson.title || '',
+      contentMarkdown: lesson.contentMarkdown || '',
+      contentHtml: lesson.contentHtml || defaultLessonHtml,
+      videoEmbedUrl,
+      attachments,
+      contentBlocks: blocks,
+      order: typeof lesson.order === 'number' ? lesson.order : Number(lesson.order || 0),
+      isPublished: Boolean(lesson.isPublished),
+    });
+    setAttachLink({ name: '', url: '' });
+  }
+
+  function cancelEditLesson() {
+    setEditingLessonId('');
+    setLessonForm((f) => getDefaultLessonForm(f?.order || 1));
+    setAttachLink({ name: '', url: '' });
+  }
+
+  function normalizeBlocks(blocks, videoEmbedUrl, attachments) {
+    const seen = new Set();
+    const cleaned = (blocks || [])
+      .filter((b) => b && b.type)
+      .map((b) => ({ type: b.type, title: b.title || '' }))
+      .filter((b) => {
+        if (seen.has(b.type)) return false;
+        seen.add(b.type);
+        return true;
+      });
+
+    // content is mandatory
+    if (!seen.has('content')) cleaned.unshift({ type: 'content', title: 'Materi' });
+
+    // If no video url, remove video block
+    if (!videoEmbedUrl) {
+      return cleaned.filter((b) => b.type !== 'video');
+    }
+
+    // If video url exists but block missing, add it to top by default
+    if (videoEmbedUrl && !cleaned.some((b) => b.type === 'video')) {
+      cleaned.unshift({ type: 'video', title: 'Video' });
+    }
+
+    // If no attachments, keep block but it will render empty in student view; allow teachers to reorder regardless.
+    // (No-op)
+    void attachments;
+    return cleaned;
   }
 
   async function toggleLessonPublish(lesson) {
@@ -585,13 +682,67 @@ export default function CourseManager() {
 
                   <Card className="p-5">
                     <div className="font-bold">Materi (Lessons)</div>
-                    <form className="mt-3 grid gap-3" onSubmit={createLesson}>
+                    <form className="mt-3 grid gap-3" onSubmit={isEditingLesson ? updateLesson : createLesson}>
                       <div>
                         <Label>Judul Materi</Label>
                         <div className="mt-1">
                           <Input value={lessonForm.title} onChange={(e) => setLessonForm((f) => ({ ...f, title: e.target.value }))} />
                         </div>
                       </div>
+                      <div>
+                        <Label>Video Embed URL (opsional)</Label>
+                        <div className="mt-1">
+                          <Input
+                            value={lessonForm.videoEmbedUrl || ''}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setLessonForm((f) => ({
+                                ...f,
+                                videoEmbedUrl: val,
+                                contentBlocks: normalizeBlocks(f.contentBlocks, val, f.attachments),
+                              }));
+                            }}
+                            placeholder="https://www.youtube.com/embed/..."
+                          />
+                        </div>
+                        <div className="mt-1 text-xs text-slate-600">Gunakan URL embed (bukan URL watch).</div>
+                      </div>
+
+                      <div>
+                        <div className="text-sm font-semibold text-slate-700">Urutan Isi (Drag & Drop)</div>
+                        <div className="mt-2 grid gap-2">
+                          {(lessonForm.contentBlocks || []).map((b, idx) => {
+                            const title = b.title || (b.type === 'video' ? 'Video' : b.type === 'attachments' ? 'Lampiran' : 'Materi');
+                            const disabled = b.type === 'content';
+                            return (
+                              <div
+                                key={b.type}
+                                draggable={!disabled}
+                                onDragStart={() => setDragBlockIdx(idx)}
+                                onDragOver={(e) => e.preventDefault()}
+                                onDrop={() => {
+                                  if (dragBlockIdx === null || dragBlockIdx === idx) return;
+                                  setLessonForm((f) => {
+                                    const arr = [...(f.contentBlocks || [])];
+                                    const [moved] = arr.splice(dragBlockIdx, 1);
+                                    arr.splice(idx, 0, moved);
+                                    return { ...f, contentBlocks: arr };
+                                  });
+                                  setDragBlockIdx(null);
+                                }}
+                                className={
+                                  'flex items-center justify-between gap-3 border border-slate-200 bg-white px-3 py-2 text-sm ' +
+                                  (disabled ? 'opacity-70' : 'cursor-move')
+                                }
+                              >
+                                <div className="min-w-0 truncate font-semibold text-slate-900">{title}</div>
+                                <div className="text-xs font-semibold text-slate-600">{disabled ? 'WAJIB' : 'DRAG'}</div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+
                       <div>
                         <RichTextEditor
                           label="Konten Materi (Word-like)"
@@ -635,6 +786,14 @@ export default function CourseManager() {
                                     ...(f.attachments || []),
                                     { type: 'link', name: attachLink.name || attachLink.url, url: attachLink.url },
                                   ],
+                                  contentBlocks: normalizeBlocks(
+                                    f.contentBlocks,
+                                    f.videoEmbedUrl,
+                                    [
+                                      ...(f.attachments || []),
+                                      { type: 'link', name: attachLink.name || attachLink.url, url: attachLink.url },
+                                    ]
+                                  ),
                                 }));
                                 setAttachLink({ name: '', url: '' });
                               }}
@@ -669,6 +828,10 @@ export default function CourseManager() {
                                         ...(f.attachments || []),
                                         { type: 'file', name: file.name, url },
                                       ],
+                                      contentBlocks: normalizeBlocks(f.contentBlocks, f.videoEmbedUrl, [
+                                        ...(f.attachments || []),
+                                        { type: 'file', name: file.name, url },
+                                      ]),
                                     }));
                                   } catch (err) {
                                     setError(err?.response?.data?.error?.message || err?.message || 'Gagal upload PDF');
@@ -696,6 +859,11 @@ export default function CourseManager() {
                                       setLessonForm((f) => ({
                                         ...f,
                                         attachments: (f.attachments || []).filter((_, i) => i !== idx),
+                                        contentBlocks: normalizeBlocks(
+                                          f.contentBlocks,
+                                          f.videoEmbedUrl,
+                                          (f.attachments || []).filter((_, i) => i !== idx)
+                                        ),
                                       }))
                                     }
                                   >
@@ -725,7 +893,14 @@ export default function CourseManager() {
                           <Label htmlFor="lessonPublished">Publish</Label>
                         </div>
                       </div>
-                      <Button type="submit">Tambah Materi</Button>
+                      <div className="flex flex-wrap gap-2">
+                        <Button type="submit">{isEditingLesson ? 'Simpan Perubahan' : 'Tambah Materi'}</Button>
+                        {isEditingLesson ? (
+                          <Button type="button" variant="outline" onClick={cancelEditLesson}>
+                            Batal
+                          </Button>
+                        ) : null}
+                      </div>
                     </form>
 
                     <div className="mt-4 grid gap-2">
@@ -737,6 +912,9 @@ export default function CourseManager() {
                               <div className="text-xs text-slate-500">Order: {l.order} • Published: {String(l.isPublished)}</div>
                             </div>
                             <div className="flex gap-2">
+                              <Button variant="outline" className="px-3" onClick={() => beginEditLesson(l)}>
+                                Edit
+                              </Button>
                               <Button variant="outline" className="px-3" onClick={() => toggleLessonPublish(l)}>
                                 Toggle
                               </Button>

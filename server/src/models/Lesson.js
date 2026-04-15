@@ -19,6 +19,21 @@ const lessonSchema = new mongoose.Schema(
 
     // Optional sections for a "Lesson" (Model A): video, quiz, assignment.
     videoEmbedUrl: { type: String, default: '' },
+    // Optional: customize content flow order in UI (drag & drop).
+    // If empty, the UI falls back to a default order.
+    contentBlocks: {
+      type: [
+        {
+          type: {
+            type: String,
+            enum: ['video', 'content', 'attachments'],
+            required: true,
+          },
+          title: { type: String, default: '' },
+        },
+      ],
+      default: [],
+    },
     quizId: { type: mongoose.Schema.Types.ObjectId, ref: 'Quiz' },
     assignment: {
       instructionsHtml: { type: String, default: '' },

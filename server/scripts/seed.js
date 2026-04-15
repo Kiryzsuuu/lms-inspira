@@ -107,6 +107,7 @@ async function main() {
     { courseId: course._id, title: 'Quiz Cepat: React Dasar' },
     {
       courseId: course._id,
+      lessonId: null,
       title: 'Quiz Cepat: React Dasar',
       description: 'Cek pemahaman kamu.',
       timeLimitSec: 0,
@@ -114,6 +115,13 @@ async function main() {
     },
     { upsert: true, new: true }
   );
+
+  // Attach quiz to the first lesson for lesson-based flow
+  const firstLesson = await Lesson.findOne({ courseId: course._id, order: 1 });
+  if (firstLesson) {
+    await Lesson.findByIdAndUpdate(firstLesson._id, { quizId: quiz._id });
+    await Quiz.findByIdAndUpdate(quiz._id, { lessonId: firstLesson._id });
+  }
 
   await Question.deleteMany({ quizId: quiz._id });
   await Question.insertMany([
