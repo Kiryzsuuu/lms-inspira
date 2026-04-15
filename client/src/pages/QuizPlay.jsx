@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Card, Container, Button } from '../components/ui';
 import { ConfirmDialog } from '../components/ConfirmDialog';
@@ -14,11 +14,15 @@ export default function QuizPlay() {
   const [answers, setAnswers] = useState({});
   const [currentIdx, setCurrentIdx] = useState(0);
   const [pinnedById, setPinnedById] = useState({});
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [pinMode, setPinMode] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState(null);
   const [gradingByQuestionId, setGradingByQuestionId] = useState({});
   const [navInfo, setNavInfo] = useState({ courseId: null, lessonId: null, nextLessonId: null });
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [remainingSec, setRemainingSec] = useState(0);
+  const autoSubmittedRef = useRef(false);
 
   useEffect(() => {
     if (!isAuthed) return;
@@ -30,6 +34,10 @@ export default function QuizPlay() {
         setCurrentIdx(0);
         setPinnedById({});
         setConfirmOpen(false);
+        setSidebarOpen(true);
+        setPinMode(false);
+        setRemainingSec(Number(res.data.quiz?.timeLimitSec || 0));
+        autoSubmittedRef.current = false;
         setNavInfo({
           courseId: res.data.quiz?.courseId || null,
           lessonId: res.data.quiz?.lessonId || null,
@@ -41,6 +49,34 @@ export default function QuizPlay() {
         setQuestions([]);
       });
   }, [quizId, isAuthed]);
+
+  useEffect(() => {
+    if (!quiz) return;
+    if (!quiz.timeLimitSec || Number(quiz.timeLimitSec) <= 0) return;
+    if (result) return;
+    if (submitting) return;
+
+    const t = setInterval(() => {
+      setRemainingSec((s) => {
+        const next = Math.max(0, Number(s || 0) - 1);
+        return next;
+      });
+    }, 1000);
+
+    return () => clearInterval(t);
+  }, [quiz, result, submitting]);
+
+  useEffect(() => {
+    if (!quiz) return;
+    if (!quiz.timeLimitSec || Number(quiz.timeLimitSec) <= 0) return;
+    if (result) return;
+    if (submitting) return;
+    if (remainingSec !== 0) return;
+    if (autoSubmittedRef.current) return;
+    autoSubmittedRef.current = true;
+    // Auto-submit when timer runs out
+    submit();
+  }, [quiz, remainingSec, result, submitting]);
 
   function isQuestionAnswered(q) {
     const a = answers[q._id];
@@ -96,6 +132,13 @@ export default function QuizPlay() {
   const lastIdx = Math.max(0, questions.length - 1);
   const isLastQuestion = currentIdx === lastIdx;
   const hasQuestions = questions.length > 0;
+
+  function fmtTime(sec) {
+    const s = Math.max(0, Number(sec || 0));
+    const mm = Math.floor(s / 60);
+    const ss = s % 60;
+    return `${String(mm).padStart(2, '0')}:${String(ss).padStart(2, '0')}`;
+  }
 
   if (!isAuthed) {
     return (
@@ -169,6 +212,14 @@ export default function QuizPlay() {
             <div className="text-right">
               <div className="text-sm text-slate-600">Skor</div>
               <div className="text-2xl font-extrabold">{result.score} / {result.maxScore}</div>
+            </div>
+          ) : quiz?.timeLimitSec ? (
+            <div className="text-right">
+              <div className="text-sm text-slate-600">Sisa waktu</div>
+              <div className={'text-2xl font-extrabold ' + (remainingSec <= 30 ? 'text-rose-700' : 'text-slate-900')}>
+                {fmtTime(remainingSec)}
+              </div>
+              <div className="mt-1 text-xs text-slate-500">Otomatis submit jika waktu habis</div>
             </div>
           ) : null}
         </div>
@@ -339,58 +390,74 @@ export default function QuizPlay() {
 
           <div>
             <Card className="p-5">
-              <div className="font-bold">Navigasi Soal</div>
-              <div className="mt-1 text-xs text-slate-600">Klik nomor untuk pindah soal. Gunakan Pin untuk menandai.</div>
+              <div className="flex items-center justify-between gap-3">
+                <div className="font-bold">Navigasi Soal</div>
+                <Button type="button" variant="outline" className="px-3" onClick={() => setSidebarOpen((v) => !v)}>
+                  {sidebarOpen ? 'Hide' : 'Show'}
+                </Button>
+              </div>
+              <div className="mt-1 text-xs text-slate-600">
+                Kotak seperti kursi bioskop: hijau = terjawab, gelap = aktif.
+              </div>
 
-              {!result && unanswered.length > 0 ? (
-                <div className="mt-3 border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-800">
-                  Belum dijawab: {unanswered.length} soal
+              {!result ? (
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <Button type="button" variant={pinMode ? 'primary' : 'outline'} className="px-3" onClick={() => setPinMode((v) => !v)}>
+                    {pinMode ? 'Mode Pin: ON' : 'Mode Pin'}
+                  </Button>
+                  {unanswered.length > 0 ? (
+                    <div className="text-xs font-semibold text-rose-800">Belum dijawab: {unanswered.length}</div>
+                  ) : (
+                    <div className="text-xs font-semibold text-emerald-800">Semua terjawab</div>
+                  )}
                 </div>
               ) : null}
 
-              <div className="mt-4 grid gap-2">
-                {questions.map((q, idx) => {
-                  const answered = isQuestionAnswered(q);
-                  const pinned = Boolean(pinnedById[q._id]);
-                  const active = idx === currentIdx;
-                  return (
-                    <div key={q._id} className="flex items-center gap-2">
+              {sidebarOpen ? (
+                <div className="mt-4 grid grid-cols-8 gap-2 sm:grid-cols-10 lg:grid-cols-6 xl:grid-cols-8">
+                  {questions.map((q, idx) => {
+                    const answered = isQuestionAnswered(q);
+                    const pinned = Boolean(pinnedById[q._id]);
+                    const active = idx === currentIdx;
+                    return (
                       <button
+                        key={q._id}
                         type="button"
-                        onClick={() => setCurrentIdx(idx)}
+                        onClick={() => {
+                          if (result) {
+                            setCurrentIdx(idx);
+                            return;
+                          }
+                          if (pinMode) {
+                            setPinnedById((m) => {
+                              const next = { ...(m || {}) };
+                              if (next[q._id]) delete next[q._id];
+                              else next[q._id] = true;
+                              return next;
+                            });
+                            return;
+                          }
+                          setCurrentIdx(idx);
+                        }}
                         className={
-                          'flex-1 border px-3 py-2 text-left text-sm font-semibold transition ' +
+                          'relative aspect-square border text-xs font-extrabold transition ' +
                           (active
                             ? 'border-slate-900 bg-slate-900 text-white'
                             : answered
                               ? 'border-emerald-200 bg-emerald-50 text-emerald-900 hover:bg-emerald-100'
                               : 'border-slate-200 bg-white text-slate-900 hover:bg-slate-50')
                         }
+                        title={pinned ? `Soal ${idx + 1} (PIN)` : `Soal ${idx + 1}`}
                       >
-                        Soal {idx + 1}
-                        {pinned ? <span className="ml-2 text-xs font-extrabold">PIN</span> : null}
+                        {idx + 1}
+                        {pinned ? (
+                          <span className="absolute right-1 top-1 text-[10px] font-extrabold">P</span>
+                        ) : null}
                       </button>
-                      {!result ? (
-                        <Button
-                          type="button"
-                          variant="outline"
-                          className="px-3"
-                          onClick={() =>
-                            setPinnedById((m) => {
-                              const next = { ...(m || {}) };
-                              if (next[q._id]) delete next[q._id];
-                              else next[q._id] = true;
-                              return next;
-                            })
-                          }
-                        >
-                          {pinned ? 'Unpin' : 'Pin'}
-                        </Button>
-                      ) : null}
-                    </div>
-                  );
-                })}
-              </div>
+                    );
+                  })}
+                </div>
+              ) : null}
 
               {!result ? (
                 <div className="mt-4 text-xs text-slate-600">
