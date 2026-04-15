@@ -287,7 +287,7 @@ export default function CourseDetail() {
   return (
     <section className="py-10">
       <Container>
-        <div className="mx-auto w-full max-w-6xl">
+        <div className="w-full">
           <div className="aspect-video overflow-hidden border border-slate-200 bg-slate-100">
             {course.coverImageUrl ? (
               <img src={course.coverImageUrl} alt="" className="h-full w-full object-cover" />
@@ -300,7 +300,9 @@ export default function CourseDetail() {
 
           <div className="mt-6">
             <h1 className="text-3xl font-extrabold tracking-tight">{course.title}</h1>
-            <p className="mt-2 text-slate-600">{course.description}</p>
+            {course.description ? (
+              <div className="mt-2 prose max-w-none text-slate-600" dangerouslySetInnerHTML={{ __html: course.description }} />
+            ) : null}
             <div className="mt-2 text-sm font-semibold text-slate-900">Harga: Rp {formatIdr(priceIdr)}</div>
 
             {isStudent ? (

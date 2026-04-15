@@ -533,7 +533,19 @@ export default function CourseManager() {
                 <div>
                   <Label>Description</Label>
                   <div className="mt-1">
-                    <Textarea rows={3} value={courseForm.description} onChange={(e) => setCourseForm((f) => ({ ...f, description: e.target.value }))} />
+                    <RichTextEditor
+                      label=""
+                      valueHtml={courseForm.description || ''}
+                      onChangeHtml={(html) => setCourseForm((f) => ({ ...f, description: html }))}
+                      onUploadImage={async (file) => {
+                        const fd = new FormData();
+                        fd.append('file', file);
+                        const res = await api.post('/uploads/image', fd, {
+                          headers: { 'Content-Type': 'multipart/form-data' },
+                        });
+                        return res.data.url;
+                      }}
+                    />
                   </div>
                 </div>
 
