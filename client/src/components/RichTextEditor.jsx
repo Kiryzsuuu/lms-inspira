@@ -63,6 +63,93 @@ export function RichTextEditor({
           'min-h-[140px] prose prose-slate max-w-none p-3 focus:outline-none',
         'data-placeholder': placeholder,
       },
+      handlePaste(view, event) {
+        try {
+          const html = event?.clipboardData?.getData('text/html') || '';
+          const text = event?.clipboardData?.getData('text/plain') || '';
+
+          // If HTML from Word is present but list markup isn't usable, fall back to text parsing
+          const looksLikeWordList = /MsoListParagraph|mso-list|<\s*o:p\s*>/i.test(html);
+
+          // Prefer default paste if we have decent HTML and it already has lists
+          if (!looksLikeWordList && /<\s*(ul|ol|li)\b/i.test(html)) {
+            return false;
+          }
+
+          const lines = String(text || '')
+            .replace(/\r\n/g, '\n')
+            .replace(/\r/g, '\n')
+            .split('\n')
+            .map((l) => l.trim())
+            .filter(Boolean);
+
+          if (lines.length < 2) return false;
+
+          const bulletRe = /^(?:[•\-–—\*]|\u2022)\s+/;
+          const orderedRe = /^\d+[\.|\)]\s+/;
+
+          const bulletCount = lines.filter((l) => bulletRe.test(l)).length;
+          const orderedCount = lines.filter((l) => orderedRe.test(l)).length;
+
+          if (bulletCount < 2 && orderedCount < 2) return false;
+
+          event.preventDefault();
+
+          const escapeHtml = (s) =>
+            String(s)
+              .replace(/&/g, '&amp;')
+              .replace(/</g, '&lt;')
+              .replace(/>/g, '&gt;')
+              .replace(/"/g, '&quot;')
+              .replace(/'/g, '&#39;');
+
+          if (orderedCount >= bulletCount) {
+            const itemTexts = lines
+              .filter((l) => orderedRe.test(l))
+              .map((l) => l.replace(orderedRe, '').trim())
+              .filter(Boolean);
+
+            if (itemTexts.length) {
+              const { schema, tr } = view.state;
+              const li = schema.nodes.listItem;
+              const p = schema.nodes.paragraph;
+              const ol = schema.nodes.orderedList;
+              if (li && p && ol) {
+                const listItems = itemTexts.map((t) => li.createAndFill(null, p.create(null, schema.text(t))));
+                const node = ol.createAndFill({ order: 1 }, listItems.filter(Boolean));
+                if (node) {
+                  view.dispatch(tr.replaceSelectionWith(node).scrollIntoView());
+                  return true;
+                }
+              }
+            }
+          }
+
+          const itemTexts = lines
+            .filter((l) => bulletRe.test(l))
+            .map((l) => l.replace(bulletRe, '').trim())
+            .filter(Boolean);
+
+          if (itemTexts.length) {
+            const { schema, tr } = view.state;
+            const li = schema.nodes.listItem;
+            const p = schema.nodes.paragraph;
+            const ul = schema.nodes.bulletList;
+            if (li && p && ul) {
+              const listItems = itemTexts.map((t) => li.createAndFill(null, p.create(null, schema.text(t))));
+              const node = ul.createAndFill(null, listItems.filter(Boolean));
+              if (node) {
+                view.dispatch(tr.replaceSelectionWith(node).scrollIntoView());
+                return true;
+              }
+            }
+          }
+
+          return false;
+        } catch {
+          return false;
+        }
+      },
     },
     onUpdate: ({ editor: ed }) => {
       const html = ed.getHTML();
