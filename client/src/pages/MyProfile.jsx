@@ -118,13 +118,14 @@ export default function MyProfile() {
     setLoading(true);
     try {
       if (!newEmail.trim()) throw new Error('Email tidak boleh kosong');
-      const res = await api.put('/auth/email', { newEmail });
-      setUser(res.data.user);
+      const res = await api.post('/auth/email/request-otp', { newEmail });
       setEditingEmail(false);
-      setSuccess('Email berhasil diperbarui');
-      setTimeout(() => setSuccess(''), 3000);
+      nav(`/otp?flow=email_change&email=${encodeURIComponent(newEmail)}`, {
+        replace: true,
+        state: { devOtp: res?.data?.devOtp || '' },
+      });
     } catch (e) {
-      setError(e?.response?.data?.error?.message || 'Gagal update email');
+      setError(e?.response?.data?.error?.message || 'Gagal mengirim OTP');
     } finally {
       setLoading(false);
     }
@@ -140,17 +141,16 @@ export default function MyProfile() {
       if (passwordData.newPassword !== passwordData.confirmPassword) throw new Error('Password baru tidak cocok');
       if (passwordData.newPassword.length < 6) throw new Error('Password minimal 6 karakter');
 
-      await api.put('/auth/password', {
+      const res = await api.post('/auth/password/request-otp', {
         currentPassword: passwordData.currentPassword,
         newPassword: passwordData.newPassword,
       });
 
       setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
       setEditingPassword(false);
-      setSuccess('Password berhasil diperbarui');
-      setTimeout(() => setSuccess(''), 3000);
+      nav('/otp?flow=password_change', { replace: true, state: { devOtp: res?.data?.devOtp || '' } });
     } catch (e) {
-      setError(e?.response?.data?.error?.message || e?.message || 'Gagal update password');
+      setError(e?.response?.data?.error?.message || e?.message || 'Gagal mengirim OTP');
     } finally {
       setLoading(false);
     }

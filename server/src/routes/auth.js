@@ -8,15 +8,74 @@ const { HttpError } = require('../utils/errors');
 const { getEnv } = require('../utils/env');
 const { sha256Hex, randomTokenHex } = require('../utils/crypto');
 const { hasSmtpConfigured, sendMail } = require('../utils/mailer');
-const { sendWelcomeEmail } = require('../utils/emailNotifications');
+const { sendWelcomeEmail, sendOTP } = require('../utils/emailNotifications');
 const { buildClientUrl } = require('../utils/urls');
+const { OTP } = require('../models/OTP');
+const { generateOTP, getOTPExpiration } = require('../utils/otp');
 
 function authRouter({ jwtSecret }) {
   const router = express.Router();
 
+  async function createAndSendOtp(env, { email, type, meta }) {
+    const normalizedEmail = String(email || '').trim().toLowerCase();
+    if (!normalizedEmail) throw new HttpError(400, 'Email harus diisi');
+
+    const code = generateOTP();
+    const expiresAt = getOTPExpiration();
+
+    // Invalidate previous OTPs for this email+type.
+    await OTP.updateMany({ email: normalizedEmail, type, verified: false }, { $set: { expiresAt: new Date(Date.now() - 1000) } });
+
+    await OTP.create({
+      email: normalizedEmail,
+      type,
+      codeHash: sha256Hex(code),
+      expiresAt,
+      attempts: 0,
+      verified: false,
+      meta: meta || undefined,
+    });
+
+    try {
+      await sendOTP(env, { userEmail: normalizedEmail, code, type: type === 'reset_password' ? 'password' : type === 'email_change' ? 'email' : type === 'password_change' ? 'password' : 'register' });
+    } catch (e) {
+      // If SMTP is misconfigured, don't leak details.
+      if (process.env.NODE_ENV === 'production') throw new HttpError(500, 'Gagal mengirim OTP');
+    }
+
+    if (process.env.NODE_ENV !== 'production') {
+      return { ok: true, devOtp: code, expiresAt };
+    }
+
+    return { ok: true };
+  }
+
+  async function verifyOtp({ email, type, code }) {
+    const normalizedEmail = String(email || '').trim().toLowerCase();
+    const rawCode = String(code || '').trim();
+    if (!normalizedEmail || !rawCode) throw new HttpError(400, 'OTP tidak valid');
+
+    const otp = await OTP.findOne({ email: normalizedEmail, type, verified: false }).sort({ createdAt: -1 });
+    if (!otp) throw new HttpError(400, 'OTP tidak valid');
+    if (otp.expiresAt.getTime() < Date.now()) throw new HttpError(400, 'OTP expired');
+    if ((otp.attempts || 0) >= 3) throw new HttpError(429, 'Terlalu banyak percobaan OTP');
+
+    const ok = sha256Hex(rawCode) === otp.codeHash;
+    if (!ok) {
+      otp.attempts = (otp.attempts || 0) + 1;
+      await otp.save();
+      throw new HttpError(400, 'OTP salah');
+    }
+
+    otp.verified = true;
+    await otp.save();
+    return otp;
+  }
+
   router.post(
     '/register',
     asyncHandler(async (req, res) => {
+      const env = getEnv();
       const schema = z.object({
         name: z.string().min(2),
         fullName: z.string().min(2),
@@ -30,16 +89,18 @@ function authRouter({ jwtSecret }) {
       });
       const { name, fullName, email, password, whatsappNumber, institution, referralSource, reason, educationLevel } = schema.parse(req.body);
 
-      const existing = await User.findOne({ email });
+      const normalizedEmail = String(email).toLowerCase();
+      const existing = await User.findOne({ email: normalizedEmail });
       if (existing) throw new HttpError(409, 'Email already registered');
 
       const passwordHash = await bcrypt.hash(password, 10);
-      const user = await User.create({
+      await User.create({
         name,
         fullName,
-        email,
+        email: normalizedEmail,
         passwordHash,
         role: 'student',
+        emailVerified: false,
         whatsappNumber,
         institution,
         referralSource,
@@ -47,23 +108,64 @@ function authRouter({ jwtSecret }) {
         educationLevel,
       });
 
-      const token = jwt.sign({ sub: String(user._id), role: user.role, name: user.name }, jwtSecret, {
-        expiresIn: '7d',
-      });
+      const otpResult = await createAndSendOtp(env, { email: normalizedEmail, type: 'register' });
+      res.status(201).json({ ok: true, requiresOtp: true, email: normalizedEmail, ...otpResult });
+    })
+  );
 
-      // Send welcome email
+  router.post(
+    '/register/resend-otp',
+    asyncHandler(async (req, res) => {
+      const env = getEnv();
+      const schema = z.object({ email: z.string().email() });
+      const { email } = schema.parse(req.body);
+
+      // Always ok to avoid enumeration.
+      const normalizedEmail = String(email).toLowerCase();
+      const user = await User.findOne({ email: normalizedEmail }).select('emailVerified');
+      if (!user || user.emailVerified) return res.json({ ok: true });
+
+      const out = await createAndSendOtp(env, { email: normalizedEmail, type: 'register' });
+      if (process.env.NODE_ENV !== 'production') {
+        return res.json({ ok: true, devOtp: out.devOtp });
+      }
+      return res.json({ ok: true });
+    })
+  );
+
+  router.post(
+    '/register/verify-otp',
+    asyncHandler(async (req, res) => {
+      const schema = z.object({
+        email: z.string().email(),
+        code: z.string().min(4),
+      });
+      const { email, code } = schema.parse(req.body);
+
+      await verifyOtp({ email, type: 'register', code });
+
+      const user = await User.findOne({ email: String(email).toLowerCase() });
+      if (!user) throw new HttpError(400, 'Akun tidak ditemukan');
+
+      user.emailVerified = true;
+      await user.save();
+
+      // Send welcome email (after verification)
       const env = getEnv();
       try {
         await sendWelcomeEmail(env, {
           userEmail: user.email,
           userName: user.fullName || user.name,
         });
-      } catch (emailErr) {
-        console.error('Failed to send welcome email:', emailErr);
-        // Don't fail registration if email fails
+      } catch {
+        // ignore
       }
 
-      res.status(201).json({ token });
+      const token = jwt.sign({ sub: String(user._id), role: user.role, name: user.name }, jwtSecret, {
+        expiresIn: '7d',
+      });
+
+      res.json({ ok: true, token });
     })
   );
 
@@ -76,8 +178,12 @@ function authRouter({ jwtSecret }) {
       });
       const { email, password } = schema.parse(req.body);
 
-      const user = await User.findOne({ email });
+      const user = await User.findOne({ email: String(email).toLowerCase() });
       if (!user) throw new HttpError(401, 'Invalid credentials');
+
+      if (!user.emailVerified) {
+        throw new HttpError(403, 'Email belum terverifikasi. Silakan cek OTP di email.');
+      }
 
       const ok = await bcrypt.compare(password, user.passwordHash);
       if (!ok) throw new HttpError(401, 'Invalid credentials');
@@ -105,7 +211,7 @@ function authRouter({ jwtSecret }) {
       }
 
       const user = await User.findById(payload.sub).select(
-        'name fullName email role createdAt activeCourseId completedCourseIds purchasedCourseIds institution whatsappNumber referralSource reason educationLevel'
+        'name fullName email role createdAt emailVerified activeCourseId completedCourseIds purchasedCourseIds institution whatsappNumber referralSource reason educationLevel'
       );
       if (!user) throw new HttpError(401, 'Unauthorized');
 
@@ -124,28 +230,14 @@ function authRouter({ jwtSecret }) {
       const user = await User.findOne({ email });
       if (!user) return res.json({ ok: true });
 
-      const rawToken = randomTokenHex(32);
-      user.passwordResetTokenHash = sha256Hex(rawToken);
-      user.passwordResetExpiresAt = new Date(Date.now() + 1000 * 60 * 30);
-      await user.save();
+      const out = await createAndSendOtp(env, {
+        email,
+        type: 'reset_password',
+      });
 
-      const resetUrl = buildClientUrl(env, `/reset-password?token=${rawToken}&email=${encodeURIComponent(email)}`);
-      const subject = 'Reset password';
-      const text = `Link reset password (berlaku 30 menit):\n${resetUrl}`;
-
-      if (hasSmtpConfigured(env)) {
-        await sendMail(env, { to: email, subject, text });
-        if (process.env.NODE_ENV !== 'production') {
-          return res.json({ ok: true, devResetUrl: resetUrl });
-        }
-        return res.json({ ok: true });
-      }
-
-      // Dev fallback to test end-to-end without SMTP.
       if (process.env.NODE_ENV !== 'production') {
-        return res.json({ ok: true, devResetUrl: resetUrl });
+        return res.json({ ok: true, devOtp: out.devOtp });
       }
-
       return res.json({ ok: true });
     })
   );
@@ -155,25 +247,18 @@ function authRouter({ jwtSecret }) {
     asyncHandler(async (req, res) => {
       const schema = z.object({
         email: z.string().email(),
-        token: z.string().min(10),
+        code: z.string().min(4).max(12),
         newPassword: z.string().min(6),
       });
-      const { email, token, newPassword } = schema.parse(req.body);
+      const { email, code, newPassword } = schema.parse(req.body);
+
+      await verifyOtp({ email, type: 'reset_password', code });
 
       const user = await User.findOne({ email });
-      if (!user || !user.passwordResetTokenHash || !user.passwordResetExpiresAt) {
-        throw new HttpError(400, 'Invalid reset token');
-      }
-      if (user.passwordResetExpiresAt.getTime() < Date.now()) {
-        throw new HttpError(400, 'Reset token expired');
-      }
-
-      const tokenHash = sha256Hex(token);
-      if (tokenHash !== user.passwordResetTokenHash) {
-        throw new HttpError(400, 'Invalid reset token');
-      }
+      if (!user) throw new HttpError(400, 'Invalid email');
 
       user.passwordHash = await bcrypt.hash(newPassword, 10);
+      // Back-compat cleanup if these fields exist on older user docs.
       user.passwordResetTokenHash = undefined;
       user.passwordResetExpiresAt = undefined;
       await user.save();
@@ -209,11 +294,12 @@ function authRouter({ jwtSecret }) {
     })
   );
 
-  // PUT /auth/email - Update email
-  router.put(
-    '/email',
+  // Email change via OTP
+  router.post(
+    '/email/request-otp',
     authMiddleware,
     asyncHandler(async (req, res) => {
+      const env = getEnv();
       const schema = z.object({ newEmail: z.string().email() });
       const { newEmail } = schema.parse(req.body);
 
@@ -222,40 +308,105 @@ function authRouter({ jwtSecret }) {
         throw new HttpError(409, 'Email already in use');
       }
 
-      const user = await User.findByIdAndUpdate(req.user.sub, { email: newEmail }, { new: true }).select(
-        'name email role'
-      );
+      const out = await createAndSendOtp(env, {
+        email: newEmail,
+        type: 'email_change',
+        meta: { userId: req.user.sub },
+      });
 
-      // Regenerate token with new email
+      if (process.env.NODE_ENV !== 'production') {
+        return res.json({ ok: true, devOtp: out.devOtp });
+      }
+      return res.json({ ok: true });
+    })
+  );
+
+  router.post(
+    '/email/verify-otp',
+    authMiddleware,
+    asyncHandler(async (req, res) => {
+      const schema = z.object({ newEmail: z.string().email(), code: z.string().min(4).max(12) });
+      const { newEmail, code } = schema.parse(req.body);
+
+      const otp = await verifyOtp({ email: newEmail, type: 'email_change', code });
+      if (!otp.meta || String(otp.meta.userId) !== String(req.user.sub)) {
+        throw new HttpError(400, 'Invalid OTP');
+      }
+
+      const user = await User.findByIdAndUpdate(
+        req.user.sub,
+        { email: newEmail, emailVerified: true },
+        { new: true }
+      ).select('name email role emailVerified');
+
       const newToken = jwt.sign({ sub: String(user._id), role: user.role, name: user.name }, jwtSecret, {
         expiresIn: '7d',
       });
 
-      res.json({ token: newToken, user });
+      res.json({ ok: true, token: newToken, user });
     })
   );
 
-  // PUT /auth/password - Update password
-  router.put(
-    '/password',
+  // Password change via OTP
+  router.post(
+    '/password/request-otp',
     authMiddleware,
     asyncHandler(async (req, res) => {
-      const schema = z.object({
-        currentPassword: z.string().min(1),
-        newPassword: z.string().min(6),
-      });
+      const env = getEnv();
+      const schema = z.object({ currentPassword: z.string().min(1), newPassword: z.string().min(6) });
       const { currentPassword, newPassword } = schema.parse(req.body);
 
-      const user = await User.findById(req.user.sub);
+      const user = await User.findById(req.user.sub).select('email passwordHash');
       if (!user) throw new HttpError(401, 'User not found');
 
       const ok = await bcrypt.compare(currentPassword, user.passwordHash);
       if (!ok) throw new HttpError(400, 'Current password is incorrect');
 
-      user.passwordHash = await bcrypt.hash(newPassword, 10);
-      await user.save();
+      const newPasswordHash = await bcrypt.hash(newPassword, 10);
+
+      const out = await createAndSendOtp(env, {
+        email: user.email,
+        type: 'password_change',
+        meta: { userId: req.user.sub, newPasswordHash },
+      });
+
+      if (process.env.NODE_ENV !== 'production') {
+        return res.json({ ok: true, devOtp: out.devOtp });
+      }
+      return res.json({ ok: true });
+    })
+  );
+
+  router.post(
+    '/password/verify-otp',
+    authMiddleware,
+    asyncHandler(async (req, res) => {
+      const schema = z.object({ code: z.string().min(4).max(12) });
+      const { code } = schema.parse(req.body);
+
+      const user = await User.findById(req.user.sub).select('email');
+      if (!user) throw new HttpError(401, 'User not found');
+
+      const otp = await verifyOtp({ email: user.email, type: 'password_change', code });
+      if (!otp.meta || String(otp.meta.userId) !== String(req.user.sub) || !otp.meta.newPasswordHash) {
+        throw new HttpError(400, 'Invalid OTP');
+      }
+
+      await User.findByIdAndUpdate(req.user.sub, { passwordHash: otp.meta.newPasswordHash });
 
       res.json({ ok: true });
+    })
+  );
+
+  // PUT /auth/password - Deprecated (use OTP endpoints)
+  router.put(
+    '/password',
+    authMiddleware,
+    asyncHandler(async (req, res) => {
+      res.status(400).json({
+        ok: false,
+        message: 'Use /auth/password/request-otp and /auth/password/verify-otp',
+      });
     })
   );
 

@@ -10,6 +10,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
+import OtpVerify from './pages/OtpVerify';
 import MyProfile from './pages/MyProfile';
 import Dashboard from './pages/Dashboard';
 import HeroManager from './pages/dashboard/HeroManager';
@@ -41,6 +42,7 @@ export default function App() {
         <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/otp" element={<OtpVerify />} />
 
         <Route
           path="/my-profile"

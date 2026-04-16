@@ -3,22 +3,20 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Button, Card, Container, Input, Label } from '../components/ui';
 import { useAuth } from '../lib/auth';
 
-function useQuery() {
-  const { search } = useLocation();
-  return useMemo(() => new URLSearchParams(search), [search]);
-}
-
 export default function ResetPassword() {
   const { api } = useAuth();
   const nav = useNavigate();
-  const q = useQuery();
+  const loc = useLocation();
+  const q = useMemo(() => new URLSearchParams(loc.search), [loc.search]);
 
   const [email, setEmail] = useState(q.get('email') || '');
-  const [token, setToken] = useState(q.get('token') || '');
+  const [code, setCode] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [status, setStatus] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  const devOtp = loc?.state?.devOtp || '';
 
   async function submit(e) {
     e.preventDefault();
@@ -27,7 +25,7 @@ export default function ResetPassword() {
     setLoading(true);
 
     try {
-      await api.post('/auth/reset-password', { email, token, newPassword });
+      await api.post('/auth/reset-password', { email, code, newPassword });
       setStatus('Password berhasil direset. Silakan login.');
       setTimeout(() => nav('/login'), 700);
     } catch (err) {
@@ -42,7 +40,7 @@ export default function ResetPassword() {
       <Container className="max-w-lg">
         <Card className="p-6 sm:p-8">
           <h1 className="text-2xl font-extrabold tracking-tight">Reset Password</h1>
-          <p className="mt-1 text-sm text-slate-600">Masukkan token dan password baru.</p>
+          <p className="mt-1 text-sm text-slate-600">Masukkan OTP dan password baru.</p>
 
           {error ? <div className="mt-4 bg-rose-50 p-3 text-sm text-rose-700">{error}</div> : null}
           {status ? <div className="mt-4 bg-emerald-50 p-3 text-sm text-emerald-700">{status}</div> : null}
@@ -55,9 +53,9 @@ export default function ResetPassword() {
               </div>
             </div>
             <div>
-              <Label>Token</Label>
+              <Label>OTP</Label>
               <div className="mt-1">
-                <Input value={token} onChange={(e) => setToken(e.target.value)} placeholder="token dari email" />
+                <Input value={code} onChange={(e) => setCode(e.target.value)} placeholder="kode OTP dari email" />
               </div>
             </div>
             <div>
@@ -71,6 +69,13 @@ export default function ResetPassword() {
               {loading ? 'Memproses...' : 'Reset password'}
             </Button>
           </form>
+
+          {devOtp ? (
+            <div className="mt-6 bg-slate-50 p-4 text-xs text-slate-700">
+              <div className="font-semibold">Dev OTP (SMTP belum dikonfigurasi):</div>
+              <div className="mt-1 font-mono text-slate-900">{devOtp}</div>
+            </div>
+          ) : null}
 
           <div className="mt-4 text-sm text-slate-600">
             Kembali ke{' '}

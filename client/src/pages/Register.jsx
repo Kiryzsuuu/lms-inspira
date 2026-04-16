@@ -45,6 +45,13 @@ export default function Register() {
       if (!formData.password.trim()) throw new Error('Password harus diisi');
 
       const res = await api.post('/auth/register', formData);
+      if (res?.data?.requiresOtp) {
+        nav(`/otp?flow=register&email=${encodeURIComponent(res.data.email || formData.email)}`, {
+          replace: true,
+          state: { devOtp: res?.data?.devOtp || '' },
+        });
+        return;
+      }
       setToken(res.data.token);
       nav('/courses', { replace: true });
     } catch (err) {

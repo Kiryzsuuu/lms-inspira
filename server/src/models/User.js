@@ -21,6 +21,8 @@ const userSchema = new mongoose.Schema(
     completedCourseIds: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Course' }],
     purchasedCourseIds: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Course' }],
 
+    emailVerified: { type: Boolean, default: false, index: true },
+
     passwordResetTokenHash: { type: String },
     passwordResetExpiresAt: { type: Date },
   },
