@@ -598,7 +598,7 @@ export default function MyProfile() {
                   </div>
                 ) : (
                   <p className="text-sm text-slate-600">Belum ada course yang diselesaikan.</p>
-                )}}
+                )}
               </div>
             </div>
           )}
