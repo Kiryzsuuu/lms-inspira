@@ -73,6 +73,7 @@ export default function LessonPresentation() {
   const [course, setCourse] = useState(null);
   const [lessons, setLessons] = useState([]);
   const [lessonProgress, setLessonProgress] = useState({});
+  const [progress, setProgress] = useState({ activeCourseId: null });
   const [openAttachmentUrl, setOpenAttachmentUrl] = useState('');
   const [lockError, setLockError] = useState('');
 
@@ -87,7 +88,15 @@ export default function LessonPresentation() {
         setCourse(null);
         setLessons([]);
       });
-  }, [id]);
+  }, [id, api]);
+
+  useEffect(() => {
+    if (role !== 'student') return;
+    api
+      .get('/progress/me')
+      .then((res) => setProgress(res.data))
+      .catch(() => setProgress({ activeCourseId: null }));
+  }, [role, api]);
 
   useEffect(() => {
     if (role !== 'student') return;
@@ -99,7 +108,7 @@ export default function LessonPresentation() {
         setLessonProgress(map);
       })
       .catch(() => setLessonProgress({}));
-  }, [role, id]);
+  }, [role, id, api]);
 
   const isStudent = role === 'student';
   const priceIdr = course?.priceIdr || 0;
@@ -127,7 +136,9 @@ export default function LessonPresentation() {
     return isLessonCompleted(prev._id);
   }
 
-  const allowed = !isPaywalled && activeIdx >= 0 && canOpenLessonByIndex(activeIdx);
+  // For students: require course to be active (started via /courses/:id/start)
+  const isActiveCourse = !isStudent || (progress?.activeCourseId && String(progress.activeCourseId) === String(id));
+  const allowed = isActiveCourse && !isPaywalled && activeIdx >= 0 && canOpenLessonByIndex(activeIdx);
   const prevLessonId = activeIdx > 0 ? lessons[activeIdx - 1]?._id : null;
   const nextLessonId = activeIdx >= 0 && activeIdx < lessons.length - 1 ? lessons[activeIdx + 1]?._id : null;
 
@@ -143,14 +154,16 @@ export default function LessonPresentation() {
         </Button>
       </div>
 
-      {isPaywalled ? (
+      {!activeLesson ? (
+        <div className="mt-6 border border-slate-200 bg-white p-6 text-sm text-slate-600">Materi tidak ditemukan.</div>
+      ) : !isActiveCourse ? (
+        <div className="mt-6 border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+          Silakan mulai course ini terlebih dahulu dari halaman course detail.
+        </div>
+      ) : isPaywalled ? (
         <div className="mt-6 border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
           Course ini berbayar. Setelah pembayaran terkonfirmasi, materi akan terbuka.
         </div>
-      ) : null}
-
-      {!activeLesson ? (
-        <div className="mt-6 border border-slate-200 bg-white p-6 text-sm text-slate-600">Materi tidak ditemukan.</div>
       ) : !allowed ? (
         <div className="mt-6 border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
           Materi ini masih terkunci. Selesaikan materi sebelumnya terlebih dahulu.

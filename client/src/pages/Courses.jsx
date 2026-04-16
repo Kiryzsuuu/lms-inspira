@@ -25,16 +25,20 @@ export default function Courses() {
     api.get('/heroes').then((res) => setSlides(res.data.slides)).catch(() => setSlides([]));
     api.get('/courses').then((res) => setCourses(res.data.courses)).catch(() => setCourses([]));
 
-    // Load purchased courses if authed
-    if (isAuthed) {
-      api.get('/courses/my-courses')
-        .then((res) => {
-          const ids = new Set((res.data.courses || []).map(c => c._id));
-          setPurchasedCourseIds(ids);
-        })
-        .catch(() => setPurchasedCourseIds(new Set()));
+    // Clear purchased list if not authed
+    if (!isAuthed) {
+      setPurchasedCourseIds(new Set());
+      return;
     }
-  }, [isAuthed]);
+
+    // Load purchased courses if authed
+    api.get('/courses/my-courses')
+      .then((res) => {
+        const ids = new Set((res.data.courses || []).map(c => c._id));
+        setPurchasedCourseIds(ids);
+      })
+      .catch(() => setPurchasedCourseIds(new Set()));
+  }, [isAuthed, api]);
 
   async function addToCart(courseId) {
     setError('');

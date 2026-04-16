@@ -27,6 +27,28 @@ function coursesRouter({ requireAuth, requireRole }) {
     })
   );
 
+  // Authenticated: get user's purchased courses
+  router.get(
+    '/my-courses',
+    requireAuth,
+    asyncHandler(async (req, res) => {
+      const user = await User.findById(req.user.sub);
+      if (!user) throw new HttpError(401, 'Unauthorized');
+
+      const courseIds = [
+        ...(user.purchasedCourseIds || []),
+        ...(user.completedCourseIds || []),
+        ...(user.activeCourseId ? [user.activeCourseId] : []),
+      ];
+      
+      // Remove duplicates
+      const uniqueIds = [...new Set(courseIds.map(id => String(id)))];
+      
+      const courses = await Course.find({ _id: { $in: uniqueIds } }).sort({ createdAt: -1 });
+      res.json({ courses });
+    })
+  );
+
   // Public detail
   router.get(
     '/:id',

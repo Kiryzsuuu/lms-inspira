@@ -514,7 +514,7 @@ export default function MyProfile() {
                   onClick={handleLogoutClick}
                   className="w-full sm:w-auto bg-rose-600 text-white hover:bg-rose-700 shadow-md hover:shadow-lg transition-all font-semibold"
                 >
-                  🚪 Logout
+                  Logout
                 </Button>
               </div>
 
