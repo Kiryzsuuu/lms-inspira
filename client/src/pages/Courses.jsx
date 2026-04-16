@@ -74,53 +74,86 @@ export default function Courses() {
         {error ? <div className="mt-4 bg-rose-50 p-3 text-sm text-rose-700">{error}</div> : null}
 
         <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {filtered.map((c) => (
-            <Card key={c._id} className="flex h-full flex-col p-5">
-              <div className="aspect-[16/9] overflow-hidden bg-slate-100">
-                {c.coverImageUrl ? (
-                  <img src={c.coverImageUrl} alt="" className="h-full w-full object-cover" />
-                ) : (
-                  <div className="flex h-full w-full items-center justify-center text-xs font-semibold text-slate-600">
-                    Cover (opsional)
+          {filtered.map((c) => {
+            const isFree = !c.priceIdr || c.priceIdr === 0;
+            const isPurchased = purchasedCourseIds.has(c._id);
+            const isAccessible = isFree || isPurchased;
+            const shouldBeGrayed = isAuthed && !isFree && !isPurchased;
+
+            return (
+              <Card 
+                key={c._id} 
+                className={`flex h-full flex-col p-5 transition-all ${
+                  shouldBeGrayed 
+                    ? 'bg-slate-100 opacity-60 border border-slate-300' 
+                    : 'bg-white border-2 border-orange-200 shadow-md'
+                }`}
+              >
+                <div className="aspect-[16/9] overflow-hidden bg-slate-100 rounded">
+                  {c.coverImageUrl ? (
+                    <img src={c.coverImageUrl} alt="" className="h-full w-full object-cover" />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center text-xs font-semibold text-slate-600">
+                      Cover (opsional)
+                    </div>
+                  )}
+                </div>
+                <div className="mt-3 line-clamp-2 min-h-[3.25rem] text-lg font-bold leading-snug text-slate-900">
+                  {c.title}
+                </div>
+                <div className="mt-1 text-sm font-semibold text-slate-900">Rp {formatIdr(c.priceIdr || 0)}</div>
+
+                {/* Status badge */}
+                {isAuthed && (
+                  <div className="mt-2">
+                    {isFree ? (
+                      <span className="inline-block bg-green-100 text-green-800 text-xs font-semibold px-3 py-1 rounded">
+                        Gratis
+                      </span>
+                    ) : isPurchased ? (
+                      <span className="inline-block bg-blue-100 text-blue-800 text-xs font-semibold px-3 py-1 rounded">
+                        Sudah Beli
+                      </span>
+                    ) : (
+                      <span className="inline-block bg-gray-300 text-gray-700 text-xs font-semibold px-3 py-1 rounded">
+                        Belum Beli
+                      </span>
+                    )}
                   </div>
                 )}
-              </div>
-              <div className="mt-3 line-clamp-2 min-h-[3.25rem] text-lg font-bold leading-snug text-slate-900">
-                {c.title}
-              </div>
-              <div className="mt-1 text-sm font-semibold text-slate-900">Rp {formatIdr(c.priceIdr || 0)}</div>
 
-              <div className="mt-auto pt-4 flex gap-2 flex-col sm:flex-row">
-                {!isAuthed ? (
-                  <Button
-                    className="w-full"
-                    onClick={() => nav('/login')}
-                  >
-                    Login untuk Lihat
-                  </Button>
-                ) : purchasedCourseIds.has(c._id) ? (
-                  <Link to={`/courses/${c._id}`} className="w-full">
-                    <Button className="w-full">Buka</Button>
-                  </Link>
-                ) : (
-                  <>
-                    <Link to={`/courses/${c._id}`} className="flex-1">
-                      <Button variant="outline" className="w-full">Detail</Button>
+                <div className="mt-auto pt-4 flex gap-2 flex-col sm:flex-row">
+                  {!isAuthed ? (
+                    <Button
+                      className="w-full"
+                      onClick={() => nav('/login')}
+                    >
+                      Login untuk Lihat
+                    </Button>
+                  ) : purchasedCourseIds.has(c._id) ? (
+                    <Link to={`/courses/${c._id}`} className="w-full">
+                      <Button className="w-full bg-blue-600 hover:bg-blue-700">Buka</Button>
                     </Link>
-                    {role === 'student' && (
-                      <Button
-                        variant="default"
-                        className="flex-1"
-                        onClick={() => addToCart(c._id)}
-                      >
-                        Tambah ke Cart
-                      </Button>
-                    )}
-                  </>
-                )}
-              </div>
-            </Card>
-          ))}
+                  ) : (
+                    <>
+                      <Link to={`/courses/${c._id}`} className="flex-1">
+                        <Button variant="outline" className="w-full">Detail</Button>
+                      </Link>
+                      {role === 'student' && (
+                        <Button
+                          variant="default"
+                          className="flex-1"
+                          onClick={() => addToCart(c._id)}
+                        >
+                          Tambah ke Cart
+                        </Button>
+                      )}
+                    </>
+                  )}
+                </div>
+              </Card>
+            );
+          })}
 
           {filtered.length === 0 && (
             <Card className="p-8 sm:col-span-2 lg:col-span-3">

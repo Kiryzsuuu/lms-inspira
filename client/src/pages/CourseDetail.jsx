@@ -389,16 +389,17 @@ export default function CourseDetail() {
               </div>
             ) : null}
 
-            {lockError ? <div className="mt-4 bg-rose-50 p-3 text-sm text-rose-700">{lockError}</div> : null}
+            {lockError ? <div className="mt-4 bg-rose-50 border border-rose-200 p-4 text-sm text-rose-700 rounded">{lockError}</div> : null}
             {isLocked ? (
-              <div className="mt-4 bg-amber-50 p-3 text-sm text-amber-800">
+              <div className="mt-4 bg-amber-50 border border-amber-200 p-4 text-sm text-amber-800 rounded">
                 Kamu masih punya course aktif lain. Selesaikan dulu course aktif tersebut supaya bisa mulai course ini.
               </div>
             ) : null}
 
             {isPaywalled ? (
-              <div className="mt-4 bg-slate-50 p-3 text-sm text-slate-700">
-                Course ini berbayar. Setelah pembayaran terkonfirmasi, course akan terbuka dan bisa dikerjakan.
+              <div className="mt-4 bg-red-50 border-2 border-red-300 p-4 text-sm text-red-800 rounded-lg font-semibold">
+                <div className="mb-2">🔒 Course Ini Berbayar - Belum Dibeli</div>
+                <div className="text-xs font-normal mb-3">Silakan lakukan pembayaran untuk membuka dan mengakses seluruh materi course ini.</div>
               </div>
             ) : null}
 
