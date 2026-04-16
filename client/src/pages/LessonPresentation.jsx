@@ -157,15 +157,15 @@ export default function LessonPresentation() {
       {!activeLesson ? (
         <div className="mt-6 border border-slate-200 bg-white p-6 text-sm text-slate-600">Materi tidak ditemukan.</div>
       ) : !isActiveCourse ? (
-        <div className="mt-6 border-2 border-amber-300 bg-amber-50 p-4 text-sm text-amber-900 rounded-lg font-semibold">
+        <div className="mt-6 border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
           ⚠️ Silakan mulai course ini terlebih dahulu dari halaman course detail.
         </div>
       ) : isPaywalled ? (
-        <div className="mt-6 border-2 border-red-300 bg-red-50 p-4 text-sm text-red-800 rounded-lg font-semibold">
-          🔒 Course ini berbayar dan belum dibeli. Materi tidak dapat diakses. Silakan lakukan pembayaran terlebih dahulu.
+        <div className="mt-6 border border-red-300 bg-red-50 p-4 text-sm text-red-800">
+          🔒 Course ini berbayar dan belum dibeli. Materi tidak dapat diakses.
         </div>
       ) : !allowed ? (
-        <div className="mt-6 border-2 border-amber-300 bg-amber-50 p-4 text-sm text-amber-900 rounded-lg">
+        <div className="mt-6 border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
           ⚠️ Materi ini masih terkunci. Selesaikan materi sebelumnya terlebih dahulu.
         </div>
       ) : (

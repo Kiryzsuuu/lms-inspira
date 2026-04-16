@@ -77,19 +77,14 @@ export default function Courses() {
           {filtered.map((c) => {
             const isFree = !c.priceIdr || c.priceIdr === 0;
             const isPurchased = purchasedCourseIds.has(c._id);
-            const isAccessible = isFree || isPurchased;
             const shouldBeGrayed = isAuthed && !isFree && !isPurchased;
 
             return (
               <Card 
                 key={c._id} 
-                className={`flex h-full flex-col p-5 transition-all ${
-                  shouldBeGrayed 
-                    ? 'bg-slate-100 opacity-60 border border-slate-300' 
-                    : 'bg-white border-2 border-orange-200 shadow-md'
-                }`}
+                className={`flex h-full flex-col p-5 ${shouldBeGrayed ? 'opacity-60' : ''}`}
               >
-                <div className="aspect-[16/9] overflow-hidden bg-slate-100 rounded">
+                <div className="aspect-[16/9] overflow-hidden bg-slate-100">
                   {c.coverImageUrl ? (
                     <img src={c.coverImageUrl} alt="" className="h-full w-full object-cover" />
                   ) : (
@@ -103,25 +98,6 @@ export default function Courses() {
                 </div>
                 <div className="mt-1 text-sm font-semibold text-slate-900">Rp {formatIdr(c.priceIdr || 0)}</div>
 
-                {/* Status badge */}
-                {isAuthed && (
-                  <div className="mt-2">
-                    {isFree ? (
-                      <span className="inline-block bg-green-100 text-green-800 text-xs font-semibold px-3 py-1 rounded">
-                        Gratis
-                      </span>
-                    ) : isPurchased ? (
-                      <span className="inline-block bg-blue-100 text-blue-800 text-xs font-semibold px-3 py-1 rounded">
-                        Sudah Beli
-                      </span>
-                    ) : (
-                      <span className="inline-block bg-gray-300 text-gray-700 text-xs font-semibold px-3 py-1 rounded">
-                        Belum Beli
-                      </span>
-                    )}
-                  </div>
-                )}
-
                 <div className="mt-auto pt-4 flex gap-2 flex-col sm:flex-row">
                   {!isAuthed ? (
                     <Button
@@ -132,7 +108,7 @@ export default function Courses() {
                     </Button>
                   ) : purchasedCourseIds.has(c._id) ? (
                     <Link to={`/courses/${c._id}`} className="w-full">
-                      <Button className="w-full bg-blue-600 hover:bg-blue-700">Buka</Button>
+                      <Button className="w-full">Buka</Button>
                     </Link>
                   ) : (
                     <>
