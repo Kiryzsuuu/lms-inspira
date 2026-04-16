@@ -3,6 +3,8 @@ const { z } = require('zod');
 const { Course } = require('../models/Course');
 const { Lesson } = require('../models/Lesson');
 const { Quiz } = require('../models/Quiz');
+const { Attempt } = require('../models/Attempt');
+const { LessonProgress } = require('../models/LessonProgress');
 const { User } = require('../models/User');
 const { asyncHandler } = require('../utils/asyncHandler');
 const { HttpError } = require('../utils/errors');
@@ -103,18 +105,57 @@ function coursesRouter({ requireAuth, requireRole }) {
       const course = await Course.findById(req.params.id);
       if (!course || !course.isPublished) throw new HttpError(404, 'Course not found');
 
-      const user = await User.findById(req.user.sub);
+      const user = await User.findById(req.user.sub).select('activeCourseId completedCourseIds purchasedCourseIds');
       if (!user) throw new HttpError(401, 'Unauthorized');
+
+      // Must be the active course
+      if (!user.activeCourseId || String(user.activeCourseId) !== String(course._id)) {
+        throw new HttpError(409, 'Course ini belum menjadi course aktif. Klik "Mulai course" dulu.');
+      }
+
+      // Paid course gating: must be purchased unless price is 0
+      const price = course.priceIdr || 0;
+      if (price > 0) {
+        const purchased = (user.purchasedCourseIds || []).some((x) => String(x) === String(course._id));
+        if (!purchased) throw new HttpError(402, 'Course belum terbeli. Silakan checkout dulu.');
+      }
+
+      // Require all published lessons completed
+      const lessons = await Lesson.find({ courseId: course._id, isPublished: true }).select('_id');
+      const totalLessons = lessons.length;
+      if (totalLessons > 0) {
+        const completedLessons = await LessonProgress.countDocuments({
+          userId: req.user.sub,
+          courseId: course._id,
+          lessonId: { $in: lessons.map((l) => l._id) },
+          isCompleted: true,
+        });
+        if (completedLessons < totalLessons) {
+          throw new HttpError(409, 'Belum bisa menyelesaikan course. Selesaikan semua materi terlebih dahulu.');
+        }
+      }
+
+      // Require all published quizzes submitted
+      const quizzes = await Quiz.find({ courseId: course._id, isPublished: true }).select('_id');
+      const totalQuizzes = quizzes.length;
+      if (totalQuizzes > 0) {
+        const submittedQuizIds = await Attempt.distinct('quizId', {
+          userId: req.user.sub,
+          quizId: { $in: quizzes.map((q) => q._id) },
+          submittedAt: { $exists: true },
+        });
+        if (submittedQuizIds.length < totalQuizzes) {
+          throw new HttpError(409, 'Belum bisa menyelesaikan course. Kerjakan dan submit semua quiz terlebih dahulu.');
+        }
+      }
 
       const already = (user.completedCourseIds || []).some((x) => String(x) === String(course._id));
       if (!already) user.completedCourseIds = [...(user.completedCourseIds || []), course._id];
 
-      if (user.activeCourseId && String(user.activeCourseId) === String(course._id)) {
-        user.activeCourseId = undefined;
-      }
+      user.activeCourseId = undefined;
       await user.save();
 
-      res.json({ ok: true, activeCourseId: user.activeCourseId || null, completedCourseIds: user.completedCourseIds || [] });
+      res.json({ ok: true, activeCourseId: null, completedCourseIds: user.completedCourseIds || [] });
     })
   );
 

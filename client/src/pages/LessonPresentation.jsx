@@ -68,12 +68,13 @@ function cleanLessonHtml(html) {
 export default function LessonPresentation() {
   const { id, lessonId } = useParams();
   const nav = useNavigate();
-  const { api, role, user } = useAuth();
+  const { api, role, user, refreshUser } = useAuth();
 
   const [course, setCourse] = useState(null);
   const [lessons, setLessons] = useState([]);
   const [lessonProgress, setLessonProgress] = useState({});
   const [progress, setProgress] = useState({ activeCourseId: null });
+  const [cert, setCert] = useState({ eligible: false, completed: 0, total: 0, quizzesEligible: true, quizzesSubmitted: 0, quizzesTotal: 0 });
   const [openAttachmentUrl, setOpenAttachmentUrl] = useState('');
   const [lockError, setLockError] = useState('');
 
@@ -108,6 +109,11 @@ export default function LessonPresentation() {
         setLessonProgress(map);
       })
       .catch(() => setLessonProgress({}));
+
+    api
+      .get(`/progress/course/${id}/certificate`)
+      .then((res) => setCert(res.data))
+      .catch(() => setCert({ eligible: false, completed: 0, total: 0, quizzesEligible: true, quizzesSubmitted: 0, quizzesTotal: 0 }));
   }, [role, id, api]);
 
   const isStudent = role === 'student';
@@ -141,6 +147,24 @@ export default function LessonPresentation() {
   const allowed = isActiveCourse && !isPaywalled && activeIdx >= 0 && canOpenLessonByIndex(activeIdx);
   const prevLessonId = activeIdx > 0 ? lessons[activeIdx - 1]?._id : null;
   const nextLessonId = activeIdx >= 0 && activeIdx < lessons.length - 1 ? lessons[activeIdx + 1]?._id : null;
+
+  async function completeCourse() {
+    setLockError('');
+    try {
+      const res = await api.post(`/courses/${id}/complete`);
+      setProgress((cur) => ({
+        ...cur,
+        activeCourseId: res.data?.activeCourseId || null,
+        completedCourseIds: res.data?.completedCourseIds || cur.completedCourseIds || [],
+        role: cur.role || 'student',
+      }));
+      await refreshUser();
+      window.dispatchEvent(new Event('progress:changed'));
+      nav(`/courses/${id}`);
+    } catch (e) {
+      setLockError(e?.response?.data?.error?.message || 'Gagal menyelesaikan course');
+    }
+  }
 
   return (
     <Container className="py-6">
@@ -278,6 +302,13 @@ export default function LessonPresentation() {
             >
               Sebelumnya
             </Button>
+
+            {!nextLessonId && isStudent && isActiveCourse && !isPaywalled && cert?.eligible ? (
+              <Button variant="outline" onClick={completeCourse}>
+                Selesai Course
+              </Button>
+            ) : null}
+
             <Button
               onClick={() => {
                 if (!nextLessonId) return;

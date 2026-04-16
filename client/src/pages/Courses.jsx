@@ -17,27 +17,53 @@ export default function Courses() {
   const nav = useNavigate();
   const [courses, setCourses] = useState([]);
   const [purchasedCourseIds, setPurchasedCourseIds] = useState(new Set());
+  const [completedCourseIds, setCompletedCourseIds] = useState(new Set());
   const [slides, setSlides] = useState([]);
   const [q, setQ] = useState('');
   const [error, setError] = useState('');
 
   useEffect(() => {
+    let cancelled = false;
+
     api.get('/heroes').then((res) => setSlides(res.data.slides)).catch(() => setSlides([]));
     api.get('/courses').then((res) => setCourses(res.data.courses)).catch(() => setCourses([]));
 
-    // Clear purchased list if not authed
-    if (!isAuthed) {
-      setPurchasedCourseIds(new Set());
-      return;
+    function onProgressChanged() {
+      loadStudentState();
     }
 
-    // Load purchased courses if authed
-    api.get('/courses/my-courses')
-      .then((res) => {
-        const ids = new Set((res.data.courses || []).map(c => c._id));
-        setPurchasedCourseIds(ids);
-      })
-      .catch(() => setPurchasedCourseIds(new Set()));
+    async function loadStudentState() {
+      if (!isAuthed) {
+        if (!cancelled) {
+          setPurchasedCourseIds(new Set());
+          setCompletedCourseIds(new Set());
+        }
+        return;
+      }
+
+      try {
+        const [myRes, progRes] = await Promise.all([api.get('/courses/my-courses'), api.get('/progress/me')]);
+        const purchasedIds = new Set((myRes.data.courses || []).map((c) => c._id));
+        const completedIds = new Set((progRes.data.completedCourseIds || []).map((x) => String(x)));
+        if (!cancelled) {
+          setPurchasedCourseIds(purchasedIds);
+          setCompletedCourseIds(completedIds);
+        }
+      } catch {
+        if (!cancelled) {
+          setPurchasedCourseIds(new Set());
+          setCompletedCourseIds(new Set());
+        }
+      }
+    }
+
+    window.addEventListener('progress:changed', onProgressChanged);
+    loadStudentState();
+
+    return () => {
+      cancelled = true;
+      window.removeEventListener('progress:changed', onProgressChanged);
+    };
   }, [isAuthed, api]);
 
   async function addToCart(courseId) {
@@ -78,13 +104,23 @@ export default function Courses() {
           {filtered.map((c) => {
             const isFree = !c.priceIdr || c.priceIdr === 0;
             const isPurchased = purchasedCourseIds.has(c._id);
+            const isCompleted = completedCourseIds.has(String(c._id));
             const shouldBeGrayed = isAuthed && !isFree && !isPurchased;
 
             return (
               <Card 
                 key={c._id} 
-                className={`flex h-full flex-col p-5 ${shouldBeGrayed ? 'opacity-60' : ''}`}
+                className={`relative flex h-full flex-col p-5 ${shouldBeGrayed ? 'opacity-60' : ''}`}
               >
+                {isAuthed && isCompleted ? (
+                  <div
+                    className="absolute right-3 top-3 flex items-center gap-1 rounded-full bg-emerald-600 px-2 py-1 text-[11px] font-extrabold text-white"
+                    aria-label="Course selesai"
+                  >
+                    <span aria-hidden="true">✓</span>
+                    <span>SELESAI</span>
+                  </div>
+                ) : null}
                 <div className="aspect-[16/9] overflow-hidden bg-slate-100">
                   {c.coverImageUrl ? (
                     <img src={c.coverImageUrl} alt="" className="h-full w-full object-cover" />

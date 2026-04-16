@@ -77,14 +77,14 @@ export default function CourseDetail() {
   const { id } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
   const nav = useNavigate();
-  const { api, role, user, isAuthed } = useAuth();
+  const { api, role, user, isAuthed, refreshUser } = useAuth();
   const [course, setCourse] = useState(null);
   const [lessons, setLessons] = useState([]);
   const [quizzes, setQuizzes] = useState([]);
   const [selectedLesson, setSelectedLesson] = useState(null);
   const [progress, setProgress] = useState({ activeCourseId: null, completedCourseIds: [], role: 'guest' });
   const [lessonProgress, setLessonProgress] = useState({});
-  const [cert, setCert] = useState({ eligible: false, completed: 0, total: 0 });
+  const [cert, setCert] = useState({ eligible: false, completed: 0, total: 0, quizzesEligible: true, quizzesSubmitted: 0, quizzesTotal: 0 });
   const [assignmentState, setAssignmentState] = useState({ loading: false, attempt: null, error: '' });
   const [assignmentAnswer, setAssignmentAnswer] = useState('');
   const [lockError, setLockError] = useState('');
@@ -132,7 +132,7 @@ export default function CourseDetail() {
     api
       .get(`/progress/course/${id}/certificate`)
       .then((res) => setCert(res.data))
-      .catch(() => setCert({ eligible: false, completed: 0, total: 0 }));
+      .catch(() => setCert({ eligible: false, completed: 0, total: 0, quizzesEligible: true, quizzesSubmitted: 0, quizzesTotal: 0 }));
   }, [role, id]);
 
   const isStudent = role === 'student';
@@ -307,9 +307,15 @@ export default function CourseDetail() {
   async function completeCourse() {
     setLockError('');
     try {
-      await api.post(`/courses/${id}/complete`);
-      const res = await api.get('/progress/me');
-      setProgress(res.data);
+      const res = await api.post(`/courses/${id}/complete`);
+      setProgress((cur) => ({
+        ...cur,
+        activeCourseId: res.data?.activeCourseId || null,
+        completedCourseIds: res.data?.completedCourseIds || cur.completedCourseIds || [],
+        role: cur.role || 'student',
+      }));
+      await refreshUser();
+      window.dispatchEvent(new Event('progress:changed'));
     } catch (e) {
       setLockError(e?.response?.data?.error?.message || 'Gagal menyelesaikan course');
     }
@@ -376,11 +382,11 @@ export default function CourseDetail() {
                   </Button>
                 )}
 
-                {(isActive || !progress?.activeCourseId) && (
+                {isActive && cert?.eligible ? (
                   <Button variant="outline" onClick={completeCourse}>
                     Tandai selesai
                   </Button>
-                )}
+                ) : null}
 
                 {!isPaywalled ? (
                   <Button variant="outline" onClick={downloadProgressPdf}>
@@ -671,7 +677,14 @@ export default function CourseDetail() {
                               <Button variant="outline" onClick={shareCertificateLink}>Share Link</Button>
                             </div>
                           ) : (
-                            <div className="bg-slate-50 p-3 text-sm text-slate-700">Selesaikan semua lesson untuk mendapatkan sertifikat.</div>
+                            <div className="bg-slate-50 p-3 text-sm text-slate-700">
+                              Selesaikan semua materi dan submit semua quiz untuk menyelesaikan course.
+                              {cert?.quizzesTotal ? (
+                                <div className="mt-1 text-xs text-slate-600">
+                                  Quiz: <span className="font-semibold">{cert.quizzesSubmitted || 0}/{cert.quizzesTotal || 0}</span>
+                                </div>
+                              ) : null}
+                            </div>
                           )}
                         </>
                       )}

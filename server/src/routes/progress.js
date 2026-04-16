@@ -5,6 +5,8 @@ const { User } = require('../models/User');
 const { Lesson } = require('../models/Lesson');
 const { Course } = require('../models/Course');
 const { LessonProgress } = require('../models/LessonProgress');
+const { Quiz } = require('../models/Quiz');
+const { Attempt } = require('../models/Attempt');
 
 function progressRouter({ requireAuth }) {
   const router = express.Router();
@@ -81,7 +83,7 @@ function progressRouter({ requireAuth }) {
       if (!course) throw new HttpError(404, 'Course not found');
 
       const lessons = await Lesson.find({ courseId: course._id, isPublished: true }).select('_id');
-      if (lessons.length === 0) return res.json({ eligible: false, reason: 'no_lessons' });
+      if (lessons.length === 0) return res.json({ eligible: false, reason: 'no_lessons', completed: 0, total: 0, quizzesEligible: true, quizzesSubmitted: 0, quizzesTotal: 0 });
 
       const completed = await LessonProgress.countDocuments({
         userId: req.user.sub,
@@ -90,8 +92,26 @@ function progressRouter({ requireAuth }) {
         isCompleted: true,
       });
 
-      const eligible = completed >= lessons.length;
-      res.json({ eligible, completed, total: lessons.length });
+      // Quiz eligibility: require a submitted attempt for each published quiz in this course.
+      const quizzes = await Quiz.find({ courseId: course._id, isPublished: true }).select('_id');
+      const quizzesTotal = quizzes.length;
+      let quizzesSubmitted = 0;
+      let quizzesEligible = true;
+
+      if (quizzesTotal > 0) {
+        const submittedQuizIds = await Attempt.distinct('quizId', {
+          userId: req.user.sub,
+          quizId: { $in: quizzes.map((q) => q._id) },
+          submittedAt: { $exists: true },
+        });
+        quizzesSubmitted = submittedQuizIds.length;
+        quizzesEligible = quizzesSubmitted >= quizzesTotal;
+      }
+
+      const lessonsEligible = completed >= lessons.length;
+      const eligible = lessonsEligible && quizzesEligible;
+
+      res.json({ eligible, completed, total: lessons.length, quizzesEligible, quizzesSubmitted, quizzesTotal });
     })
   );
 
