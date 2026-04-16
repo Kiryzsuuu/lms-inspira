@@ -67,16 +67,22 @@ export default function Register() {
             {/* Username & Password */}
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
-                <Label>Username</Label>
+                <Label htmlFor="username">Username</Label>
                 <Input
+                  id="username"
+                  name="username"
+                  autoComplete="username"
                   value={formData.name}
                   onChange={(e) => handleChange('name', e.target.value)}
-                  placeholder="username"
+                  placeholder="Username"
                 />
               </div>
               <div>
-                <Label>Password</Label>
+                <Label htmlFor="password">Password</Label>
                 <Input
+                  id="password"
+                  name="password"
+                  autoComplete="new-password"
                   type="password"
                   value={formData.password}
                   onChange={(e) => handleChange('password', e.target.value)}
