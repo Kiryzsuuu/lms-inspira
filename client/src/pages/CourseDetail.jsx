@@ -279,6 +279,7 @@ export default function CourseDetail() {
     setLockError('');
     try {
       await api.post('/cart/items', { courseId: id });
+      window.dispatchEvent(new Event('cart:changed'));
       nav('/cart');
     } catch (e) {
       setLockError(e?.response?.data?.error?.message || 'Gagal tambah ke cart');

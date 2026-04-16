@@ -86,7 +86,8 @@ export default function Cart() {
     setError('');
     try {
       await api.delete(`/cart/items/${courseId}`);
-      refresh();
+      await refresh();
+      window.dispatchEvent(new Event('cart:changed'));
     } catch (e) {
       setError(e?.response?.data?.error?.message || 'Gagal hapus item');
     }
@@ -111,17 +112,11 @@ export default function Cart() {
 
       window.snap.pay(res.data.snapToken, {
         onSuccess: async () => {
-          console.log('[Cart] Payment successful! Refreshing data...');
-          // Refresh user data to get updated purchasedCourseIds
-          await refreshUser();
-          console.log('[Cart] User data refreshed');
-          // Refresh cart
+          // "Success" from Snap does not always mean the transaction is already settled.
+          // Course access will be unlocked only after webhook status becomes "settlement".
           await refresh();
-          // Small delay to ensure data is updated
-          setTimeout(() => {
-            setError('') // Clear any errors
-            alert('Pembayaran berhasil! Course sudah tersimpan.');
-          }, 500);
+          setError('');
+          alert('Pembayaran diterima. Course akan terbuka otomatis setelah status settlement.');
         },
         onPending: () => {
           // pending payment; user can return later; webhook will unlock

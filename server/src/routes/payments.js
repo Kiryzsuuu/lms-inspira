@@ -24,7 +24,9 @@ function computeMidtransSignature({ orderId, statusCode, grossAmount, serverKey 
 }
 
 function isPaidStatus(transactionStatus) {
-  return transactionStatus === 'settlement' || transactionStatus === 'capture';
+  // Unlock course only when Midtrans confirms settlement.
+  // ("capture" can happen before settlement for certain methods and should not unlock access.)
+  return transactionStatus === 'settlement';
 }
 
 function isTerminalFailedStatus(transactionStatus) {

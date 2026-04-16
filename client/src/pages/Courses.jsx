@@ -44,6 +44,7 @@ export default function Courses() {
     setError('');
     try {
       await api.post('/cart/items', { courseId });
+      window.dispatchEvent(new Event('cart:changed'));
     } catch (e) {
       setError(e?.response?.data?.error?.message || 'Gagal tambah ke cart');
     }

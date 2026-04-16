@@ -29,9 +29,14 @@ export function Navbar() {
       }
     }
 
+    const onCartChanged = () => loadCartCount();
+
+    window.addEventListener('cart:changed', onCartChanged);
     loadCartCount();
+
     return () => {
       cancelled = true;
+      window.removeEventListener('cart:changed', onCartChanged);
     };
   }, [api, isAuthed, role, location?.pathname]);
 
