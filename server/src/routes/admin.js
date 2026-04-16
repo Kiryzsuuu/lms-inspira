@@ -2,6 +2,12 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const { z } = require('zod');
 const { User, ROLES } = require('../models/User');
+const { Cart } = require('../models/Cart');
+const { Order } = require('../models/Order');
+const { LessonProgress } = require('../models/LessonProgress');
+const { Attempt } = require('../models/Attempt');
+const { AssignmentAttempt } = require('../models/AssignmentAttempt');
+const { OTP } = require('../models/OTP');
 const { asyncHandler } = require('../utils/asyncHandler');
 const { HttpError } = require('../utils/errors');
 const { writeAuditLog } = require('../utils/audit');
@@ -48,7 +54,7 @@ function adminRouter({ requireAuth, requireRole }) {
       });
       const { role } = schema.parse(req.body);
 
-      if (String(req.params.id) === String(req.user._id) && role !== req.user.role) {
+      if (String(req.params.id) === String(req.user.sub) && role !== req.user.role) {
         throw new HttpError(400, 'Tidak bisa mengubah role diri sendiri');
       }
 
@@ -67,6 +73,46 @@ function adminRouter({ requireAuth, requireRole }) {
       });
 
       res.json({ user: { _id: target._id, name: target.name, email: target.email, role: target.role } });
+    })
+  );
+
+  router.delete(
+    '/users/:id',
+    asyncHandler(async (req, res) => {
+      const userId = String(req.params.id);
+      if (userId === String(req.user.sub)) {
+        throw new HttpError(400, 'Tidak bisa menghapus akun sendiri');
+      }
+
+      const target = await User.findById(userId).select('role email name');
+      if (!target) throw new HttpError(404, 'User not found');
+
+      if (target.role === 'admin') {
+        const adminCount = await User.countDocuments({ role: 'admin' });
+        if (adminCount <= 1) {
+          throw new HttpError(400, 'Tidak bisa menghapus admin terakhir');
+        }
+      }
+
+      await Promise.all([
+        Cart.deleteOne({ userId: target._id }),
+        Order.deleteMany({ userId: target._id }),
+        LessonProgress.deleteMany({ userId: target._id }),
+        Attempt.deleteMany({ userId: target._id }),
+        AssignmentAttempt.deleteMany({ userId: target._id }),
+        OTP.deleteMany({ email: String(target.email || '').toLowerCase() }),
+      ]);
+
+      await User.deleteOne({ _id: target._id });
+
+      await writeAuditLog({
+        req,
+        action: 'admin.user.deleted',
+        targetUserId: target._id,
+        metadata: { email: target.email, role: target.role, name: target.name },
+      });
+
+      res.json({ ok: true });
     })
   );
 

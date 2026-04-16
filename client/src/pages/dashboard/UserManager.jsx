@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Button, Card, Label } from '../../components/ui';
+import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { useAuth } from '../../lib/auth';
 
 const ROLES = ['student', 'teacher', 'admin'];
@@ -13,6 +14,8 @@ export default function UserManager() {
   const [roleDrafts, setRoleDrafts] = useState({});
   const [sidebarWidth, setSidebarWidth] = useState(320);
   const [isResizing, setIsResizing] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deletingId, setDeletingId] = useState('');
 
   const sortedUsers = useMemo(() => {
     return [...users].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
@@ -73,6 +76,21 @@ export default function UserManager() {
     }
   }
 
+  async function confirmDelete() {
+    if (!deleteTarget?._id) return;
+    setDeletingId(deleteTarget._id);
+    setError('');
+    try {
+      await api.delete(`/admin/users/${deleteTarget._id}`);
+      setUsers((prev) => prev.filter((u) => u._id !== deleteTarget._id));
+      setDeleteTarget(null);
+    } catch (e) {
+      setError(e?.response?.data?.error?.message || e?.response?.data?.message || e.message || 'Gagal menghapus user');
+    } finally {
+      setDeletingId('');
+    }
+  }
+
   return (
     <div className="flex min-h-screen flex-col">
       {/* Header */}
@@ -89,6 +107,21 @@ export default function UserManager() {
 
       {/* Main Layout */}
       <div className="flex flex-1 overflow-hidden">
+        <ConfirmDialog
+          open={Boolean(deleteTarget)}
+          title="Hapus user?"
+          message={
+            deleteTarget
+              ? `User: ${deleteTarget.name} (${deleteTarget.email}) akan dihapus permanen.`
+              : ''
+          }
+          confirmText="Hapus"
+          cancelText="Batal"
+          confirmVariant="danger"
+          onCancel={() => (deletingId ? null : setDeleteTarget(null))}
+          onConfirm={confirmDelete}
+        />
+
         {/* Sidebar */}
         <div
           className="flex flex-col gap-4 border-r border-slate-200 bg-slate-50 p-3 sm:p-4 overflow-auto"
@@ -148,13 +181,23 @@ export default function UserManager() {
                           </select>
                         </div>
                       </div>
-                      <Button 
-                        onClick={() => saveRole(u._id)} 
-                        disabled={savingId === u._id}
-                        className="bg-[#d76810] text-white hover:bg-[#c55a0a] text-xs sm:text-sm"
-                      >
-                        {savingId === u._id ? 'Menyimpan...' : 'Simpan'}
-                      </Button>
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                        <Button
+                          onClick={() => saveRole(u._id)}
+                          disabled={savingId === u._id || deletingId === u._id}
+                          className="bg-[#d76810] text-white hover:bg-[#c55a0a] text-xs sm:text-sm"
+                        >
+                          {savingId === u._id ? 'Menyimpan...' : 'Simpan'}
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={() => setDeleteTarget(u)}
+                          disabled={savingId === u._id || deletingId === u._id}
+                          className="border-rose-300 text-rose-700 hover:bg-rose-50 text-xs sm:text-sm"
+                        >
+                          {deletingId === u._id ? 'Menghapus...' : 'Hapus'}
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 ))}
