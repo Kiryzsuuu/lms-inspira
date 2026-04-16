@@ -7,6 +7,8 @@ const { Order } = require('../models/Order');
 const { User } = require('../models/User');
 const { asyncHandler } = require('../utils/asyncHandler');
 const { HttpError } = require('../utils/errors');
+const { getEnv } = require('../utils/env');
+const { sendPurchaseNotification, sendPurchaseConfirmation } = require('../utils/emailNotifications');
 
 function makeOrderCode() {
   const ts = Date.now();
@@ -101,6 +103,22 @@ function paymentsRouter({ requireAuth, requireRole, midtrans }) {
           orderId: orderCode,
         },
       });
+
+      // Send purchase notification email
+      const env = getEnv();
+      try {
+        for (const course of payable) {
+          await sendPurchaseNotification(env, {
+            userEmail: user.email,
+            userName: user.fullName || user.name,
+            courseName: course.title,
+            coursePrice: course.priceIdr || 0,
+          });
+        }
+      } catch (emailErr) {
+        console.error('Failed to send purchase notification:', emailErr);
+        // Don't fail checkout if email fails
+      }
 
       const snap = new midtransClient.Snap({
         isProduction: Boolean(midtrans.isProduction),
@@ -198,6 +216,23 @@ function paymentsRouter({ requireAuth, requireRole, midtrans }) {
             { _id: order.userId },
             { $addToSet: { purchasedCourseIds: { $each: courseIds } } }
           );
+
+          // Send purchase confirmation email
+          const env = getEnv();
+          const user = await User.findById(order.userId).lean();
+          try {
+            for (const item of order.items) {
+              await sendPurchaseConfirmation(env, {
+                userEmail: user.email,
+                userName: user.fullName || user.name,
+                courseName: item.title,
+                purchaseDate: new Date(),
+              });
+            }
+          } catch (emailErr) {
+            console.error('Failed to send purchase confirmation:', emailErr);
+            // Don't fail webhook if email fails
+          }
         }
         await Cart.updateOne({ userId: order.userId }, { $set: { items: [] } });
       }

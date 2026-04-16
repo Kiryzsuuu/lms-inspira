@@ -18,7 +18,7 @@ export function HeroCarousel({ slides }) {
   return (
     <section className="py-10 sm:py-14">
       <Container>
-        <Card className="p-6 sm:p-10">
+        <Card className="p-3 sm:p-4">
           <div className="relative">
             <div className="aspect-video w-full overflow-hidden bg-slate-100">
               <img src={slide?.imageUrl || '/hero-frame.png'} alt="" className="h-full w-full object-cover" />
@@ -57,7 +57,7 @@ export function HeroCarousel({ slides }) {
           </div>
         </Card>
 
-        <div className="mt-8">
+        <div className="mt-7 sm:mt-10">
           <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Belajar & Quiz Interaktif</p>
           <h1 className="mt-2 text-balance text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">
             {slide?.title || 'Platform LMS + Quiz'}

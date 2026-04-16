@@ -2,7 +2,14 @@
 export default {
   content: ['./index.html', './src/**/*.{js,jsx,ts,tsx}'],
   theme: {
-    extend: {},
+    extend: {
+      maxWidth: {
+        '8xl': '88rem',
+      },
+      colors: {
+        primary: '#d76810',
+      },
+    },
   },
   plugins: [],
 }

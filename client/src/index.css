@@ -9,4 +9,30 @@
   body {
     @apply bg-white text-slate-900 antialiased;
   }
+
+  /* Tailwind preflight removes list markers; restore them for rich text areas */
+  .prose ul,
+  .ProseMirror ul {
+    list-style: disc;
+    list-style-position: outside;
+    padding-left: 1.5rem;
+  }
+
+  .prose ol,
+  .ProseMirror ol {
+    list-style: decimal;
+    list-style-position: outside;
+    padding-left: 1.5rem;
+  }
+
+  .prose li,
+  .ProseMirror li {
+    margin: 0.25rem 0;
+  }
+
+  /* Rich-text editors often wrap list items in <p>; default p margins push text down */
+  .prose li > p,
+  .ProseMirror li > p {
+    margin: 0;
+  }
 }

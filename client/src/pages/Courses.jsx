@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { HeroCarousel } from '../components/HeroCarousel';
 import { Card, Container, Button, Input } from '../components/ui';
 import { useAuth } from '../lib/auth';
 
@@ -14,10 +15,12 @@ function formatIdr(n) {
 export default function Courses() {
   const { api, role, isAuthed } = useAuth();
   const [courses, setCourses] = useState([]);
+  const [slides, setSlides] = useState([]);
   const [q, setQ] = useState('');
   const [error, setError] = useState('');
 
   useEffect(() => {
+    api.get('/heroes').then((res) => setSlides(res.data.slides)).catch(() => setSlides([]));
     api.get('/courses').then((res) => setCourses(res.data.courses)).catch(() => setCourses([]));
   }, []);
 
@@ -37,8 +40,11 @@ export default function Courses() {
   });
 
   return (
-    <section className="py-10">
-      <Container>
+    <>
+      <HeroCarousel slides={slides} />
+
+      <section className="mt-9 pb-14">
+        <Container>
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <h1 className="text-3xl font-extrabold tracking-tight">Courses</h1>
@@ -53,7 +59,7 @@ export default function Courses() {
 
         <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {filtered.map((c) => (
-            <Card key={c._id} className="p-5">
+            <Card key={c._id} className="flex h-full flex-col p-5">
               <div className="aspect-[16/9] overflow-hidden bg-slate-100">
                 {c.coverImageUrl ? (
                   <img src={c.coverImageUrl} alt="" className="h-full w-full object-cover" />
@@ -63,20 +69,21 @@ export default function Courses() {
                   </div>
                 )}
               </div>
-              <div className="text-lg font-bold text-slate-900">{c.title}</div>
+              <div className="mt-3 line-clamp-2 min-h-[3.25rem] text-lg font-bold leading-snug text-slate-900">
+                {c.title}
+              </div>
               <div className="mt-1 text-sm font-semibold text-slate-900">Rp {formatIdr(c.priceIdr || 0)}</div>
-              <div className="mt-4">
+
+              <div className="mt-auto pt-4">
                 <Link to={`/courses/${c._id}`}>
                   <Button className="w-full">Buka</Button>
                 </Link>
-              </div>
-              {isAuthed && role === 'student' ? (
-                <div className="mt-2">
+                {isAuthed && role === 'student' ? (
                   <Button variant="outline" className="w-full" onClick={() => addToCart(c._id)}>
                     Tambah ke Cart
                   </Button>
-                </div>
-              ) : null}
+                ) : null}
+              </div>
             </Card>
           ))}
 
@@ -86,7 +93,8 @@ export default function Courses() {
             </Card>
           )}
         </div>
-      </Container>
-    </section>
+        </Container>
+      </section>
+    </>
   );
 }

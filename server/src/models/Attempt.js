@@ -4,6 +4,18 @@ const attemptSchema = new mongoose.Schema(
   {
     quizId: { type: mongoose.Schema.Types.ObjectId, ref: 'Quiz', required: true, index: true },
     userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
+    startedAt: { type: Date, default: Date.now, index: true },
+    questionOrder: {
+      type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Question' }],
+      default: undefined,
+    },
+    meta: {
+      type: {
+        pinnedById: { type: Object, default: undefined },
+        currentIdx: { type: Number, default: 0 },
+      },
+      default: undefined,
+    },
     answers: {
       type: [
         {

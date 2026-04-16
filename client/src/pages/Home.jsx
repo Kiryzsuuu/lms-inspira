@@ -18,7 +18,7 @@ export default function Home() {
     <>
       <HeroCarousel slides={slides} />
 
-      <section className="pb-14">
+      <section className="mt-9 pb-14">
         <Container>
           <div className="flex items-end justify-between gap-4">
             <div>

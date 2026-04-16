@@ -13,7 +13,7 @@ export default function Login() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const nextPath = location.state?.from?.pathname || '/dashboard';
+  const nextPath = location.state?.from?.pathname || '/courses';
 
   if (isAuthed) return <Navigate to={nextPath} replace />;
 
@@ -24,7 +24,7 @@ export default function Login() {
     try {
       const res = await api.post('/auth/login', { email, password });
       setToken(res.data.token);
-      nav(nextPath);
+      nav(nextPath, { replace: true });
     } catch (err) {
       setError(err?.response?.data?.error?.message || 'Login gagal');
     } finally {

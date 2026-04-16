@@ -27,6 +27,7 @@ export function RichTextEditor({
   onChangeHtml,
   placeholder = 'Tulis di sini...',
   onUploadImage,
+  editorClassName = '',
 }) {
   const [imgUploading, setImgUploading] = useState(false);
   const [linkDraft, setLinkDraft] = useState('');
@@ -46,7 +47,7 @@ export function RichTextEditor({
         HTMLAttributes: {
           rel: 'noopener noreferrer',
           target: '_blank',
-          class: 'text-violet-700 underline',
+          class: 'text-orange-600 underline',
         },
       }),
       Image.configure({ inline: false, allowBase64: false }),
@@ -60,7 +61,7 @@ export function RichTextEditor({
     editorProps: {
       attributes: {
         class:
-          'min-h-[140px] prose prose-slate max-w-none p-3 focus:outline-none',
+          'min-h-[140px] prose prose-slate max-w-none p-3 focus:outline-none ' + editorClassName,
         'data-placeholder': placeholder,
       },
       handlePaste(view, event) {
@@ -76,22 +77,38 @@ export function RichTextEditor({
             return false;
           }
 
-          const lines = String(text || '')
+          const extractTextFromHtml = (rawHtml) => {
+            try {
+              if (!rawHtml) return '';
+              const doc = new DOMParser().parseFromString(rawHtml, 'text/html');
+              const bodyText = doc?.body?.innerText;
+              if (bodyText) return bodyText;
+              const fallback = doc?.body?.textContent;
+              return fallback || '';
+            } catch {
+              return '';
+            }
+          };
+
+          // Word/Docs sometimes puts list markers only in HTML, not in text/plain
+          const rawText = text || (looksLikeWordList ? extractTextFromHtml(html) : '');
+
+          const lines = String(rawText || '')
             .replace(/\r\n/g, '\n')
             .replace(/\r/g, '\n')
             .split('\n')
             .map((l) => l.trim())
             .filter(Boolean);
 
-          if (lines.length < 2) return false;
+          if (lines.length < 1) return false;
 
-          const bulletRe = /^(?:[•\-–—\*]|\u2022)\s+/;
-          const orderedRe = /^\d+[\.|\)]\s+/;
+          const bulletRe = /^(?:[•\-–—\*]|\u2022)\s*/;
+          const orderedRe = /^\d+(?:\.|\))\s*/;
 
           const bulletCount = lines.filter((l) => bulletRe.test(l)).length;
           const orderedCount = lines.filter((l) => orderedRe.test(l)).length;
 
-          if (bulletCount < 2 && orderedCount < 2) return false;
+          if (bulletCount < 1 && orderedCount < 1) return false;
 
           event.preventDefault();
 

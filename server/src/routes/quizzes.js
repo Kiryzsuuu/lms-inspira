@@ -8,6 +8,8 @@ const { User } = require('../models/User');
 const { LessonProgress } = require('../models/LessonProgress');
 const { asyncHandler } = require('../utils/asyncHandler');
 const { HttpError } = require('../utils/errors');
+const { getEnv } = require('../utils/env');
+const { sendProgressReport } = require('../utils/emailNotifications');
 
 async function assertStudentCanAccessCourse(courseId, userPayload) {
   if (!userPayload || userPayload.role !== 'student') return;
@@ -31,6 +33,19 @@ async function assertCanEditCourse(courseId, user) {
 
 function quizzesRouter({ requireAuth, requireRole }) {
   const router = express.Router();
+
+  async function syncQuizLessonLink({ quizId, courseId, lessonId }) {
+    // Clear existing lesson links for this quiz
+    await Lesson.updateMany({ courseId, quizId }, { $unset: { quizId: 1 } });
+
+    if (!lessonId) return;
+
+    const lesson = await Lesson.findOne({ _id: lessonId, courseId });
+    if (!lesson) throw new HttpError(400, 'Materi tidak ditemukan untuk course ini');
+
+    // Ensure the selected lesson points to this quiz
+    await Lesson.updateOne({ _id: lessonId }, { $set: { quizId } });
+  }
 
   function shuffleCopy(arr) {
     const a = [...arr];
@@ -66,9 +81,20 @@ function quizzesRouter({ requireAuth, requireRole }) {
         timeLimitSec: z.coerce.number().optional().default(0),
         randomizeQuestions: z.coerce.boolean().optional().default(false),
         isPublished: z.coerce.boolean().optional().default(false),
+        lessonId: z.string().optional().default(''),
       });
       const data = schema.parse(req.body);
-      const quiz = await Quiz.create({ ...data, courseId: req.params.courseId });
+      const lessonId = data.lessonId ? String(data.lessonId) : '';
+      const quiz = await Quiz.create({
+        courseId: req.params.courseId,
+        title: data.title,
+        description: data.description,
+        timeLimitSec: data.timeLimitSec,
+        randomizeQuestions: data.randomizeQuestions,
+        isPublished: data.isPublished,
+        lessonId: lessonId || undefined,
+      });
+      await syncQuizLessonLink({ quizId: quiz._id, courseId: quiz.courseId, lessonId: lessonId || null });
       res.status(201).json({ quiz });
     })
   );
@@ -88,9 +114,23 @@ function quizzesRouter({ requireAuth, requireRole }) {
         timeLimitSec: z.coerce.number().optional().default(0),
         randomizeQuestions: z.coerce.boolean().optional().default(false),
         isPublished: z.coerce.boolean().optional().default(false),
+        lessonId: z.string().optional().default(''),
       });
       const data = schema.parse(req.body);
-      const updated = await Quiz.findByIdAndUpdate(req.params.quizId, data, { new: true });
+      const lessonId = data.lessonId ? String(data.lessonId) : '';
+      const updated = await Quiz.findByIdAndUpdate(
+        req.params.quizId,
+        {
+          title: data.title,
+          description: data.description,
+          timeLimitSec: data.timeLimitSec,
+          randomizeQuestions: data.randomizeQuestions,
+          isPublished: data.isPublished,
+          lessonId: lessonId || undefined,
+        },
+        { new: true }
+      );
+      await syncQuizLessonLink({ quizId: updated._id, courseId: updated.courseId, lessonId: lessonId || null });
       res.json({ quiz: updated });
     })
   );
@@ -103,6 +143,8 @@ function quizzesRouter({ requireAuth, requireRole }) {
       const quiz = await Quiz.findById(req.params.quizId);
       if (!quiz) throw new HttpError(404, 'Quiz not found');
       await assertCanEditCourse(quiz.courseId, req.user);
+
+      await Lesson.updateMany({ courseId: quiz.courseId, quizId: quiz._id }, { $unset: { quizId: 1 } });
 
       await Question.deleteMany({ quizId: quiz._id });
       await Attempt.deleteMany({ quizId: quiz._id });
@@ -258,7 +300,42 @@ function quizzesRouter({ requireAuth, requireRole }) {
       }
 
       const questionsRaw = await Question.find({ quizId: quiz._id }).sort({ order: 1, createdAt: 1 });
-      const questions = quiz.randomizeQuestions ? shuffleCopy(questionsRaw) : questionsRaw;
+      const questionsSorted = quiz.randomizeQuestions ? shuffleCopy(questionsRaw) : questionsRaw;
+
+      // Resume: find latest in-progress attempt (not submitted)
+      let attempt = await Attempt.findOne({ quizId: quiz._id, userId: req.user.sub, submittedAt: { $exists: false } })
+        .sort({ createdAt: -1 });
+
+      // If the attempt has no question order (older data), initialize it
+      if (attempt && (!Array.isArray(attempt.questionOrder) || attempt.questionOrder.length === 0)) {
+        attempt.questionOrder = questionsSorted.map((q) => q._id);
+        if (!attempt.startedAt) attempt.startedAt = new Date();
+        await attempt.save();
+      }
+
+      // Start new attempt if none
+      if (!attempt) {
+        attempt = await Attempt.create({
+          quizId: quiz._id,
+          userId: req.user.sub,
+          startedAt: new Date(),
+          questionOrder: questionsSorted.map((q) => q._id),
+          answers: [],
+        });
+      }
+
+      // Build questions array based on saved order (stable resume)
+      const byQid = new Map(questionsRaw.map((q) => [String(q._id), q]));
+      const orderedQuestions = (attempt.questionOrder || [])
+        .map((qid) => byQid.get(String(qid)))
+        .filter(Boolean);
+      const questions = orderedQuestions.length ? orderedQuestions : questionsSorted;
+
+      const serverNow = new Date();
+      const timeLimitSec = Number(quiz.timeLimitSec || 0);
+      const startedAt = attempt.startedAt || attempt.createdAt || serverNow;
+      const elapsedSec = Math.floor((serverNow.getTime() - new Date(startedAt).getTime()) / 1000);
+      const remainingSec = timeLimitSec > 0 ? Math.max(0, timeLimitSec - elapsedSec) : 0;
 
       // Hide correct answers
       res.json({
@@ -271,6 +348,14 @@ function quizzesRouter({ requireAuth, requireRole }) {
           timeLimitSec: quiz.timeLimitSec,
           randomizeQuestions: Boolean(quiz.randomizeQuestions),
         },
+        attempt: {
+          _id: attempt._id,
+          startedAt,
+          answers: attempt.answers || [],
+          meta: attempt.meta || undefined,
+        },
+        serverNow,
+        remainingSec,
         questions: questions.map((q) => ({
           _id: q._id,
           type: q.type || 'mcq',
@@ -281,6 +366,66 @@ function quizzesRouter({ requireAuth, requireRole }) {
           order: q.order,
         })),
       });
+    })
+  );
+
+  // Student: autosave in-progress attempt (answers/meta)
+  router.patch(
+    '/play/:quizId/attempt/:attemptId',
+    requireAuth,
+    asyncHandler(async (req, res) => {
+      const quiz = await Quiz.findById(req.params.quizId);
+      if (!quiz || !quiz.isPublished) throw new HttpError(404, 'Quiz not found');
+
+      await assertStudentCanAccessCourse(quiz.courseId, req.user);
+
+      const attempt = await Attempt.findOne({ _id: req.params.attemptId, quizId: quiz._id, userId: req.user.sub });
+      if (!attempt) throw new HttpError(404, 'Attempt not found');
+      if (attempt.submittedAt) throw new HttpError(409, 'Attempt already submitted');
+
+      const schema = z.object({
+        answers: z
+          .array(
+            z.object({
+              questionId: z.string().min(1),
+              choiceId: z.string().optional(),
+              textAnswer: z.string().optional(),
+              matchingAnswer: z.array(z.object({ left: z.string(), right: z.string() })).optional(),
+            })
+          )
+          .optional(),
+        meta: z
+          .object({
+            currentIdx: z.coerce.number().optional(),
+            pinnedById: z.record(z.coerce.boolean()).optional(),
+          })
+          .optional(),
+      });
+      const data = schema.parse(req.body);
+
+      if (data.answers) {
+        // Replace-by-questionId merge
+        const next = new Map((attempt.answers || []).map((a) => [String(a.questionId), a]));
+        for (const a of data.answers) {
+          next.set(String(a.questionId), {
+            questionId: a.questionId,
+            choiceId: a.choiceId,
+            textAnswer: a.textAnswer,
+            matchingAnswer: a.matchingAnswer,
+          });
+        }
+        attempt.answers = Array.from(next.values());
+      }
+
+      if (data.meta) {
+        attempt.meta = {
+          ...(attempt.meta || {}),
+          ...(data.meta || {}),
+        };
+      }
+
+      await attempt.save();
+      res.json({ ok: true });
     })
   );
 
@@ -295,18 +440,20 @@ function quizzesRouter({ requireAuth, requireRole }) {
       await assertStudentCanAccessCourse(quiz.courseId, req.user);
 
       const schema = z.object({
-        answers: z.array(
-          z.object({
-            questionId: z.string().min(1),
-            choiceId: z.string().optional(),
-            textAnswer: z.string().optional(),
-            matchingAnswer: z
-              .array(z.object({ left: z.string().min(1), right: z.string().min(1) }))
-              .optional(),
-          })
-        ),
+        attemptId: z.string().optional(),
+        answers: z
+          .array(
+            z.object({
+              questionId: z.string().min(1),
+              choiceId: z.string().optional(),
+              textAnswer: z.string().optional(),
+              matchingAnswer: z.array(z.object({ left: z.string().min(1), right: z.string().min(1) })).optional(),
+            })
+          )
+          .optional()
+          .default([]),
       });
-      const { answers } = schema.parse(req.body);
+      const { attemptId, answers } = schema.parse(req.body);
 
       const questions = await Question.find({ quizId: quiz._id });
       const byId = new Map(questions.map((q) => [String(q._id), q]));
@@ -355,19 +502,35 @@ function quizzesRouter({ requireAuth, requireRole }) {
         };
       }
 
-      const attempt = await Attempt.create({
-        quizId: quiz._id,
-        userId: req.user.sub,
-        answers: answers.map((a) => ({
-          questionId: a.questionId,
-          choiceId: a.choiceId,
-          textAnswer: a.textAnswer,
-          matchingAnswer: a.matchingAnswer,
-        })),
-        score,
-        maxScore,
-        submittedAt: new Date(),
-      });
+      let attempt = null;
+      if (attemptId) {
+        attempt = await Attempt.findOne({ _id: attemptId, quizId: quiz._id, userId: req.user.sub });
+      }
+      if (!attempt) {
+        attempt = await Attempt.findOne({ quizId: quiz._id, userId: req.user.sub, submittedAt: { $exists: false } })
+          .sort({ createdAt: -1 });
+      }
+
+      if (!attempt) {
+        attempt = await Attempt.create({
+          quizId: quiz._id,
+          userId: req.user.sub,
+          startedAt: new Date(),
+          questionOrder: questions.map((q) => q._id),
+          answers: [],
+        });
+      }
+
+      attempt.answers = answers.map((a) => ({
+        questionId: a.questionId,
+        choiceId: a.choiceId,
+        textAnswer: a.textAnswer,
+        matchingAnswer: a.matchingAnswer,
+      }));
+      attempt.score = score;
+      attempt.maxScore = maxScore;
+      attempt.submittedAt = new Date();
+      await attempt.save();
 
       // If linked to a lesson, mark it completed and compute next lesson
       let nextLessonId = null;
@@ -382,6 +545,36 @@ function quizzesRouter({ requireAuth, requireRole }) {
           .sort({ order: 1, createdAt: 1 })
           .select('_id');
         nextLessonId = next?._id || null;
+      }
+
+      // Calculate course progress and send email
+      const env = getEnv();
+      try {
+        const user = await User.findById(req.user.sub);
+        const course = await Course.findById(quiz.courseId);
+        if (user && course) {
+          // Get total lessons and completed lessons for this course
+          const allLessons = await Lesson.find({ courseId: quiz.courseId, isPublished: true }).count();
+          const completedLessons = await LessonProgress.find({
+            userId: req.user.sub,
+            courseId: quiz.courseId,
+            isCompleted: true,
+          }).count();
+          
+          const progress = allLessons > 0 ? Math.round((completedLessons / allLessons) * 100) : 0;
+
+          await sendProgressReport(env, {
+            userEmail: user.email,
+            userName: user.fullName || user.name,
+            courseName: course.title,
+            taskName: `${quiz.title} - ${Math.round((score / maxScore) * 100)}%`,
+            progress,
+            completedAt: new Date(),
+          });
+        }
+      } catch (emailErr) {
+        console.error('Failed to send progress report:', emailErr);
+        // Don't fail submission if email fails
       }
 
       res.json({

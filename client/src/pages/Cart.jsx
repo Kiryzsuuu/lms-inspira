@@ -151,23 +151,31 @@ export default function Cart() {
           ) : (
             items.map((it) => (
               <Card key={it.course._id} className="p-5">
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                  <div>
-                    <div className="text-lg font-bold text-slate-900">{it.course.title}</div>
-                    <div className="mt-1 text-sm text-slate-600">Rp {formatIdr(it.course.priceIdr || 0)}</div>
-                    {it.course.description ? (
-                      <div className="mt-2 text-sm text-slate-600">{it.course.description}</div>
-                    ) : null}
-                    <div className="mt-3">
+                <div className="flex flex-col gap-4 sm:flex-row">
+                  <div className="w-full sm:w-56">
+                    <div className="aspect-[16/9] overflow-hidden bg-slate-100">
+                      {it.course.coverImageUrl ? (
+                        <img src={it.course.coverImageUrl} alt="" className="h-full w-full object-cover" />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center text-xs font-semibold text-slate-600">
+                          Cover (opsional)
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex min-w-0 flex-1 flex-col">
+                    <div className="line-clamp-2 text-lg font-bold leading-snug text-slate-900">{it.course.title}</div>
+                    <div className="mt-1 text-sm font-semibold text-slate-900">Rp {formatIdr(it.course.priceIdr || 0)}</div>
+
+                    <div className="mt-auto flex flex-col gap-2 pt-4 sm:flex-row sm:items-center sm:justify-between">
                       <Link to={`/courses/${it.course._id}`}>
                         <Button variant="outline">Detail</Button>
                       </Link>
+                      <Button variant="ghost" onClick={() => remove(it.course._id)}>
+                        Hapus
+                      </Button>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Button variant="ghost" onClick={() => remove(it.course._id)}>
-                      Hapus
-                    </Button>
                   </div>
                 </div>
               </Card>

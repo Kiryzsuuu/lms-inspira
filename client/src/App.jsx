@@ -3,12 +3,14 @@ import { Navbar } from './components/Navbar';
 import Home from './pages/Home';
 import Courses from './pages/Courses';
 import CourseDetail from './pages/CourseDetail';
+import LessonPresentation from './pages/LessonPresentation';
 import QuizPlay from './pages/QuizPlay';
 import Cart from './pages/Cart';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
+import MyProfile from './pages/MyProfile';
 import Dashboard from './pages/Dashboard';
 import HeroManager from './pages/dashboard/HeroManager';
 import CourseManager from './pages/dashboard/CourseManager';
@@ -24,6 +26,7 @@ export default function App() {
         <Route path="/" element={<Home />} />
         <Route path="/courses" element={<Courses />} />
         <Route path="/courses/:id" element={<CourseDetail />} />
+        <Route path="/courses/:id/lessons/:lessonId" element={<LessonPresentation />} />
         <Route path="/quiz/:quizId" element={<QuizPlay />} />
         <Route
           path="/cart"
@@ -37,6 +40,15 @@ export default function App() {
         <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
+
+        <Route
+          path="/my-profile"
+          element={
+            <RequireAuth>
+              <MyProfile />
+            </RequireAuth>
+          }
+        />
 
         <Route
           path="/dashboard"

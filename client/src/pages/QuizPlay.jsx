@@ -23,6 +23,32 @@ export default function QuizPlay() {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [remainingSec, setRemainingSec] = useState(0);
   const autoSubmittedRef = useRef(false);
+  const [attemptId, setAttemptId] = useState(null);
+  const [timerBase, setTimerBase] = useState({ endsAtMs: null });
+  const [clockOffsetMs, setClockOffsetMs] = useState(0);
+  const saveTimerRef = useRef(null);
+
+  function answersArrayFromMap(map) {
+    return Object.entries(map || {}).map(([questionId, a]) => ({
+      questionId,
+      choiceId: a?.choiceId,
+      textAnswer: a?.textAnswer,
+      matchingAnswer: a?.matchingAnswer,
+    }));
+  }
+
+  function mapFromAttemptAnswers(arr) {
+    const out = {};
+    for (const a of arr || []) {
+      if (!a?.questionId) continue;
+      out[String(a.questionId)] = {
+        choiceId: a.choiceId,
+        textAnswer: a.textAnswer,
+        matchingAnswer: a.matchingAnswer,
+      };
+    }
+    return out;
+  }
 
   useEffect(() => {
     if (!isAuthed) return;
@@ -31,12 +57,26 @@ export default function QuizPlay() {
       .then((res) => {
         setQuiz(res.data.quiz);
         setQuestions(res.data.questions || []);
-        setCurrentIdx(0);
-        setPinnedById({});
+        const at = res.data.attempt;
+        setAttemptId(at?._id || null);
+
+        const serverNowMs = res.data.serverNow ? new Date(res.data.serverNow).getTime() : Date.now();
+        setClockOffsetMs(serverNowMs - Date.now());
+        const startedAtMs = at?.startedAt ? new Date(at.startedAt).getTime() : serverNowMs;
+        const timeLimitSec = Number(res.data.quiz?.timeLimitSec || 0);
+        const endsAtMs = timeLimitSec > 0 ? startedAtMs + timeLimitSec * 1000 : null;
+        setTimerBase({ endsAtMs });
+        setRemainingSec(Number(res.data.remainingSec || 0));
+
+        const savedAnswers = mapFromAttemptAnswers(at?.answers || []);
+        setAnswers(savedAnswers);
+
+        const meta = at?.meta || {};
+        setCurrentIdx(Number.isFinite(meta.currentIdx) ? Math.max(0, meta.currentIdx) : 0);
+        setPinnedById(meta.pinnedById || {});
         setConfirmOpen(false);
         setSidebarOpen(true);
         setPinMode(false);
-        setRemainingSec(Number(res.data.quiz?.timeLimitSec || 0));
         autoSubmittedRef.current = false;
         setNavInfo({
           courseId: res.data.quiz?.courseId || null,
@@ -57,14 +97,24 @@ export default function QuizPlay() {
     if (submitting) return;
 
     const t = setInterval(() => {
-      setRemainingSec((s) => {
-        const next = Math.max(0, Number(s || 0) - 1);
+      setRemainingSec(() => {
+        const endsAtMs = timerBase.endsAtMs;
+        if (!endsAtMs) return 0;
+        const nowMs = Date.now() + Number(clockOffsetMs || 0);
+        const next = Math.max(0, Math.ceil((endsAtMs - nowMs) / 1000));
         return next;
       });
     }, 1000);
 
     return () => clearInterval(t);
-  }, [quiz, result, submitting]);
+  }, [quiz, result, submitting, timerBase.endsAtMs, clockOffsetMs]);
+
+  useEffect(() => {
+    setCurrentIdx((idx) => {
+      const last = Math.max(0, (questions?.length || 0) - 1);
+      return Math.min(Math.max(0, idx), last);
+    });
+  }, [questions?.length]);
 
   useEffect(() => {
     if (!quiz) return;
@@ -100,6 +150,7 @@ export default function QuizPlay() {
     setSubmitting(true);
     try {
       const payload = {
+        attemptId,
         answers: questions.map((q) => {
           const a = answers[q._id] || {};
           return {
@@ -122,6 +173,29 @@ export default function QuizPlay() {
       setSubmitting(false);
     }
   }
+
+  // Autosave answers + meta (current index / pinned). Debounced to minimize API calls.
+  useEffect(() => {
+    if (!isAuthed) return;
+    if (!attemptId) return;
+    if (result) return;
+
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(() => {
+      api
+        .patch(`/quizzes/play/${quizId}/attempt/${attemptId}`,
+          {
+            answers: answersArrayFromMap(answers),
+            meta: { currentIdx, pinnedById },
+          }
+        )
+        .catch(() => {});
+    }, 400);
+
+    return () => {
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    };
+  }, [answers, currentIdx, pinnedById, attemptId, quizId, isAuthed, result]);
 
   function goToLesson(lessonId) {
     if (!lessonId || !navInfo.courseId) return;

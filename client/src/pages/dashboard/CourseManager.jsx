@@ -11,6 +11,8 @@ export default function CourseManager() {
   const [selectedId, setSelectedId] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
+  const [sidebarWidth, setSidebarWidth] = useState(320); // adjustable sidebar width
+  const [isResizing, setIsResizing] = useState(false);
 
   const selected = useMemo(() => courses.find((c) => c._id === selectedId) || null, [courses, selectedId]);
 
@@ -74,7 +76,10 @@ export default function CourseManager() {
     timeLimitSec: 0,
     randomizeQuestions: false,
     isPublished: false,
+    lessonId: '',
   });
+
+  const [activePanel, setActivePanel] = useState('course');
 
   const [activeQuizId, setActiveQuizId] = useState('');
   const [questions, setQuestions] = useState([]);
@@ -95,6 +100,28 @@ export default function CourseManager() {
       { left: '', right: '' },
     ],
   });
+
+  // Handle sidebar resize
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      if (!isResizing) return;
+      const newWidth = Math.max(220, Math.min(e.clientX, 600)); // min 220px, max 600px
+      setSidebarWidth(newWidth);
+    };
+
+    const handleMouseUp = () => {
+      setIsResizing(false);
+    };
+
+    if (isResizing) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      return () => {
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+      };
+    }
+  }, [isResizing]);
 
   async function loadCourses() {
     setLoading(true);
@@ -365,7 +392,7 @@ export default function CourseManager() {
     setError('');
     try {
       const res = await api.post(`/quizzes/course/${selected._id}`, quizForm);
-      setQuizForm({ title: '', description: '', timeLimitSec: 0, randomizeQuestions: false, isPublished: false });
+      setQuizForm({ title: '', description: '', timeLimitSec: 0, randomizeQuestions: false, isPublished: false, lessonId: '' });
       await loadCourseDetails(selected._id);
       setActiveQuizId(res.data.quiz._id);
     } catch (e) {
@@ -472,58 +499,80 @@ export default function CourseManager() {
   }
 
   return (
-    <section className="py-10">
-      <Container>
-        <ConfirmDialog
-          open={confirmState.open}
-          title={confirmState.title}
-          message={confirmState.message}
-          confirmText={confirmState.confirmText}
-          confirmVariant={confirmState.confirmVariant}
-          onCancel={() => setConfirmState((s) => ({ ...s, open: false }))}
-          onConfirm={async () => {
-            const action = confirmActionRef.current;
-            setConfirmState((s) => ({ ...s, open: false }));
-            if (typeof action === 'function') await action();
-          }}
-        />
+    <section className="flex h-[calc(100vh-4rem)] flex-col overflow-hidden">
+      <ConfirmDialog
+        open={confirmState.open}
+        title={confirmState.title}
+        message={confirmState.message}
+        confirmText={confirmState.confirmText}
+        confirmVariant={confirmState.confirmVariant}
+        onCancel={() => setConfirmState((s) => ({ ...s, open: false }))}
+        onConfirm={async () => {
+          const action = confirmActionRef.current;
+          setConfirmState((s) => ({ ...s, open: false }));
+          if (typeof action === 'function') await action();
+        }}
+      />
 
-        <div className="flex items-end justify-between gap-4">
-          <div>
+      <div className="flex shrink-0 flex-col gap-4 border-b border-slate-200 px-4 py-6 sm:px-6">
+        <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-start">
+          <div className="flex flex-col items-start gap-1 text-left">
             <h1 className="text-3xl font-extrabold tracking-tight">Kelola Course</h1>
-            <p className="mt-1 text-sm text-slate-600">Buat course, tambah materi (markdown), buat quiz dan soal.</p>
+            <p className="text-sm text-slate-600">Buat course, tambah materi (markdown), buat quiz dan soal.</p>
           </div>
-          <Button variant="outline" onClick={loadCourses} disabled={loading}>
+          <Button variant="outline" onClick={loadCourses} disabled={loading} className="shrink-0">
             Refresh
           </Button>
         </div>
+        {error ? <div className="bg-rose-50 p-3 text-sm text-rose-700">{error}</div> : null}
+      </div>
 
-        {error ? <div className="mt-4 bg-rose-50 p-3 text-sm text-rose-700">{error}</div> : null}
+      <div className="flex flex-1 min-h-0 flex-col overflow-auto px-4 py-4 lg:px-6 lg:py-4">
+        <div className="flex flex-1 min-h-0 flex-col gap-4 lg:flex-row lg:gap-6">
+          <div
+            onMouseDown={() => setIsResizing(true)}
+            style={{ width: `${sidebarWidth}px` }}
+            className="group relative lg:shrink-0 cursor-col-resize"
+          >
+            <aside className="flex min-h-0 h-full flex-col border border-slate-200 bg-white p-3 sm:p-4 overflow-auto">
+            <div className="text-lg font-bold text-slate-900">Course Saya</div>
+            <div className="mt-3 flex-1 min-h-0 overflow-auto space-y-3">
+              <div className="grid gap-2">
+                {courses.map((c) => (
+                  <button
+                    key={c._id}
+                    onClick={() => setSelectedId(c._id)}
+                    className={
+                      'px-2 py-2 text-left text-xs sm:text-sm font-medium rounded transition break-words ' +
+                      (selectedId === c._id ? 'bg-[#d76810] text-white' : 'bg-slate-100 text-slate-900 hover:bg-slate-200')
+                    }
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0 font-semibold leading-snug line-clamp-2 break-words">{c.title}</div>
+                      <span
+                        className={
+                          'mt-0.5 shrink-0 rounded border px-2 py-0.5 text-[10px] font-extrabold ' +
+                          (c.isPublished
+                            ? selectedId === c._id
+                              ? 'border-emerald-300 bg-emerald-50 text-emerald-900'
+                              : 'border-emerald-200 bg-emerald-50 text-emerald-900'
+                            : selectedId === c._id
+                              ? 'border-rose-300 bg-rose-50 text-rose-900'
+                              : 'border-rose-200 bg-rose-50 text-rose-900')
+                        }
+                      >
+                        {c.isPublished ? 'PUBLISHED' : 'DRAFT'}
+                      </span>
+                    </div>
+                  </button>
+                ))}
+                {!loading && courses.length === 0 ? <div className="text-sm text-slate-600">Belum ada course.</div> : null}
+                {loading ? <div className="text-sm text-slate-600">Loading...</div> : null}
+              </div>
 
-        <div className="mt-6 grid gap-4 lg:grid-cols-3">
-          <Card className="p-6 lg:col-span-1">
-            <div className="text-lg font-bold">Course Saya</div>
-            <div className="mt-3 grid gap-2">
-              {courses.map((c) => (
-                <button
-                  key={c._id}
-                  onClick={() => setSelectedId(c._id)}
-                  className={
-                    'px-3 py-2 text-left text-sm ' +
-                    (selectedId === c._id ? 'bg-slate-900 text-white' : 'bg-slate-100 hover:bg-slate-200')
-                  }
-                >
-                  <div className="font-semibold truncate">{c.title}</div>
-                  <div className="text-xs opacity-80">Published: {String(c.isPublished)}</div>
-                </button>
-              ))}
-              {!loading && courses.length === 0 ? <div className="text-sm text-slate-600">Belum ada course.</div> : null}
-              {loading ? <div className="text-sm text-slate-600">Loading...</div> : null}
-            </div>
-
-            <div className="mt-6 border-t border-slate-200 pt-4">
-              <div className="text-sm font-semibold">Buat Course Baru</div>
-              <form className="mt-3 grid gap-3" onSubmit={createCourse}>
+              <div className="mt-6 border-t border-slate-200 pt-4">
+                <div className="text-sm font-semibold">Buat Course Baru</div>
+                <form className="mt-3 grid gap-3" onSubmit={createCourse}>
                 <div>
                   <Label>Title</Label>
                   <div className="mt-1">
@@ -537,6 +586,7 @@ export default function CourseManager() {
                       label=""
                       valueHtml={courseForm.description || ''}
                       onChangeHtml={(html) => setCourseForm((f) => ({ ...f, description: html }))}
+                      editorClassName="min-h-[160px]"
                       onUploadImage={async (file) => {
                         const fd = new FormData();
                         fd.append('file', file);
@@ -595,16 +645,22 @@ export default function CourseManager() {
                   />
                   <Label htmlFor="coursePublished">Publish</Label>
                 </div>
-                <Button type="submit">Tambah Course</Button>
-              </form>
+                  <Button type="submit">Tambah Course</Button>
+                </form>
+              </div>
             </div>
-          </Card>
+            </aside>
+          </div>
 
-          <Card className="p-6 lg:col-span-2">
-            {!selected ? (
-              <div className="text-sm text-slate-600">Pilih course di kiri untuk kelola materi & quiz.</div>
-            ) : (
-              <>
+          <div className="flex flex-1 min-h-0 flex-col">
+            <Card
+              className="flex min-h-0 w-full flex-col overflow-auto p-4 sm:p-6"
+              onFocusCapture={() => setActivePanel('course')}
+            >
+              {!selected ? (
+                <div className="text-sm text-slate-600">Pilih course di kiri untuk kelola materi & quiz.</div>
+              ) : (
+                <>
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div>
                     <div className="text-lg font-bold">{selected.title}</div>
@@ -620,8 +676,14 @@ export default function CourseManager() {
                   </div>
                 </div>
 
-                <div className="mt-6 grid gap-4 xl:grid-cols-2">
-                  <Card className="p-5 xl:col-span-2">
+                <div className="mt-6 grid flex-1 min-h-0 gap-4 overflow-auto pr-1">
+                  <Card
+                    className={
+                      'p-5 xl:col-span-2 ' +
+                      (activePanel === 'course' ? 'ring-2 ring-slate-900 ring-offset-2' : '')
+                    }
+                    onFocusCapture={() => setActivePanel('course')}
+                  >
                     <div className="font-bold">Sampul (Cover)</div>
 
                     <div className="mt-3 grid gap-3 sm:grid-cols-2">
@@ -692,7 +754,10 @@ export default function CourseManager() {
                     </div>
                   </Card>
 
-                  <Card className="p-5">
+                  <Card
+                    className={'p-5 ' + (activePanel === 'lesson' ? 'ring-2 ring-slate-900 ring-offset-2' : '')}
+                    onFocusCapture={() => setActivePanel('lesson')}
+                  >
                     <div className="font-bold">Materi (Lessons)</div>
                     <form className="mt-3 grid gap-3" onSubmit={isEditingLesson ? updateLesson : createLesson}>
                       <div>
@@ -760,6 +825,7 @@ export default function CourseManager() {
                           label="Konten Materi (Word-like)"
                           valueHtml={lessonForm.contentHtml}
                           onChangeHtml={(html) => setLessonForm((f) => ({ ...f, contentHtml: html }))}
+                          editorClassName="min-h-[200px]"
                           onUploadImage={async (file) => {
                             const fd = new FormData();
                             fd.append('file', file);
@@ -915,15 +981,20 @@ export default function CourseManager() {
                       </div>
                     </form>
 
-                    <div className="mt-4 grid gap-2">
+                    <div className="mt-4 grid gap-3">
                       {lessons.map((l) => (
-                        <Card key={l._id} className="p-4">
-                          <div className="flex items-start justify-between gap-3">
+                        <Card key={l._id} className="aspect-[16/9] p-4">
+                          <div className="flex h-full flex-col justify-between gap-3">
                             <div className="min-w-0">
-                              <div className="font-semibold truncate">{l.title}</div>
-                              <div className="text-xs text-slate-500">Order: {l.order} • Published: {String(l.isPublished)}</div>
+                              <div className="font-semibold leading-snug line-clamp-2 break-words">{l.title}</div>
+                              <div className="mt-1 text-xs text-slate-500">
+                                <span className="whitespace-nowrap">Order: {l.order}</span>
+                                <span className="px-1">•</span>
+                                <span className="whitespace-nowrap">Published: {String(l.isPublished)}</span>
+                              </div>
                             </div>
-                            <div className="flex gap-2">
+
+                            <div className="flex flex-wrap gap-2">
                               <Button variant="outline" className="px-3" onClick={() => beginEditLesson(l)}>
                                 Edit
                               </Button>
@@ -941,7 +1012,10 @@ export default function CourseManager() {
                     </div>
                   </Card>
 
-                  <Card className="p-5">
+                  <Card
+                    className={'p-5 ' + (activePanel === 'quiz' ? 'ring-2 ring-slate-900 ring-offset-2' : '')}
+                    onFocusCapture={() => setActivePanel('quiz')}
+                  >
                     <div className="font-bold">Quiz</div>
                     <form className="mt-3 grid gap-3" onSubmit={createQuiz}>
                       <div>
@@ -949,6 +1023,24 @@ export default function CourseManager() {
                         <div className="mt-1">
                           <Input value={quizForm.title} onChange={(e) => setQuizForm((f) => ({ ...f, title: e.target.value }))} />
                         </div>
+                      </div>
+                      <div>
+                        <Label>Quiz untuk Materi</Label>
+                        <div className="mt-1">
+                          <select
+                            className="w-full border border-slate-200 bg-white px-3 py-2 text-sm"
+                            value={quizForm.lessonId || ''}
+                            onChange={(e) => setQuizForm((f) => ({ ...f, lessonId: e.target.value }))}
+                          >
+                            <option value="">(Pilih materi...)</option>
+                            {lessons.map((l) => (
+                              <option key={l._id} value={l._id}>
+                                {l.title}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        <div className="mt-1 text-xs text-slate-600">Menentukan quiz ini muncul setelah materi yang dipilih.</div>
                       </div>
                       <div>
                         <Label>Description</Label>
@@ -1043,6 +1135,7 @@ export default function CourseManager() {
                                 label="Pertanyaan (Word-like)"
                                 valueHtml={questionForm.promptHtml}
                                 onChangeHtml={(html) => setQuestionForm((f) => ({ ...f, promptHtml: html }))}
+                                editorClassName="min-h-[160px]"
                                 onUploadImage={async (file) => {
                                   const fd = new FormData();
                                   fd.append('file', file);
@@ -1210,11 +1303,12 @@ export default function CourseManager() {
                     </div>
                   </Card>
                 </div>
-              </>
-            )}
-          </Card>
+                </>
+              )}
+            </Card>
+          </div>
         </div>
-      </Container>
+      </div>
     </section>
   );
 }
