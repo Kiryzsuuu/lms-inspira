@@ -1,8 +1,10 @@
 const express = require('express');
 const PDFDocument = require('pdfkit');
+const { z } = require('zod');
 const { Course } = require('../models/Course');
 const { Lesson } = require('../models/Lesson');
 const { LessonProgress } = require('../models/LessonProgress');
+const { Order } = require('../models/Order');
 const { User } = require('../models/User');
 const { asyncHandler } = require('../utils/asyncHandler');
 const { HttpError } = require('../utils/errors');
@@ -15,8 +17,191 @@ function formatIdr(n) {
   }
 }
 
+function toCsvValue(v) {
+  const s = String(v ?? '');
+  const needsQuotes = /[",\n\r]/.test(s);
+  const escaped = s.replace(/"/g, '""');
+  return needsQuotes ? `"${escaped}"` : escaped;
+}
+
+function parseDateRange(query) {
+  const schema = z.object({
+    from: z.string().datetime().optional(),
+    to: z.string().datetime().optional(),
+    status: z.enum(['pending', 'paid', 'failed', 'expired', 'canceled']).optional(),
+  });
+  const q = schema.parse(query);
+
+  const to = q.to ? new Date(q.to) : new Date();
+  const from = q.from ? new Date(q.from) : new Date(to.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+  // normalize to valid range
+  if (Number.isNaN(from.getTime()) || Number.isNaN(to.getTime())) {
+    throw new HttpError(400, 'Invalid date range');
+  }
+
+  return { from, to, status: q.status };
+}
+
 function reportsRouter({ requireAuth, requireRole }) {
   const router = express.Router();
+
+  // Admin: accounting summary
+  router.get(
+    '/accounting/summary',
+    requireAuth,
+    requireRole('admin'),
+    asyncHandler(async (req, res) => {
+      const { from, to } = parseDateRange(req.query);
+      const match = { createdAt: { $gte: from, $lte: to } };
+
+      const [byStatus, paidAgg] = await Promise.all([
+        Order.aggregate([
+          { $match: match },
+          { $group: { _id: '$status', count: { $sum: 1 }, amountIdr: { $sum: '$amountIdr' } } },
+        ]),
+        Order.aggregate([
+          { $match: { ...match, status: 'paid' } },
+          {
+            $group: {
+              _id: null,
+              count: { $sum: 1 },
+              amountIdr: { $sum: '$amountIdr' },
+              feeIdr: { $sum: { $ifNull: ['$midtrans.feeIdr', 0] } },
+            },
+          },
+        ]),
+      ]);
+
+      const statusMap = Object.fromEntries(byStatus.map((x) => [x._id, { count: x.count, amountIdr: x.amountIdr }]));
+      const paid = paidAgg?.[0] || { count: 0, amountIdr: 0, feeIdr: 0 };
+
+      res.json({
+        range: { from: from.toISOString(), to: to.toISOString() },
+        paid: {
+          ...paid,
+          netIdr: (paid.amountIdr || 0) - (paid.feeIdr || 0),
+        },
+        byStatus: statusMap,
+      });
+    })
+  );
+
+  // Admin: list orders (accounting ledger)
+  router.get(
+    '/accounting/orders',
+    requireAuth,
+    requireRole('admin'),
+    asyncHandler(async (req, res) => {
+      const { from, to, status } = parseDateRange(req.query);
+      const filter = { createdAt: { $gte: from, $lte: to } };
+      if (status) filter.status = status;
+
+      const orders = await Order.find(filter).sort({ createdAt: -1 }).limit(1000).lean();
+      const userIds = [...new Set(orders.map((o) => String(o.userId)))];
+      const users = await User.find({ _id: { $in: userIds } }, { name: 1, fullName: 1, email: 1 }).lean();
+      const userMap = new Map(users.map((u) => [String(u._id), u]));
+
+      const rows = orders.map((o) => {
+        const u = userMap.get(String(o.userId));
+        return {
+          id: String(o._id),
+          orderCode: o.orderCode,
+          status: o.status,
+          amountIdr: o.amountIdr,
+          feeIdr: o.midtrans?.feeIdr || 0,
+          netIdr: (o.amountIdr || 0) - (o.midtrans?.feeIdr || 0),
+          itemCount: (o.items || []).length,
+          items: (o.items || []).map((it) => ({
+            courseId: String(it.courseId),
+            title: it.title,
+            priceIdr: it.priceIdr,
+          })),
+          user: u
+            ? { id: String(u._id), name: u.fullName || u.name || '', email: u.email || '' }
+            : { id: String(o.userId), name: '', email: '' },
+          midtrans: {
+            transactionStatus: o.midtrans?.transactionStatus || '',
+            paymentType: o.midtrans?.paymentType || '',
+            settlementTime: o.midtrans?.settlementTime || null,
+          },
+          createdAt: o.createdAt,
+          updatedAt: o.updatedAt,
+        };
+      });
+
+      res.json({
+        range: { from: from.toISOString(), to: to.toISOString() },
+        count: rows.length,
+        orders: rows,
+      });
+    })
+  );
+
+  // Admin: export CSV (Excel)
+  router.get(
+    '/accounting/orders.csv',
+    requireAuth,
+    requireRole('admin'),
+    asyncHandler(async (req, res) => {
+      const { from, to, status } = parseDateRange(req.query);
+      const filter = { createdAt: { $gte: from, $lte: to } };
+      if (status) filter.status = status;
+
+      const orders = await Order.find(filter).sort({ createdAt: -1 }).limit(5000).lean();
+      const userIds = [...new Set(orders.map((o) => String(o.userId)))];
+      const users = await User.find({ _id: { $in: userIds } }, { name: 1, fullName: 1, email: 1 }).lean();
+      const userMap = new Map(users.map((u) => [String(u._id), u]));
+
+      res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+      res.setHeader('Content-Disposition', 'attachment; filename="accounting-orders.csv"');
+
+      // UTF-8 BOM for Excel
+      res.write('\uFEFF');
+
+      const header = [
+        'orderCode',
+        'status',
+        'amountIdr',
+        'feeIdr',
+        'netIdr',
+        'itemCount',
+        'items',
+        'userName',
+        'userEmail',
+        'paymentType',
+        'transactionStatus',
+        'settlementTime',
+        'createdAt',
+      ];
+      res.write(header.join(',') + '\n');
+
+      for (const o of orders) {
+        const u = userMap.get(String(o.userId));
+        const items = (o.items || []).map((it) => `${it.title} (${it.priceIdr})`).join(' | ');
+        const feeIdr = o.midtrans?.feeIdr || 0;
+        const netIdr = (o.amountIdr || 0) - feeIdr;
+        const row = [
+          toCsvValue(o.orderCode),
+          toCsvValue(o.status),
+          toCsvValue(o.amountIdr),
+          toCsvValue(feeIdr),
+          toCsvValue(netIdr),
+          toCsvValue((o.items || []).length),
+          toCsvValue(items),
+          toCsvValue(u?.fullName || u?.name || ''),
+          toCsvValue(u?.email || ''),
+          toCsvValue(o.midtrans?.paymentType || ''),
+          toCsvValue(o.midtrans?.transactionStatus || ''),
+          toCsvValue(o.midtrans?.settlementTime ? new Date(o.midtrans.settlementTime).toISOString() : ''),
+          toCsvValue(o.createdAt ? new Date(o.createdAt).toISOString() : ''),
+        ];
+        res.write(row.join(',') + '\n');
+      }
+
+      res.end();
+    })
+  );
 
   // Student: export PDF progress + achievements for a course
   router.get(

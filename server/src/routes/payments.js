@@ -203,6 +203,37 @@ function paymentsRouter({ requireAuth, requireRole, midtrans }) {
       if (isPaidStatus(txStatus) && fraudStatus !== 'deny') {
         newStatus = 'paid';
         update['midtrans.settlementTime'] = n.settlement_time ? new Date(n.settlement_time) : new Date();
+
+        // Fee is not provided by Midtrans notification by default.
+        // We store an estimated fee (optional) based on env rules.
+        const env = getEnv();
+
+        function safeParseFeeRules(json) {
+          if (!json) return null;
+          try {
+            const parsed = JSON.parse(json);
+            return parsed && typeof parsed === 'object' ? parsed : null;
+          } catch {
+            return null;
+          }
+        }
+
+        function computeFeeIdr({ amountIdr, paymentType }) {
+          const amt = Math.max(0, Number(amountIdr || 0));
+          const rules = safeParseFeeRules(env.MIDTRANS_FEE_RULES_JSON);
+
+          const rule =
+            (rules && paymentType && rules[paymentType]) ||
+            (rules && rules.default) ||
+            null;
+
+          const percent = Math.max(0, Math.min(100, Number(rule?.percent ?? env.MIDTRANS_FEE_PERCENT ?? 0)));
+          const flat = Math.max(0, Math.round(Number(rule?.flat ?? 0)));
+
+          return Math.max(0, Math.round((amt * percent) / 100) + flat);
+        }
+
+        update['midtrans.feeIdr'] = computeFeeIdr({ amountIdr: order.amountIdr, paymentType });
       } else if (isTerminalFailedStatus(txStatus)) {
         newStatus = txStatus === 'expire' ? 'expired' : txStatus === 'cancel' ? 'canceled' : 'failed';
       }

@@ -46,6 +46,14 @@ export default function Dashboard() {
           <Card className="mt-4 p-6">
             <div className="text-lg font-bold">Admin</div>
             <p className="mt-1 text-sm text-slate-600">Kelola user dan role di menu header: Users.</p>
+            <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+              <Link to="/dashboard/users" className="flex-1">
+                <Button className="w-full">Kelola Users</Button>
+              </Link>
+              <Link to="/dashboard/accounting" className="flex-1">
+                <Button variant="outline" className="w-full">Pembukuan</Button>
+              </Link>
+            </div>
           </Card>
         )}
       </Container>

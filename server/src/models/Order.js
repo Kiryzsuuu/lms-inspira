@@ -28,6 +28,7 @@ const orderSchema = new mongoose.Schema(
       paymentType: { type: String },
       fraudStatus: { type: String },
       settlementTime: { type: Date },
+      feeIdr: { type: Number, min: 0 },
       rawNotification: { type: Object },
     },
   },

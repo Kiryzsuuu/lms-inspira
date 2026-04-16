@@ -19,6 +19,16 @@ export function AuthProvider({ children }) {
 
   const api = useMemo(() => createApiClient(() => token), [token]);
 
+  async function refreshUser() {
+    if (!token) return;
+    try {
+      const res = await api.get('/auth/me');
+      setUser(res.data.user);
+    } catch (err) {
+      console.error('[Auth] Failed to refresh user:', err?.message);
+    }
+  }
+
   useEffect(() => {
     if (!token) {
       setUser(null);
@@ -59,6 +69,7 @@ export function AuthProvider({ children }) {
         localStorage.removeItem('token');
         setUser(null);
       },
+      refreshUser,
     }),
     [token, user, api]
   );

@@ -40,7 +40,7 @@ function loadSnapScript({ clientKey, isProduction }) {
 }
 
 export default function Cart() {
-  const { api } = useAuth();
+  const { api, user, refreshUser } = useAuth();
   const [items, setItems] = useState([]);
   const [totalIdr, setTotalIdr] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -54,9 +54,11 @@ export default function Cart() {
     setError('');
     try {
       const res = await api.get('/cart');
+      console.log('[Cart] Loaded items:', res.data.items?.length || 0);
       setItems(res.data.items || []);
       setTotalIdr(res.data.totalIdr || 0);
     } catch (e) {
+      console.error('[Cart] Gagal load cart:', e?.response?.data?.error?.message);
       setItems([]);
       setTotalIdr(0);
       setError(e?.response?.data?.error?.message || 'Gagal load cart');
@@ -66,11 +68,18 @@ export default function Cart() {
   }
 
   useEffect(() => {
+    console.log('[Cart] Component mounted, loading cart...');
     refresh();
     api
       .get('/payments/config')
-      .then((res) => setMidtransConfig(res.data))
-      .catch(() => setMidtransConfig({ clientKey: '', isProduction: false }));
+      .then((res) => {
+        console.log('[Cart] Midtrans config loaded');
+        setMidtransConfig(res.data);
+      })
+      .catch(() => {
+        console.warn('[Cart] Failed to load Midtrans config');
+        setMidtransConfig({ clientKey: '', isProduction: false });
+      });
   }, []);
 
   async function remove(courseId) {
@@ -102,7 +111,17 @@ export default function Cart() {
 
       window.snap.pay(res.data.snapToken, {
         onSuccess: async () => {
+          console.log('[Cart] Payment successful! Refreshing data...');
+          // Refresh user data to get updated purchasedCourseIds
+          await refreshUser();
+          console.log('[Cart] User data refreshed');
+          // Refresh cart
           await refresh();
+          // Small delay to ensure data is updated
+          setTimeout(() => {
+            setError('') // Clear any errors
+            alert('Pembayaran berhasil! Course sudah tersimpan.');
+          }, 500);
         },
         onPending: () => {
           // pending payment; user can return later; webhook will unlock

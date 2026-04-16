@@ -190,6 +190,21 @@ export default function CourseManager() {
   }, [selectedId, selected?.coverImageUrl]);
 
   useEffect(() => {
+    // Populate course form when a course is selected
+    if (!selected) {
+      setCourseForm({ title: '', description: '', coverImageUrl: '', priceIdr: 0, isPublished: false });
+      return;
+    }
+    setCourseForm({
+      title: selected.title || '',
+      description: selected.description || '',
+      coverImageUrl: selected.coverImageUrl || '',
+      priceIdr: selected.priceIdr || 0,
+      isPublished: selected.isPublished || false,
+    });
+  }, [selected]);
+
+  useEffect(() => {
     if (!activeQuizId) return;
     loadQuestions(activeQuizId);
   }, [activeQuizId]);
@@ -530,10 +545,23 @@ export default function CourseManager() {
       <div className="flex flex-1 min-h-0 flex-col overflow-auto px-4 py-4 lg:px-6 lg:py-4">
         <div className="flex flex-1 min-h-0 flex-col gap-4 lg:flex-row lg:gap-6">
           <div
-            onMouseDown={() => setIsResizing(true)}
             style={{ width: `${sidebarWidth}px` }}
-            className="group relative lg:shrink-0 cursor-col-resize"
+            className="group relative lg:shrink-0"
           >
+            {/* Resize handle: only this thin area should be draggable */}
+            <div
+              role="separator"
+              aria-orientation="vertical"
+              aria-label="Resize sidebar"
+              onMouseDown={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setIsResizing(true);
+              }}
+              className="absolute right-0 top-0 h-full w-2 cursor-col-resize"
+              style={{ touchAction: 'none' }}
+            />
+
             <aside className="flex min-h-0 h-full flex-col border border-slate-200 bg-white p-3 sm:p-4 overflow-auto">
             <div className="text-lg font-bold text-slate-900">Course Saya</div>
             <div className="mt-3 flex-1 min-h-0 overflow-auto space-y-3">

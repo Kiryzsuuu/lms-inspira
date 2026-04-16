@@ -1,15 +1,39 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { Button } from './ui';
 import { useAuth } from '../lib/auth';
 import { ConfirmDialog } from './ConfirmDialog';
 
 export function Navbar() {
-  const { isAuthed, role, user, logout } = useAuth();
+  const { api, isAuthed, role, user, logout } = useAuth();
   const location = useLocation();
   const nav = useNavigate();
   const [exitOpen, setExitOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [cartCount, setCartCount] = useState(0);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadCartCount() {
+      if (!isAuthed || role !== 'student') {
+        setCartCount(0);
+        return;
+      }
+      try {
+        const res = await api.get('/cart');
+        const count = Array.isArray(res.data?.items) ? res.data.items.length : 0;
+        if (!cancelled) setCartCount(count);
+      } catch {
+        if (!cancelled) setCartCount(0);
+      }
+    }
+
+    loadCartCount();
+    return () => {
+      cancelled = true;
+    };
+  }, [api, isAuthed, role, location?.pathname]);
 
   const path = location?.pathname || '';
   const minimalHeader =
@@ -75,11 +99,6 @@ export function Navbar() {
               <NavLink to="/courses" className={linkClass}>
                 Courses
               </NavLink>
-              {isAuthed && role === 'student' && (
-                <NavLink to="/cart" className={linkClass}>
-                  Cart
-                </NavLink>
-              )}
               {isAuthed && (
                 <NavLink to="/dashboard" className={linkClass}>
                   Dashboard
@@ -116,6 +135,34 @@ export function Navbar() {
                   </>
                 ) : (
                   <>
+                    {role === 'student' ? (
+                      <Link to="/cart" className="relative hidden sm:inline-flex" aria-label="Cart">
+                        <Button variant="outline" className="px-2">
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            className="h-4 w-4"
+                            aria-hidden="true"
+                          >
+                            <circle cx="9" cy="21" r="1" />
+                            <circle cx="20" cy="21" r="1" />
+                            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+                          </svg>
+                        </Button>
+                        {cartCount > 0 ? (
+                          <span
+                            className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full bg-rose-500 ring-2 ring-white"
+                            aria-label="Cart berisi"
+                          />
+                        ) : null}
+                      </Link>
+                    ) : null}
+
                     <Link to="/my-profile">
                       <Button variant="outline" className="hidden sm:inline text-xs">
                         {user?.name || 'Profile'}
@@ -150,7 +197,14 @@ export function Navbar() {
                       className="absolute right-0 top-[calc(100%+0.5rem)] z-40 w-56 overflow-hidden border border-slate-200 bg-white shadow-sm"
                     >
                       <MobileMenuItem to="/courses">Courses</MobileMenuItem>
-                      {isAuthed && role === 'student' ? <MobileMenuItem to="/cart">Cart</MobileMenuItem> : null}
+                      {isAuthed && role === 'student' ? (
+                        <MobileMenuItem to="/cart">
+                          <span className="flex items-center justify-between">
+                            <span>Cart</span>
+                            {cartCount > 0 ? <span className="h-2.5 w-2.5 rounded-full bg-rose-500" /> : null}
+                          </span>
+                        </MobileMenuItem>
+                      ) : null}
                       {isAuthed ? <MobileMenuItem to="/dashboard">Dashboard</MobileMenuItem> : null}
                       {role === 'admin' || role === 'teacher' ? (
                         <>

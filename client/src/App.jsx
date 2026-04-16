@@ -15,6 +15,7 @@ import Dashboard from './pages/Dashboard';
 import HeroManager from './pages/dashboard/HeroManager';
 import CourseManager from './pages/dashboard/CourseManager';
 import UserManager from './pages/dashboard/UserManager';
+import Accounting from './pages/dashboard/Accounting';
 import { RequireAuth } from './components/RequireAuth';
 import { Container } from './components/ui';
 
@@ -79,6 +80,14 @@ export default function App() {
           element={
             <RequireAuth roles={['admin']}>
               <UserManager />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/dashboard/accounting"
+          element={
+            <RequireAuth roles={['admin']}>
+              <Accounting />
             </RequireAuth>
           }
         />
