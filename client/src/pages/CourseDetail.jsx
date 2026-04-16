@@ -279,7 +279,7 @@ export default function CourseDetail() {
     setLockError('');
     try {
       await api.post('/cart/items', { courseId: id });
-      setLockError('Course ditambahkan ke cart.');
+      nav('/cart');
     } catch (e) {
       setLockError(e?.response?.data?.error?.message || 'Gagal tambah ke cart');
     }
@@ -429,7 +429,16 @@ export default function CourseDetail() {
                         onClick={() => {
                           if (!allowed) return;
                           if (isStudent) {
-                            nav(`/courses/${id}/lessons/${l._id}`);
+                            // Student: must call /start first to activate course (includes payment gating)
+                            setLockError('');
+                            api
+                              .post(`/courses/${id}/start`)
+                              .then(() => {
+                                nav(`/courses/${id}/lessons/${l._id}`);
+                              })
+                              .catch((e) => {
+                                setLockError(e?.response?.data?.error?.message || 'Gagal membuka materi');
+                              });
                             return;
                           }
                           setSelectedLesson(l);
