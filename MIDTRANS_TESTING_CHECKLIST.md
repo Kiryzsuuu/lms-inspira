@@ -4,7 +4,7 @@
 
 **Environment:** Sandbox (Test Mode)
 - **Server Key:** your-sandbox-server-key
-- **Client Key:** your-sandbox-client-key
+- **Client Key:** (your sandbox client key)
 - **Merchant ID:** M377060101
 - **Servers:** Running
   - Backend: http://localhost:4000

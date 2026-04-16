@@ -169,8 +169,8 @@ nav('/cart')  // Redirect to cart page
 
 ```
 MIDTRANS_MERCHANT_ID = M377060101 ✅
-MIDTRANS_CLIENT_KEY = your-sandbox-client-key ✅
-MIDTRANS_SERVER_KEY = your-sandbox-server-key ✅
+MIDTRANS_CLIENT_KEY = your-sandbox-client-key
+MIDTRANS_SERVER_KEY = your-sandbox-server-key
 MIDTRANS_IS_PRODUCTION = false (Sandbox) ✅
 
 Mode: SANDBOX (Testing) - Use test cards
