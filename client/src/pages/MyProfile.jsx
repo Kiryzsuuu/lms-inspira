@@ -1,8 +1,24 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { Card, Button, Input, Label } from '../components/ui';
 import { useAuth } from '../lib/auth';
 import { ConfirmDialog } from '../components/ConfirmDialog';
+
+function cleanCourseHtml(html) {
+  let s = String(html || '');
+  if (!s) return '';
+  s = s.replace(/<li>\s*<p>\s*(?:<br\s*\/?\s*>)\s*<\/p>\s*<\/li>/gi, '');
+  s = s.replace(/<li>\s*<p>\s*<\/p>\s*<\/li>/gi, '');
+  s = s.replace(/<li>\s*(?:<br\s*\/?\s*>)\s*<\/li>/gi, '');
+  return s;
+}
+
+function snippet(text, max = 150) {
+  const s = String(text || '').trim();
+  if (!s) return '';
+  if (s.length <= max) return s;
+  return s.slice(0, max).replace(/\s+\S*$/, '').trim() + '…';
+}
 
 const EDUCATION_LEVELS = ['SD/MI', 'SMP/MTs', 'SMA/SMK/MA', 'D3', 'S1', 'S2', 'S3'];
 const REFERRAL_SOURCES = ['Media Sosial', 'Rekomendasi', 'Search Engine', 'Teman/Keluarga', 'Lainnya'];
@@ -538,10 +554,21 @@ export default function MyProfile() {
               {/* Sedang dikerjakan */}
               {activeCourse && (
                 <Card className="p-6 border-l-4 border-l-orange-500">
-                  <h3 className="font-bold text-slate-900">Sedang Dikerjakan</h3>
-                  <div className="mt-3">
+                  <div className="flex items-start justify-between gap-4 mb-3">
+                    <h3 className="font-bold text-slate-900">Sedang Dikerjakan</h3>
+                    <Link to={`/courses/${activeCourse._id}`}>
+                      <Button variant="outline" size="sm">Lanjutkan</Button>
+                    </Link>
+                  </div>
+                  <div>
                     <h4 className="font-semibold text-slate-700">{activeCourse.title}</h4>
-                    <p className="mt-1 text-sm text-slate-600">{activeCourse.description}</p>
+                    <p className="mt-1 text-sm text-slate-600 line-clamp-2">
+                      {snippet(activeCourse?.description?.replace(/<[^>]*>/g, '') || 'Tidak ada deskripsi', 150)}
+                    </p>
+                    <div className="mt-4 flex items-center gap-4 text-xs text-slate-600">
+                      <span>📚 Materi: {activeCourse.lessons?.length || 0} pelajaran</span>
+                      {activeCourse.quizCount > 0 && <span>📝 Quiz: {activeCourse.quizCount} soal</span>}
+                    </div>
                   </div>
                 </Card>
               )}
@@ -556,11 +583,13 @@ export default function MyProfile() {
                     {completedCourses.map((c) => (
                       <Card key={c._id} className="p-4 border border-slate-200 border-l-4 border-l-green-500">
                         <div className="flex items-start justify-between gap-3">
-                          <div>
+                          <div className="flex-1">
                             <h4 className="font-semibold text-slate-900">✓ {c.title}</h4>
-                            <p className="mt-1 text-sm text-slate-600">{c.description}</p>
+                            <p className="mt-1 text-sm text-slate-600 line-clamp-2">
+                              {snippet(c?.description?.replace(/<[^>]*>/g, '') || 'Tidak ada deskripsi', 120)}
+                            </p>
                           </div>
-                          <span className="text-xs font-medium bg-green-100 text-green-900 px-2 py-1 rounded">
+                          <span className="text-xs font-medium bg-green-100 text-green-900 px-2 py-1 rounded whitespace-nowrap">
                             Selesai
                           </span>
                         </div>
@@ -569,7 +598,7 @@ export default function MyProfile() {
                   </div>
                 ) : (
                   <p className="text-sm text-slate-600">Belum ada course yang diselesaikan.</p>
-                )}
+                )}}
               </div>
             </div>
           )}
