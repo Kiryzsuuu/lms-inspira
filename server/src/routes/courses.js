@@ -85,10 +85,8 @@ function coursesRouter({ requireAuth, requireRole }) {
         if (!purchased) throw new HttpError(402, 'Course belum terbeli. Silakan checkout dulu.');
       }
 
-      if (user.activeCourseId && String(user.activeCourseId) !== String(course._id)) {
-        throw new HttpError(409, 'Selesaikan course aktif terlebih dahulu sebelum mulai course lain');
-      }
-
+      // Allow switching active course among enrolled/purchased courses.
+      // Keeps a single activeCourseId, but user can choose which one is active.
       user.activeCourseId = course._id;
       await user.save();
 

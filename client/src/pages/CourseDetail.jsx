@@ -140,7 +140,7 @@ export default function CourseDetail() {
   const hasPurchased = isStudent && (user?.purchasedCourseIds || []).some((x) => String(x) === String(id));
   const isPaywalled = isStudent && priceIdr > 0 && !hasPurchased;
   const isActive = isStudent && progress?.activeCourseId && String(progress.activeCourseId) === String(id);
-  const isLocked = isStudent && progress?.activeCourseId && String(progress.activeCourseId) !== String(id);
+  const hasOtherActive = isStudent && progress?.activeCourseId && String(progress.activeCourseId) !== String(id);
 
   function isLessonCompleted(lessonId) {
     return Boolean(lessonProgress[String(lessonId)]?.isCompleted);
@@ -377,14 +377,14 @@ export default function CourseDetail() {
                 {isActive ? (
                   <div className="text-sm font-semibold text-slate-700">Status: sedang dipelajari</div>
                 ) : (
-                  <Button onClick={startCourse} disabled={isLocked}>
-                    {isLocked ? 'Terkunci (selesaikan course aktif)' : 'Mulai course ini'}
+                  <Button onClick={startCourse}>
+                    {hasOtherActive ? 'Aktifkan course ini' : 'Mulai course ini'}
                   </Button>
                 )}
 
-                {isActive && cert?.eligible ? (
-                  <Button variant="outline" onClick={completeCourse}>
-                    Tandai selesai
+                {isActive ? (
+                  <Button variant="outline" onClick={completeCourse} disabled={!cert?.eligible}>
+                    Selesai Course
                   </Button>
                 ) : null}
 
@@ -397,11 +397,6 @@ export default function CourseDetail() {
             ) : null}
 
             {lockError ? <div className="mt-4 bg-rose-50 p-3 text-sm text-rose-700">{lockError}</div> : null}
-            {isLocked ? (
-              <div className="mt-4 bg-amber-50 p-3 text-sm text-amber-800">
-                Kamu masih punya course aktif lain. Selesaikan dulu course aktif tersebut supaya bisa mulai course ini.
-              </div>
-            ) : null}
 
             {isPaywalled ? (
               <div className="mt-4 bg-red-50 border-2 border-red-300 p-4 text-sm text-red-800 rounded">

@@ -68,7 +68,7 @@ function cleanLessonHtml(html) {
 export default function LessonPresentation() {
   const { id, lessonId } = useParams();
   const nav = useNavigate();
-  const { api, role, user, refreshUser } = useAuth();
+  const { api, role, user } = useAuth();
 
   const [course, setCourse] = useState(null);
   const [lessons, setLessons] = useState([]);
@@ -148,23 +148,35 @@ export default function LessonPresentation() {
   const prevLessonId = activeIdx > 0 ? lessons[activeIdx - 1]?._id : null;
   const nextLessonId = activeIdx >= 0 && activeIdx < lessons.length - 1 ? lessons[activeIdx + 1]?._id : null;
 
-  async function completeCourse() {
-    setLockError('');
+  async function markLessonComplete(lessonToCompleteId) {
+    if (!isStudent) return true;
+    if (!lessonToCompleteId) return true;
+    if (isLessonCompleted(lessonToCompleteId)) return true;
+
     try {
-      const res = await api.post(`/courses/${id}/complete`);
-      setProgress((cur) => ({
+      await api.post(`/progress/lessons/${lessonToCompleteId}/complete`);
+      setLessonProgress((cur) => ({
         ...cur,
-        activeCourseId: res.data?.activeCourseId || null,
-        completedCourseIds: res.data?.completedCourseIds || cur.completedCourseIds || [],
-        role: cur.role || 'student',
+        [String(lessonToCompleteId)]: {
+          lessonId: lessonToCompleteId,
+          isCompleted: true,
+          completedAt: new Date().toISOString(),
+        },
       }));
-      await refreshUser();
+      try {
+        const certRes = await api.get(`/progress/course/${id}/certificate`);
+        setCert(certRes.data);
+      } catch {
+        // ignore
+      }
       window.dispatchEvent(new Event('progress:changed'));
-      nav(`/courses/${id}`);
+      return true;
     } catch (e) {
-      setLockError(e?.response?.data?.error?.message || 'Gagal menyelesaikan course');
+      setLockError(e?.response?.data?.error?.message || 'Gagal menyimpan progress materi');
+      return false;
     }
   }
+
 
   return (
     <Container className="py-6">
@@ -303,15 +315,24 @@ export default function LessonPresentation() {
               Sebelumnya
             </Button>
 
-            {!nextLessonId && isStudent && isActiveCourse && !isPaywalled && cert?.eligible ? (
-              <Button variant="outline" onClick={completeCourse}>
-                Selesai Course
+            {isStudent && isActiveCourse && !isPaywalled && !nextLessonId && !isLessonCompleted(activeLesson?._id) ? (
+              <Button
+                variant="outline"
+                onClick={async () => {
+                  setLockError('');
+                  await markLessonComplete(activeLesson?._id);
+                }}
+              >
+                Tandai Materi Selesai
               </Button>
             ) : null}
 
             <Button
-              onClick={() => {
+              onClick={async () => {
                 if (!nextLessonId) return;
+                setLockError('');
+                const ok = await markLessonComplete(activeLesson?._id);
+                if (!ok) return;
                 nav(`/courses/${id}/lessons/${nextLessonId}`);
               }}
               disabled={!nextLessonId}

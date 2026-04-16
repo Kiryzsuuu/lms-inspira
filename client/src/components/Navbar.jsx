@@ -68,10 +68,15 @@ export function Navbar() {
       <div className="flex h-16 w-full items-center justify-between px-[clamp(1rem,2vw,2.5rem)]">
         {minimalHeader ? (
           <>
-            <div className="flex items-center gap-2 font-extrabold tracking-tight text-slate-900">
+            <button
+              type="button"
+              className="flex items-center gap-2 font-extrabold tracking-tight text-slate-900"
+              onClick={() => setExitOpen(true)}
+              aria-label="Kembali"
+            >
               <img src="/lms-logo.png" alt="LMS" className="h-6 w-auto sm:h-7" />
               <span className="hidden sm:block">Inspira Innovation</span>
-            </div>
+            </button>
 
             <div className="flex items-center gap-2">
               <Button variant="outline" onClick={() => setExitOpen(true)}>
@@ -95,7 +100,7 @@ export function Navbar() {
           </>
         ) : (
           <>
-            <Link to="/" className="flex items-center gap-2 font-extrabold tracking-tight text-slate-900">
+            <Link to="/courses" className="flex items-center gap-2 font-extrabold tracking-tight text-slate-900">
               <img src="/lms-logo.png" alt="LMS" className="h-6 w-auto sm:h-7" />
               <span className="hidden sm:block">Inspira Innovation</span>
             </Link>
