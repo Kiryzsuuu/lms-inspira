@@ -62,7 +62,7 @@ export function HeroCarousel({ slides }) {
           <h1 className="mt-2 text-balance text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">
             {slide?.title || 'Platform LMS + Quiz'}
           </h1>
-          <p className="mt-3 text-pretty text-slate-600">{slide?.subtitle || 'Course, materi, dan quiz ala Quizizz/Kahoot.'}</p>
+          <p className="mt-3 text-pretty text-slate-600">{slide?.subtitle || 'Course singkat + quiz interaktif.'}</p>
         </div>
       </Container>
     </section>

@@ -51,7 +51,7 @@ async function main() {
   await HeroSlide.insertMany([
     {
       title: 'Belajar Skill Baru, Setiap Hari',
-      subtitle: 'Course singkat + quiz interaktif ala Kahoot/Quizizz.',
+      subtitle: 'Course singkat + quiz interaktif.',
       ctaText: 'Lihat Course',
       ctaHref: '/courses',
       imageUrl: '/hero-34.png',
@@ -60,7 +60,7 @@ async function main() {
     },
     {
       title: 'Belajar Skill Baru, Setiap Hari',
-      subtitle: 'Course singkat + quiz interaktif ala Kahoot/Quizizz.',
+      subtitle: 'Course singkat + quiz interaktif.',
       ctaText: 'Lihat Course',
       ctaHref: '/courses',
       imageUrl: '/hero-35.png',
