@@ -73,12 +73,6 @@ export default function Login() {
               Reset di sini
             </Link>
           </div>
-
-          <div className="mt-6 bg-slate-50 p-4 text-xs text-slate-700">
-            <div className="font-semibold">Demo login (setelah seed):</div>
-            <div>Admin: admin@lms.local / admin123</div>
-            <div>Teacher: teacher@lms.local / teacher123</div>
-          </div>
         </Card>
       </Container>
     </section>
