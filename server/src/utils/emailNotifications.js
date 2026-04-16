@@ -184,9 +184,59 @@ async function sendWelcomeEmail(env, { userEmail, userName }) {
   });
 }
 
+/**
+ * Send OTP code to user email
+ */
+async function sendOTP(env, { userEmail, code, type }) {
+  if (!hasSmtpConfigured(env)) return;
+
+  const typeLabel = {
+    register: 'Registrasi Akun',
+    login: 'Login Akun',
+    email: 'Ubah Email',
+    password: 'Reset Password',
+  }[type] || 'Verifikasi';
+
+  const subject = `Kode OTP ${typeLabel} - Inspira Innovation`;
+  const html = `
+    <div style="font-family: Arial, sans-serif; color: #333; line-height: 1.6;">
+      <h2 style="color: #d76810;">Kode OTP ${typeLabel}</h2>
+      
+      <p>Halo,</p>
+      
+      <p>Berikut adalah kode OTP Anda untuk ${typeLabel.toLowerCase()}:</p>
+      
+      <div style="background-color: #f5f5f5; padding: 20px; border-left: 4px solid #d76810; margin: 20px 0; text-align: center;">
+        <h1 style="color: #d76810; letter-spacing: 5px; margin: 0;">${code}</h1>
+        <p style="color: #999; margin: 10px 0 0 0; font-size: 12px;">Kode berlaku selama 10 menit</p>
+      </div>
+      
+      <p><strong>PENTING:</strong></p>
+      <ul>
+        <li>Jangan bagikan kode ini kepada siapapun</li>
+        <li>Kode ini hanya berlaku selama 10 menit</li>
+        <li>Jika Anda tidak meminta kode ini, abaikan email ini</li>
+      </ul>
+      
+      <hr style="border: none; border-top: 1px solid #ddd; margin: 20px 0;">
+      <p style="font-size: 12px; color: #888;">
+        Email ini dikirim secara otomatis. Silakan jangan membalas email ini.
+      </p>
+    </div>
+  `;
+
+  await sendMail(env, {
+    to: userEmail,
+    subject,
+    html,
+    text: `Kode OTP ${typeLabel}: ${code} (berlaku 10 menit)`,
+  });
+}
+
 module.exports = {
   sendPurchaseNotification,
   sendPurchaseConfirmation,
   sendProgressReport,
   sendWelcomeEmail,
+  sendOTP,
 };

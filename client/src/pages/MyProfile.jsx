@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, Button, Input, Label } from '../components/ui';
 import { useAuth } from '../lib/auth';
+import { ConfirmDialog } from '../components/ConfirmDialog';
 
 const EDUCATION_LEVELS = ['SD/MI', 'SMP/MTs', 'SMA/SMK/MA', 'D3', 'S1', 'S2', 'S3'];
 const REFERRAL_SOURCES = ['Media Sosial', 'Rekomendasi', 'Search Engine', 'Teman/Keluarga', 'Lainnya'];
@@ -34,6 +35,9 @@ export default function MyProfile() {
   // Course history
   const [courses, setCourses] = useState([]);
   const [coursesLoading, setCoursesLoading] = useState(false);
+
+  // Logout confirmation
+  const [logoutOpen, setLogoutOpen] = useState(false);
 
   async function loadProfile() {
     try {
@@ -137,6 +141,15 @@ export default function MyProfile() {
     nav('/', { replace: true });
   }
 
+  function handleLogoutClick() {
+    setLogoutOpen(true);
+  }
+
+  function confirmLogout() {
+    setLogoutOpen(false);
+    handleLogout();
+  }
+
   if (!user) return <div className="py-10 text-center">Memuat...</div>;
 
   const purchasedCourses = courses.filter((c) => user.purchasedCourseIds?.includes(c._id));
@@ -199,30 +212,43 @@ export default function MyProfile() {
         <div className="flex-1 overflow-auto p-4 sm:p-6">
           {/* Profile Tab */}
           {activeTab === 'profile' && (
-            <div className="space-y-4">
-              <div className="grid gap-4 lg:grid-cols-2">
+            <div className="space-y-6">
+              <div className="grid gap-6 lg:grid-cols-2">
                 {/* Left Column */}
-                <div className="space-y-4">
+                <div className="space-y-6 flex flex-col">
                   {/* Informasi Dasar */}
-                  <Card className="p-6">
-                    <h2 className="text-lg font-bold text-slate-900">Informasi Dasar</h2>
-                    <div className="mt-4 space-y-3 text-sm">
-                      <div>
-                        <span className="font-semibold text-slate-700">Username:</span> {user.name}
+                  <Card className="p-6 border border-slate-200 shadow-sm hover:shadow-md transition-shadow flex-1">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-10 h-10 rounded-lg bg-orange-100 flex items-center justify-center">
+                        <span className="text-lg">👤</span>
+                      </div>
+                      <h2 className="text-lg font-bold text-slate-900">Informasi Dasar</h2>
+                    </div>
+                    <div className="mt-4 space-y-4 text-sm">
+                      <div className="pb-3 border-b border-slate-100">
+                        <span className="text-slate-600 text-xs uppercase tracking-wider">Username</span>
+                        <p className="font-semibold text-slate-900 mt-1">{user.name}</p>
+                      </div>
+                      <div className="pb-3 border-b border-slate-100">
+                        <span className="text-slate-600 text-xs uppercase tracking-wider">Role</span>
+                        <p className="font-semibold text-slate-900 mt-1 capitalize">{user.role}</p>
                       </div>
                       <div>
-                        <span className="font-semibold text-slate-700">Role:</span> {user.role}
-                      </div>
-                      <div>
-                        <span className="font-semibold text-slate-700">Bergabung:</span> {new Date(user.createdAt).toLocaleDateString('id-ID')}
+                        <span className="text-slate-600 text-xs uppercase tracking-wider">Bergabung</span>
+                        <p className="font-semibold text-slate-900 mt-1">{new Date(user.createdAt).toLocaleDateString('id-ID')}</p>
                       </div>
                     </div>
                   </Card>
 
                   {/* Profil Pribadi */}
-                  <Card className="p-6">
-                    <div className="flex items-center justify-between gap-4">
-                      <h2 className="text-lg font-bold text-slate-900">Profil Pribadi</h2>
+                  <Card className="p-6 border border-slate-200 shadow-sm hover:shadow-md transition-shadow flex-1">
+                    <div className="flex items-center justify-between gap-4 mb-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
+                          <span className="text-lg">📋</span>
+                        </div>
+                        <h2 className="text-lg font-bold text-slate-900">Profil Pribadi</h2>
+                      </div>
                       {!editingProfile && (
                         <Button
                           variant="outline"
@@ -341,11 +367,16 @@ export default function MyProfile() {
                 </div>
 
                 {/* Right Column */}
-                <div className="space-y-4">
+                <div className="space-y-6 flex flex-col">
                   {/* Email Management */}
-                  <Card className="p-6">
-                    <div className="flex items-center justify-between gap-4">
-                      <h2 className="text-lg font-bold text-slate-900">Update Email</h2>
+                  <Card className="p-6 border border-slate-200 shadow-sm hover:shadow-md transition-shadow flex-1">
+                    <div className="flex items-center justify-between gap-4 mb-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
+                          <span className="text-lg">✉️</span>
+                        </div>
+                        <h2 className="text-lg font-bold text-slate-900">Update Email</h2>
+                      </div>
                       {!editingEmail && (
                         <Button
                           variant="outline"
@@ -357,21 +388,23 @@ export default function MyProfile() {
                       )}
                     </div>
 
-                    {editingEmail ? (
-                      <div className="mt-4 space-y-3">
-                        <div>
-                          <Label>Email Saat Ini</Label>
-                          <Input value={user.email} disabled className="bg-slate-100 text-slate-600" />
-                        </div>
-                        <div>
-                          <Label>Email Baru</Label>
-                          <Input
-                            type="email"
-                            value={newEmail}
-                            onChange={(e) => setNewEmail(e.target.value)}
-                            placeholder="email@baru.com"
-                          />
-                        </div>
+                    <div className="mt-4 space-y-3">
+                      <div>
+                        <Label>Email Saat Ini</Label>
+                        <Input value={user.email} disabled className="bg-slate-100 text-slate-600" />
+                      </div>
+                      <div>
+                        <Label>Email Baru</Label>
+                        <Input
+                          type="email"
+                          value={newEmail}
+                          onChange={(e) => setNewEmail(e.target.value)}
+                          disabled={!editingEmail}
+                          placeholder="email@baru.com"
+                          className={!editingEmail ? "bg-slate-100 text-slate-600" : ""}
+                        />
+                      </div>
+                      {editingEmail && (
                         <div className="flex gap-2 pt-2">
                           <Button
                             onClick={updateEmail}
@@ -390,16 +423,19 @@ export default function MyProfile() {
                             Batal
                           </Button>
                         </div>
-                      </div>
-                    ) : (
-                      <div className="mt-3 text-sm text-slate-600">{user.email}</div>
-                    )}
+                      )}
+                    </div>
                   </Card>
 
                   {/* Password Management */}
-                  <Card className="p-6">
-                    <div className="flex items-center justify-between gap-4">
-                      <h2 className="text-lg font-bold text-slate-900">Update Password</h2>
+                  <Card className="p-6 border border-slate-200 shadow-sm hover:shadow-md transition-shadow flex-1">
+                    <div className="flex items-center justify-between gap-4 mb-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center">
+                          <span className="text-lg">🔐</span>
+                        </div>
+                        <h2 className="text-lg font-bold text-slate-900">Update Password</h2>
+                      </div>
                       {!editingPassword && (
                         <Button
                           variant="outline"
@@ -411,41 +447,47 @@ export default function MyProfile() {
                       )}
                     </div>
 
-                    {editingPassword && (
-                      <div className="mt-4 space-y-3">
-                        <div>
-                          <Label>Password Saat Ini</Label>
-                          <Input
-                            type="password"
-                            value={passwordData.currentPassword}
-                            onChange={(e) =>
-                              setPasswordData((p) => ({ ...p, currentPassword: e.target.value }))
-                            }
-                            placeholder="Password saat ini"
-                          />
-                        </div>
-                        <div>
-                          <Label>Password Baru</Label>
-                          <Input
-                            type="password"
-                            value={passwordData.newPassword}
-                            onChange={(e) =>
-                              setPasswordData((p) => ({ ...p, newPassword: e.target.value }))
-                            }
-                            placeholder="Password baru (minimal 6 karakter)"
-                          />
-                        </div>
-                        <div>
-                          <Label>Konfirmasi Password Baru</Label>
-                          <Input
-                            type="password"
-                            value={passwordData.confirmPassword}
-                            onChange={(e) =>
-                              setPasswordData((p) => ({ ...p, confirmPassword: e.target.value }))
-                            }
-                            placeholder="Konfirmasi password baru"
-                          />
-                        </div>
+                    <div className="mt-4 space-y-3">
+                      <div>
+                        <Label>Password Saat Ini</Label>
+                        <Input
+                          type="password"
+                          value={passwordData.currentPassword}
+                          onChange={(e) =>
+                            setPasswordData((p) => ({ ...p, currentPassword: e.target.value }))
+                          }
+                          disabled={!editingPassword}
+                          placeholder="Password saat ini"
+                          className={!editingPassword ? "bg-slate-100 text-slate-600" : ""}
+                        />
+                      </div>
+                      <div>
+                        <Label>Password Baru</Label>
+                        <Input
+                          type="password"
+                          value={passwordData.newPassword}
+                          onChange={(e) =>
+                            setPasswordData((p) => ({ ...p, newPassword: e.target.value }))
+                          }
+                          disabled={!editingPassword}
+                          placeholder="Password baru (minimal 6 karakter)"
+                          className={!editingPassword ? "bg-slate-100 text-slate-600" : ""}
+                        />
+                      </div>
+                      <div>
+                        <Label>Konfirmasi Password Baru</Label>
+                        <Input
+                          type="password"
+                          value={passwordData.confirmPassword}
+                          onChange={(e) =>
+                            setPasswordData((p) => ({ ...p, confirmPassword: e.target.value }))
+                          }
+                          disabled={!editingPassword}
+                          placeholder="Konfirmasi password baru"
+                          className={!editingPassword ? "bg-slate-100 text-slate-600" : ""}
+                        />
+                      </div>
+                      {editingPassword && (
                         <div className="flex gap-2 pt-2">
                           <Button
                             onClick={updatePassword}
@@ -464,21 +506,33 @@ export default function MyProfile() {
                             Batal
                           </Button>
                         </div>
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </Card>
                 </div>
               </div>
 
               {/* Logout Button di bawah */}
-              <div className="pt-4 flex lg:justify-end">
+              <div className="pt-6 mt-2 border-t border-slate-200 flex lg:justify-end">
                 <Button
-                  onClick={handleLogout}
-                  className="w-full sm:w-auto bg-rose-600 text-white hover:bg-rose-700"
+                  onClick={handleLogoutClick}
+                  className="w-full sm:w-auto bg-rose-600 text-white hover:bg-rose-700 shadow-md hover:shadow-lg transition-all font-semibold"
                 >
-                  Logout
+                  🚪 Logout
                 </Button>
               </div>
+
+              {/* Logout Confirmation Dialog */}
+              <ConfirmDialog
+                open={logoutOpen}
+                title="Logout?"
+                message="Apakah Anda yakin ingin logout dari akun ini?"
+                confirmText="Ya, Keluar"
+                cancelText="Batal"
+                confirmVariant="primary"
+                onCancel={() => setLogoutOpen(false)}
+                onConfirm={confirmLogout}
+              />
             </div>
           )}
 
