@@ -11,7 +11,7 @@ export default function MyProfile() {
   const { api, user: authUser, logout } = useAuth();
   const nav = useNavigate();
   const [activeTab, setActiveTab] = useState('profile'); // profile, courses, certificates
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
@@ -34,7 +34,6 @@ export default function MyProfile() {
 
   // Course history
   const [courses, setCourses] = useState([]);
-  const [coursesLoading, setCoursesLoading] = useState(false);
 
   // Logout confirmation
   const [logoutOpen, setLogoutOpen] = useState(false);
@@ -45,26 +44,31 @@ export default function MyProfile() {
       setUser(res.data.user);
       setProfileData(res.data.user);
       setNewEmail(res.data.user.email);
+      setError('');
     } catch (e) {
-      setError('Gagal memuat profil');
+      const errMsg = e?.response?.data?.error?.message || 'Gagal memuat profil';
+      setError(errMsg);
+      console.error('Load profile error:', e);
     }
   }
 
   async function loadCourses() {
-    setCoursesLoading(true);
     try {
-      const res = await api.get('/courses/my-courses'); // Assuming this endpoint exists
+      const res = await api.get('/courses/my-courses');
       setCourses(res.data.courses || []);
     } catch (e) {
-      console.log('Courses endpoint not available');
-    } finally {
-      setCoursesLoading(false);
+      console.log('Courses endpoint not available or error:', e?.response?.data?.error?.message);
     }
   }
 
   useEffect(() => {
-    loadProfile();
-    loadCourses();
+    async function init() {
+      setLoading(true);
+      await loadProfile();
+      await loadCourses();
+      setLoading(false);
+    }
+    init();
   }, []);
 
   async function saveProfile() {
@@ -150,7 +154,19 @@ export default function MyProfile() {
     handleLogout();
   }
 
-  if (!user) return <div className="py-10 text-center">Memuat...</div>;
+  if (loading) return <div className="py-10 text-center text-slate-600">Memuat data...</div>;
+
+  if (error || !user) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center p-4">
+        <div className="bg-rose-50 border border-rose-200 rounded p-6 max-w-md w-full">
+          <h2 className="text-lg font-bold text-rose-900 mb-2">⚠️ Error</h2>
+          <p className="text-sm text-rose-700 mb-4">{error || 'Gagal memuat profil. Silakan login ulang.'}</p>
+          <a href="/login" className="text-sm text-rose-600 hover:text-rose-700 underline">Kembali ke Login</a>
+        </div>
+      </div>
+    );
+  }
 
   const purchasedCourses = courses.filter((c) => user.purchasedCourseIds?.includes(c._id));
   const completedCourses = courses.filter((c) => user.completedCourseIds?.includes(c._id));
