@@ -18,6 +18,7 @@ export default function Courses() {
   const [courses, setCourses] = useState([]);
   const [purchasedCourseIds, setPurchasedCourseIds] = useState(new Set());
   const [completedCourseIds, setCompletedCourseIds] = useState(new Set());
+  const [activeCourseId, setActiveCourseId] = useState(null);
   const [slides, setSlides] = useState([]);
   const [q, setQ] = useState('');
   const [error, setError] = useState('');
@@ -37,6 +38,7 @@ export default function Courses() {
         if (!cancelled) {
           setPurchasedCourseIds(new Set());
           setCompletedCourseIds(new Set());
+          setActiveCourseId(null);
         }
         return;
       }
@@ -45,14 +47,17 @@ export default function Courses() {
         const [myRes, progRes] = await Promise.all([api.get('/courses/my-courses'), api.get('/progress/me')]);
         const purchasedIds = new Set((myRes.data.courses || []).map((c) => c._id));
         const completedIds = new Set((progRes.data.completedCourseIds || []).map((x) => String(x)));
+        const activeId = progRes.data.activeCourseId ? String(progRes.data.activeCourseId) : null;
         if (!cancelled) {
           setPurchasedCourseIds(purchasedIds);
           setCompletedCourseIds(completedIds);
+          setActiveCourseId(activeId);
         }
       } catch {
         if (!cancelled) {
           setPurchasedCourseIds(new Set());
           setCompletedCourseIds(new Set());
+          setActiveCourseId(null);
         }
       }
     }
@@ -105,6 +110,7 @@ export default function Courses() {
             const isFree = !c.priceIdr || c.priceIdr === 0;
             const isPurchased = purchasedCourseIds.has(c._id);
             const isCompleted = completedCourseIds.has(String(c._id));
+            const isOngoing = isAuthed && activeCourseId && String(c._id) === String(activeCourseId) && !isCompleted;
             const shouldBeGrayed = isAuthed && !isFree && !isPurchased;
 
             return (
@@ -119,6 +125,13 @@ export default function Courses() {
                   >
                     <span aria-hidden="true">✓</span>
                     <span>SELESAI</span>
+                  </div>
+                ) : isOngoing ? (
+                  <div
+                    className="absolute right-3 top-3 rounded-full bg-amber-500 px-2 py-1 text-[11px] font-extrabold text-white"
+                    aria-label="Course sedang dikerjakan"
+                  >
+                    ON GOING
                   </div>
                 ) : null}
                 <div className="aspect-[16/9] overflow-hidden bg-slate-100">
