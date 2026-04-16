@@ -16,7 +16,7 @@ export default function CourseManager() {
 
   const selected = useMemo(() => courses.find((c) => c._id === selectedId) || null, [courses, selectedId]);
 
-  const [courseForm, setCourseForm] = useState({ title: '', description: '', coverImageUrl: '', isPublished: false });
+  const [courseForm, setCourseForm] = useState({ title: '', description: '', coverImageUrl: '', priceIdr: 0, isPublished: false });
   const [coverUploading, setCoverUploading] = useState(false);
   const [coverUploadingForSelected, setCoverUploadingForSelected] = useState(false);
   const [selectedCoverDraft, setSelectedCoverDraft] = useState('');
@@ -219,7 +219,7 @@ export default function CourseManager() {
       const res = await api.post('/courses', courseForm);
       await loadCourses();
       setSelectedId(res.data.course._id);
-      setCourseForm({ title: '', description: '', coverImageUrl: '', isPublished: false });
+      setCourseForm({ title: '', description: '', coverImageUrl: '', priceIdr: 0, isPublished: false });
     } catch (e) {
       setError(e?.response?.data?.error?.message || 'Gagal membuat course');
     }
@@ -633,6 +633,19 @@ export default function CourseManager() {
                       }}
                     />
                     {coverUploading ? <div className="text-xs text-slate-600">Uploading...</div> : null}
+                  </div>
+                </div>
+                <div>
+                  <Label>Harga (Rp)</Label>
+                  <div className="mt-1">
+                    <Input
+                      type="number"
+                      min="0"
+                      step="10000"
+                      value={courseForm.priceIdr}
+                      onChange={(e) => setCourseForm((f) => ({ ...f, priceIdr: parseInt(e.target.value) || 0 }))}
+                      placeholder="0 untuk gratis"
+                    />
                   </div>
                 </div>
                 <div className="flex items-center gap-2">

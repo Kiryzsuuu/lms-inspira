@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { HeroCarousel } from '../components/HeroCarousel';
 import { Card, Container, Button, Input } from '../components/ui';
 import { useAuth } from '../lib/auth';
@@ -14,7 +14,9 @@ function formatIdr(n) {
 
 export default function Courses() {
   const { api, role, isAuthed } = useAuth();
+  const nav = useNavigate();
   const [courses, setCourses] = useState([]);
+  const [purchasedCourseIds, setPurchasedCourseIds] = useState(new Set());
   const [slides, setSlides] = useState([]);
   const [q, setQ] = useState('');
   const [error, setError] = useState('');
@@ -22,7 +24,17 @@ export default function Courses() {
   useEffect(() => {
     api.get('/heroes').then((res) => setSlides(res.data.slides)).catch(() => setSlides([]));
     api.get('/courses').then((res) => setCourses(res.data.courses)).catch(() => setCourses([]));
-  }, []);
+
+    // Load purchased courses if authed
+    if (isAuthed) {
+      api.get('/courses/my-courses')
+        .then((res) => {
+          const ids = new Set((res.data.courses || []).map(c => c._id));
+          setPurchasedCourseIds(ids);
+        })
+        .catch(() => setPurchasedCourseIds(new Set()));
+    }
+  }, [isAuthed]);
 
   async function addToCart(courseId) {
     setError('');
@@ -74,15 +86,34 @@ export default function Courses() {
               </div>
               <div className="mt-1 text-sm font-semibold text-slate-900">Rp {formatIdr(c.priceIdr || 0)}</div>
 
-              <div className="mt-auto pt-4">
-                <Link to={`/courses/${c._id}`}>
-                  <Button className="w-full">Buka</Button>
-                </Link>
-                {isAuthed && role === 'student' ? (
-                  <Button variant="outline" className="w-full" onClick={() => addToCart(c._id)}>
-                    Tambah ke Cart
+              <div className="mt-auto pt-4 flex gap-2 flex-col sm:flex-row">
+                {!isAuthed ? (
+                  <Button
+                    className="w-full"
+                    onClick={() => nav('/login')}
+                  >
+                    Login untuk Lihat
                   </Button>
-                ) : null}
+                ) : purchasedCourseIds.has(c._id) ? (
+                  <Link to={`/courses/${c._id}`} className="w-full">
+                    <Button className="w-full">Buka</Button>
+                  </Link>
+                ) : (
+                  <>
+                    <Link to={`/courses/${c._id}`} className="flex-1">
+                      <Button variant="outline" className="w-full">Detail</Button>
+                    </Link>
+                    {role === 'student' && (
+                      <Button
+                        variant="default"
+                        className="flex-1"
+                        onClick={() => addToCart(c._id)}
+                      >
+                        Tambah ke Cart
+                      </Button>
+                    )}
+                  </>
+                )}
               </div>
             </Card>
           ))}
