@@ -218,12 +218,7 @@ export default function MyProfile() {
                 <div className="space-y-6 flex flex-col">
                   {/* Informasi Dasar */}
                   <Card className="p-6 border border-slate-200 shadow-sm hover:shadow-md transition-shadow flex-1">
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="w-10 h-10 rounded-lg bg-orange-100 flex items-center justify-center">
-                        <span className="text-lg">👤</span>
-                      </div>
-                      <h2 className="text-lg font-bold text-slate-900">Informasi Dasar</h2>
-                    </div>
+                    <h2 className="text-lg font-bold text-slate-900 mb-4">Informasi Dasar</h2>
                     <div className="mt-4 space-y-4 text-sm">
                       <div className="pb-3 border-b border-slate-100">
                         <span className="text-slate-600 text-xs uppercase tracking-wider">Username</span>
@@ -243,12 +238,7 @@ export default function MyProfile() {
                   {/* Profil Pribadi */}
                   <Card className="p-6 border border-slate-200 shadow-sm hover:shadow-md transition-shadow flex-1">
                     <div className="flex items-center justify-between gap-4 mb-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
-                          <span className="text-lg">📋</span>
-                        </div>
-                        <h2 className="text-lg font-bold text-slate-900">Profil Pribadi</h2>
-                      </div>
+                      <h2 className="text-lg font-bold text-slate-900">Profil Pribadi</h2>
                       {!editingProfile && (
                         <Button
                           variant="outline"
@@ -371,12 +361,7 @@ export default function MyProfile() {
                   {/* Email Management */}
                   <Card className="p-6 border border-slate-200 shadow-sm hover:shadow-md transition-shadow flex-1">
                     <div className="flex items-center justify-between gap-4 mb-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
-                          <span className="text-lg">✉️</span>
-                        </div>
-                        <h2 className="text-lg font-bold text-slate-900">Update Email</h2>
-                      </div>
+                      <h2 className="text-lg font-bold text-slate-900">Update Email</h2>
                       {!editingEmail && (
                         <Button
                           variant="outline"
@@ -430,12 +415,7 @@ export default function MyProfile() {
                   {/* Password Management */}
                   <Card className="p-6 border border-slate-200 shadow-sm hover:shadow-md transition-shadow flex-1">
                     <div className="flex items-center justify-between gap-4 mb-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center">
-                          <span className="text-lg">🔐</span>
-                        </div>
-                        <h2 className="text-lg font-bold text-slate-900">Update Password</h2>
-                      </div>
+                      <h2 className="text-lg font-bold text-slate-900">Update Password</h2>
                       {!editingPassword && (
                         <Button
                           variant="outline"
@@ -550,29 +530,29 @@ export default function MyProfile() {
                 </Card>
               )}
 
-              {/* Sudah Dibeli */}
+              {/* Riwayat Courses - Selesai */}
               <div>
                 <h3 className="font-bold text-slate-900 mb-3">
-                  Course yang Sudah Dibeli <span className="text-sm text-slate-600">({purchasedCourses.length})</span>
+                  Course yang Selesai <span className="text-sm text-slate-600">({completedCourses.length})</span>
                 </h3>
-                {purchasedCourses.length > 0 ? (
+                {completedCourses.length > 0 ? (
                   <div className="grid gap-3">
-                    {purchasedCourses.map((c) => (
-                      <Card key={c._id} className="p-4 border border-slate-200">
+                    {completedCourses.map((c) => (
+                      <Card key={c._id} className="p-4 border border-slate-200 border-l-4 border-l-green-500">
                         <div className="flex items-start justify-between gap-3">
                           <div>
-                            <h4 className="font-semibold text-slate-900">{c.title}</h4>
+                            <h4 className="font-semibold text-slate-900">✓ {c.title}</h4>
                             <p className="mt-1 text-sm text-slate-600">{c.description}</p>
                           </div>
-                          <span className="text-xs font-medium bg-blue-100 text-blue-900 px-2 py-1 rounded">
-                            {completedCourses.includes(c) ? 'Selesai' : 'Sedang'}
+                          <span className="text-xs font-medium bg-green-100 text-green-900 px-2 py-1 rounded">
+                            Selesai
                           </span>
                         </div>
                       </Card>
                     ))}
                   </div>
                 ) : (
-                  <p className="text-sm text-slate-600">Belum ada course</p>
+                  <p className="text-sm text-slate-600">Belum ada course yang diselesaikan.</p>
                 )}
               </div>
             </div>
