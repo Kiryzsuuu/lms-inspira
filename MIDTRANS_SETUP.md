@@ -26,7 +26,7 @@ MIDTRANS_IS_PRODUCTION=false
 Returns Midtrans client configuration
 ```json
 {
-  "clientKey": "your-sandbox-client-key",
+  "clientKey": "(your sandbox client key)",
   "isProduction": false
 }
 ```

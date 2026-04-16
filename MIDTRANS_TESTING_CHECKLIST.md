@@ -3,7 +3,7 @@
 ## System Status ✅
 
 **Environment:** Sandbox (Test Mode)
-- **Server Key:** your-sandbox-server-key
+- **Server Key:** (your sandbox server key)
 - **Client Key:** (your sandbox client key)
 - **Merchant ID:** M377060101
 - **Servers:** Running
@@ -120,7 +120,7 @@ curl -X POST http://localhost:4000/api/auth/login \
 curl -X GET http://localhost:4000/api/payments/config \
   -H "Authorization: Bearer <JWT_TOKEN>"
 
-# Expected: { "clientKey": "your-sandbox-client-key", "isProduction": false }
+# Expected: { "clientKey": "(your sandbox client key)", "isProduction": false }
 ```
 
 ### Test 2: Checkout Flow (UI)
