@@ -17,6 +17,9 @@ import HeroManager from './pages/dashboard/HeroManager';
 import CourseManager from './pages/dashboard/CourseManager';
 import UserManager from './pages/dashboard/UserManager';
 import Accounting from './pages/dashboard/Accounting';
+import QuestionBankManager from './pages/dashboard/QuestionBankManager';
+import StudentProgressMonitor from './pages/dashboard/StudentProgressMonitor';
+import AssignmentSubmit from './pages/AssignmentSubmit';
 import { RequireAuth } from './components/RequireAuth';
 import { Container } from './components/ui';
 
@@ -90,6 +93,30 @@ export default function App() {
           element={
             <RequireAuth roles={['admin']}>
               <Accounting />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/dashboard/question-bank"
+          element={
+            <RequireAuth roles={['admin', 'teacher']}>
+              <QuestionBankManager />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/dashboard/student-progress"
+          element={
+            <RequireAuth roles={['admin', 'teacher']}>
+              <StudentProgressMonitor />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/assignment/:assignmentId"
+          element={
+            <RequireAuth roles={['student']}>
+              <AssignmentSubmit />
             </RequireAuth>
           }
         />

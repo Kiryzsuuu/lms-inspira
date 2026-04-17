@@ -39,6 +39,16 @@ export default function Dashboard() {
                 </Link>
               </div>
             )}
+            {(role === 'admin' || role === 'teacher') && (
+              <div className="mt-2 flex flex-col gap-2 sm:flex-row">
+                <Link to="/dashboard/question-bank" className="flex-1">
+                  <Button className="w-full">Bank Soal</Button>
+                </Link>
+                <Link to="/dashboard/student-progress" className="flex-1">
+                  <Button variant="outline" className="w-full">Monitor Siswa</Button>
+                </Link>
+              </div>
+            )}
           </Card>
         </div>
 
