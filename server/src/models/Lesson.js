@@ -35,6 +35,7 @@ const lessonSchema = new mongoose.Schema(
       default: [],
     },
     quizId: { type: mongoose.Schema.Types.ObjectId, ref: 'Quiz' },
+    assignmentId: { type: mongoose.Schema.Types.ObjectId, ref: 'Assignment' },
     assignment: {
       instructionsHtml: { type: String, default: '' },
       openAt: { type: Date },

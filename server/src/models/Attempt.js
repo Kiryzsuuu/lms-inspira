@@ -4,6 +4,7 @@ const attemptSchema = new mongoose.Schema(
   {
     quizId: { type: mongoose.Schema.Types.ObjectId, ref: 'Quiz', required: true, index: true },
     userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
+    attemptNumber: { type: Number, default: 1, min: 1 },
     startedAt: { type: Date, default: Date.now, index: true },
     questionOrder: {
       type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Question' }],
@@ -37,6 +38,6 @@ const attemptSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-attemptSchema.index({ quizId: 1, userId: 1, createdAt: -1 });
+attemptSchema.index({ quizId: 1, userId: 1, attemptNumber: 1 });
 
 module.exports = { Attempt: mongoose.model('Attempt', attemptSchema) };
