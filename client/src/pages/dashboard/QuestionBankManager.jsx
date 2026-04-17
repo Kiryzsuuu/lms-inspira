@@ -86,6 +86,49 @@ export default function QuestionBankManager() {
     URL.revokeObjectURL(url);
   };
 
+  const exportAllQuestions = () => {
+    if (questions.length === 0) {
+      setError('Tidak ada soal untuk disimpan');
+      return;
+    }
+
+    let content = '';
+
+    questions.forEach((question, idx) => {
+      if (idx > 0) content += '\n\n';
+
+      if (question.type === 'mcq') {
+        content += `Soal ${idx + 1}\n`;
+        content += `${stripHtml(question.promptHtml || question.prompt || '')}\n`;
+        question.choices?.forEach((choice) => {
+          content += `${choice.id}. ${choice.text}\n`;
+        });
+        content += `ANSWER: ${question.correctChoiceId}\n`;
+      } else if (question.type === 'essay') {
+        content += `Soal ${idx + 1} (Essay)\n`;
+        content += `${stripHtml(question.promptHtml || question.prompt || '')}\n`;
+        if (question.rubric) {
+          content += `JAWABAN: ${question.rubric}\n`;
+        }
+      } else if (question.type === 'matching') {
+        content += `Soal ${idx + 1} (Matching)\n`;
+        content += `${stripHtml(question.promptHtml || question.prompt || '')}\n`;
+        question.pairs?.forEach((pair) => {
+          content += `${pair.left} -> ${pair.right}\n`;
+        });
+      }
+    });
+
+    const blob = new Blob([content], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${selectedCollection?.title.replace(/\s+/g, '_')}_${questions.length}_soal.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+    setSuccess(`${questions.length} soal berhasil disimpan`);
+  };
+
   const stripHtml = (html) => String(html || '').replace(/<[^>]*>/g, '').trim();
 
   useEffect(() => {
@@ -499,7 +542,17 @@ export default function QuestionBankManager() {
 
                 {/* Questions List */}
                 <Card className="p-6">
-                  <h3 className="font-semibold mb-4 text-slate-900">Soal dalam Koleksi ({questions.length})</h3>
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="font-semibold text-slate-900">Soal dalam Koleksi ({questions.length})</h3>
+                    {questions.length > 0 && (
+                      <Button
+                        onClick={exportAllQuestions}
+                        className="text-sm"
+                      >
+                        Simpan Koleksi
+                      </Button>
+                    )}
+                  </div>
 
                   <div className="space-y-4 max-h-96 overflow-y-auto">
                     {questions.map((question, idx) => (
