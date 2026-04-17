@@ -628,6 +628,36 @@ export default function CourseManager() {
     }
   }
 
+  function handleTypeChange(newType) {
+    setQuestionForm((f) => {
+      let updated = { ...f, type: newType };
+      
+      if (newType === 'essay') {
+        // Reset untuk essay: clear choices & pairs, set rubric
+        updated.choices = [{ id: 'a', text: '' }, { id: 'b', text: '' }, { id: 'c', text: '' }, { id: 'd', text: '' }];
+        updated.correctChoiceId = '';
+        updated.pairs = [{ left: '', right: '' }, { left: '', right: '' }];
+        updated.rubric = f.rubric || '<p>Rubrik penilaian...</p>';
+      } else if (newType === 'matching') {
+        // Reset untuk matching: clear choices, keep pairs
+        updated.choices = [{ id: 'a', text: '' }, { id: 'b', text: '' }, { id: 'c', text: '' }, { id: 'd', text: '' }];
+        updated.correctChoiceId = '';
+        updated.rubric = '';
+        if (!f.pairs || f.pairs.length === 0) {
+          updated.pairs = [{ left: '', right: '' }, { left: '', right: '' }];
+        }
+      } else {
+        // Reset untuk MCQ: reset choices to 4 empty, clear pairs
+        updated.choices = [{ id: 'a', text: '' }, { id: 'b', text: '' }, { id: 'c', text: '' }, { id: 'd', text: '' }];
+        updated.correctChoiceId = 'a';
+        updated.pairs = [{ left: '', right: '' }, { left: '', right: '' }];
+        updated.rubric = '';
+      }
+      
+      return updated;
+    });
+  }
+
   return (
     <section className="flex h-[calc(100vh-4rem)] flex-col overflow-hidden">
       <ConfirmDialog
@@ -1347,7 +1377,7 @@ export default function CourseManager() {
                                 <select
                                   className="w-full border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400"
                                   value={questionForm.type}
-                                  onChange={(e) => setQuestionForm((f) => ({ ...f, type: e.target.value }))}
+                                  onChange={(e) => handleTypeChange(e.target.value)}
                                 >
                                   <option value="mcq">Pilihan ganda</option>
                                   <option value="essay">Essay</option>

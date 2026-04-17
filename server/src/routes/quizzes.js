@@ -227,40 +227,58 @@ function quizzesRouter({ requireAuth, requireRole }) {
 
       const schema = z
         .object({
-          type: z.enum(['mcq', 'essay', 'matching']).optional().default('mcq'),
-          prompt: z.string().optional().default(''),
-          promptHtml: z.string().optional().default(''),
-          choices: z.array(z.object({ id: z.string().min(1), text: z.string().min(1) })).optional().default([]),
-          correctChoiceId: z.string().optional().default(''),
+          type: z.enum(['mcq', 'essay', 'matching']).optional(),
+          prompt: z.string().optional(),
+          promptHtml: z.string().optional(),
+          choices: z.array(z.object({ id: z.string().min(1), text: z.string().min(1) })).optional(),
+          correctChoiceId: z.string().optional(),
           pairs: z
             .array(z.object({ left: z.string().min(1), right: z.string().min(1) }))
-            .optional()
-            .default([]),
-          rubric: z.string().optional().default(''),
-          order: z.coerce.number().optional().default(0),
+            .optional(),
+          rubric: z.string().optional(),
+          order: z.coerce.number().optional(),
         })
         .superRefine((val, ctx) => {
-          const promptOk = (val.promptHtml && val.promptHtml.trim()) || (val.prompt && val.prompt.trim());
-          if (!promptOk) ctx.addIssue({ code: 'custom', path: ['prompt'], message: 'prompt is required' });
-          if (val.type === 'mcq') {
-            if (!Array.isArray(val.choices) || val.choices.length < 2) {
-              ctx.addIssue({ code: 'custom', path: ['choices'], message: 'choices must have at least 2 items' });
-            }
-            if (!val.correctChoiceId) {
-              ctx.addIssue({ code: 'custom', path: ['correctChoiceId'], message: 'correctChoiceId is required' });
-            }
+          // Only validate content fields if prompt/promptHtml is being updated
+          if ('promptHtml' in val || 'prompt' in val) {
+            const promptOk = (val.promptHtml && val.promptHtml.trim()) || (val.prompt && val.prompt.trim());
+            if (!promptOk) ctx.addIssue({ code: 'custom', path: ['prompt'], message: 'prompt is required' });
           }
-          if (val.type === 'matching') {
-            if (!Array.isArray(val.pairs) || val.pairs.length < 2) {
-              ctx.addIssue({ code: 'custom', path: ['pairs'], message: 'pairs must have at least 2 items' });
+
+          // Only validate type-specific fields if they're being updated
+          if ('type' in val || 'choices' in val || 'correctChoiceId' in val || 'pairs' in val) {
+            const type = val.type || 'mcq';
+            
+            if (type === 'mcq') {
+              if ('choices' in val) {
+                if (!Array.isArray(val.choices) || val.choices.length < 2) {
+                  ctx.addIssue({ code: 'custom', path: ['choices'], message: 'choices must have at least 2 items' });
+                }
+              }
+              if ('correctChoiceId' in val && !val.correctChoiceId) {
+                ctx.addIssue({ code: 'custom', path: ['correctChoiceId'], message: 'correctChoiceId is required' });
+              }
+            }
+            
+            if (type === 'matching') {
+              if ('pairs' in val) {
+                if (!Array.isArray(val.pairs) || val.pairs.length < 2) {
+                  ctx.addIssue({ code: 'custom', path: ['pairs'], message: 'pairs must have at least 2 items' });
+                }
+              }
             }
           }
         });
       const data = schema.parse(req.body);
+      
+      // Remove undefined fields so MongoDB only updates what was provided
+      const updateData = Object.fromEntries(
+        Object.entries(data).filter(([_, v]) => v !== undefined)
+      );
 
       const question = await Question.findOneAndUpdate(
         { _id: req.params.questionId, quizId: quiz._id },
-        data,
+        updateData,
         { new: true }
       );
       if (!question) throw new HttpError(404, 'Question not found');
