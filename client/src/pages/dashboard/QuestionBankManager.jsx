@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Card, Container, Button, Input, Textarea, Label } from '../../components/ui';
 import { useAuth } from '../../lib/auth';
 
 export default function QuestionBankManager() {
@@ -259,69 +260,75 @@ export default function QuestionBankManager() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 p-6">
-      <div className="max-w-7xl mx-auto">
+    <section className="py-10">
+      <Container>
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold text-gray-900">Bank Soal</h1>
-          <button
-            onClick={() => setShowNewCollectionModal(true)}
-            className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
-          >
+          <div>
+            <h1 className="text-3xl font-extrabold tracking-tight">Bank Soal</h1>
+            <p className="mt-1 text-sm text-slate-600">Kelola koleksi soal dan impor pertanyaan</p>
+          </div>
+          <Button onClick={() => setShowNewCollectionModal(true)}>
             ➕ Koleksi Baru
-          </button>
+          </Button>
         </div>
 
         {error && (
-          <div className="mb-4 p-4 bg-red-100 text-red-700 rounded-lg flex justify-between items-center">
-            <span>{error}</span>
-            <button onClick={() => setError(null)}>
-              <X size={20} />
-            </button>
-          </div>
+          <Card className="mb-6 p-4 border-l-4 border-l-red-500 bg-red-50">
+            <div className="flex justify-between items-center">
+              <span className="text-red-700 font-medium">{error}</span>
+              <button onClick={() => setError(null)} className="text-sm text-red-600 hover:text-red-800 font-medium">
+                Tutup
+              </button>
+            </div>
+          </Card>
         )}
 
         {success && (
-          <div className="mb-4 p-4 bg-green-100 text-green-700 rounded-lg flex justify-between items-center">
-            <div className="flex items-center gap-2">
-              <CheckCircle size={20} /> {success}
+          <Card className="mb-6 p-4 border-l-4 border-l-green-500 bg-green-50">
+            <div className="flex justify-between items-center">
+              <div className="flex items-center gap-2">
+                <span className="text-2xl">✓</span>
+                <span className="text-green-700 font-medium">{success}</span>
+              </div>
+              <button onClick={() => setSuccess(null)} className="text-sm text-green-600 hover:text-green-800 font-medium">
+                Tutup
+              </button>
             </div>
-            <button onClick={() => setSuccess(null)}>
-              <X size={20} />
-            </button>
-          </div>
+          </Card>
         )}
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Collections List */}
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-lg shadow p-4">
-              <h2 className="text-lg font-semibold mb-4">Koleksi</h2>
+            <Card className="p-4">
+              <h2 className="font-semibold mb-4 text-slate-900">Koleksi</h2>
               <div className="space-y-2 max-h-96 overflow-y-auto">
                 {collections.map((col) => (
-                  <div
+                  <button
                     key={col._id}
                     onClick={() => setSelectedCollection(col)}
-                    className={`p-3 rounded-lg cursor-pointer transition ${
+                    className={`w-full text-left p-3 rounded-lg transition ${
                       selectedCollection?._id === col._id
                         ? 'bg-blue-600 text-white'
-                        : 'bg-gray-100 hover:bg-gray-200'
+                        : 'bg-slate-50 hover:bg-slate-100 text-slate-900'
                     }`}
                   >
                     <div className="font-medium text-sm">{col.title}</div>
                     <div className="text-xs opacity-75 mt-1">{col.numQuestions || 0} soal</div>
-                  </div>
+                  </button>
                 ))}
               </div>
 
               {selectedCollection && (
-                <button
+                <Button
                   onClick={() => deleteCollection(selectedCollection._id)}
-                  className="mt-4 w-full px-3 py-2 bg-red-100 text-red-700 rounded hover:bg-red-200 text-sm"
+                  variant="destructive"
+                  className="mt-4 w-full text-sm"
                 >
                   Hapus Koleksi
-                </button>
+                </Button>
               )}
-            </div>
+            </Card>
           </div>
 
           {/* Questions and Form */}
@@ -329,35 +336,32 @@ export default function QuestionBankManager() {
             {selectedCollection ? (
               <div className="space-y-6">
                 {/* Import Button */}
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <button
-                    onClick={() => setShowImportModal(true)}
-                    className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
-                  >
-                    <Upload size={20} /> Impor dari TXT
-                  </button>
-                  <p className="text-sm text-gray-600 mt-2">Format Ayken: Soal X / A. Opsi / Jawaban: A</p>
-                </div>
+                <Card className="p-4 border border-blue-200 bg-blue-50">
+                  <Button onClick={() => setShowImportModal(true)}>
+                    ⬆️ Impor dari TXT
+                  </Button>
+                  <p className="text-sm text-slate-600 mt-2">Format Ayken: Soal X / A. Opsi / Jawaban: A</p>
+                </Card>
 
                 {/* Add Question Form */}
-                <div className="bg-white rounded-lg shadow p-6">
-                  <h3 className="text-lg font-semibold mb-4">Tambah Soal</h3>
+                <Card className="p-6">
+                  <h3 className="font-semibold mb-4 text-slate-900">Tambah Soal</h3>
 
                   <div className="space-y-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Pertanyaan</label>
-                      <textarea
+                      <Label className="text-sm font-medium text-slate-700 mb-1">Pertanyaan</Label>
+                      <Textarea
                         value={questionForm.question}
                         onChange={(e) => setQuestionForm({ ...questionForm, question: e.target.value })}
                         placeholder="Masukkan pertanyaan"
-                        className="w-full border border-gray-300 rounded-lg p-2"
-                        rows="3"
+                        className="w-full"
+                        rows={3}
                       />
                     </div>
 
                     {questionForm.type === 'mcq' && (
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Opsi</label>
+                        <Label className="text-sm font-medium text-slate-700 mb-2">Opsi</Label>
                         {questionForm.options.map((option, idx) => (
                           <div key={option.id} className="flex gap-2 mb-2">
                             <input
@@ -368,67 +372,66 @@ export default function QuestionBankManager() {
                               onChange={(e) => setQuestionForm({ ...questionForm, correctAnswer: e.target.value })}
                               className="mt-2"
                             />
-                            <input
+                            <Input
                               type="text"
                               value={option.text}
                               onChange={(e) => updateOption(idx, e.target.value)}
                               placeholder={`Opsi ${String.fromCharCode(65 + idx)}`}
-                              className="flex-1 border border-gray-300 rounded-lg p-2"
                             />
                           </div>
                         ))}
-                        <button
+                        <Button
                           onClick={addOption}
-                          className="mt-2 text-sm text-blue-600 hover:text-blue-700 font-medium"
+                          variant="ghost"
+                          size="sm"
+                          className="mt-2"
                         >
                           + Tambah Opsi
-                        </button>
+                        </Button>
                       </div>
                     )}
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Penjelasan (Opsional)</label>
-                      <textarea
+                      <Label className="text-sm font-medium text-slate-700 mb-1">Penjelasan (Opsional)</Label>
+                      <Textarea
                         value={questionForm.explanation}
                         onChange={(e) => setQuestionForm({ ...questionForm, explanation: e.target.value })}
                         placeholder="Penjelasan jawaban"
-                        className="w-full border border-gray-300 rounded-lg p-2"
-                        rows="2"
+                        rows={2}
                       />
                     </div>
 
                     <div className="flex gap-2">
-                      <button
+                      <Button
                         onClick={addQuestion}
                         disabled={loading}
-                        className="flex-1 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 disabled:opacity-50"
                       >
                         {loading ? 'Menyimpan...' : 'Simpan Soal'}
-                      </button>
-                      <button
+                      </Button>
+                      <Button
                         onClick={resetQuestionForm}
-                        className="flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400"
+                        variant="outline"
                       >
                         Reset
-                      </button>
+                      </Button>
                     </div>
                   </div>
-                </div>
+                </Card>
 
                 {/* Questions List */}
-                <div className="bg-white rounded-lg shadow p-6">
-                  <h3 className="text-lg font-semibold mb-4">Soal dalam Koleksi ({questions.length})</h3>
+                <Card className="p-6">
+                  <h3 className="font-semibold mb-4 text-slate-900">Soal dalam Koleksi ({questions.length})</h3>
 
                   <div className="space-y-4 max-h-96 overflow-y-auto">
                     {questions.map((question, idx) => (
-                      <div key={question._id} className="border border-gray-200 rounded-lg p-4">
+                      <div key={question._id} className="border border-slate-200 rounded-lg p-4">
                         <div className="flex justify-between items-start mb-2">
                           <div className="flex-1">
-                            <div className="font-medium text-sm text-gray-900">
+                            <div className="font-medium text-sm text-slate-900">
                               {idx + 1}. {question.prompt}
                             </div>
                             {question.type === 'mcq' && question.choices && (
-                              <div className="mt-2 space-y-1 text-sm text-gray-600">
+                              <div className="mt-2 space-y-1 text-sm text-slate-600">
                                 {question.choices.map((choice, idx) => (
                                   <div
                                     key={choice.id}
@@ -443,89 +446,87 @@ export default function QuestionBankManager() {
                           </div>
                           <button
                             onClick={() => deleteQuestion(question._id)}
-                            className="text-red-600 hover:text-red-700 ml-2"
+                            className="text-red-600 hover:text-red-700 ml-2 font-medium"
                           >
-                            <Trash2 size={18} />
+                            🗑️
                           </button>
                         </div>
                       </div>
                     ))}
                   </div>
-                </div>
+                </Card>
               </div>
             ) : (
-              <div className="bg-white rounded-lg shadow p-12 text-center text-gray-500">
-                <p>Pilih koleksi atau buat koleksi baru</p>
-              </div>
+              <Card className="p-12 text-center">
+                <p className="text-slate-500">Pilih koleksi atau buat koleksi baru</p>
+              </Card>
             )}
           </div>
         </div>
-      </div>
 
       {/* New Collection Modal */}
       {showNewCollectionModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+          <Card className="max-w-md w-full p-6">
             <h2 className="text-xl font-bold mb-4">Koleksi Baru</h2>
-            <input
+            <Input
               type="text"
               value={newCollectionName}
               onChange={(e) => setNewCollectionName(e.target.value)}
               placeholder="Nama koleksi"
-              className="w-full border border-gray-300 rounded-lg p-2 mb-4"
+              className="mb-4"
               onKeyPress={(e) => e.key === 'Enter' && createCollection()}
             />
             <div className="flex gap-2">
-              <button
+              <Button
                 onClick={createCollection}
                 disabled={loading}
-                className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
               >
                 {loading ? 'Membuat...' : 'Buat'}
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={() => setShowNewCollectionModal(false)}
-                className="flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400"
+                variant="outline"
               >
                 Batal
-              </button>
+              </Button>
             </div>
-          </div>
+          </Card>
         </div>
       )}
 
       {/* Import Modal */}
       {showImportModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+          <Card className="max-w-md w-full p-6">
             <h2 className="text-xl font-bold mb-4">Impor Soal dari TXT</h2>
-            <p className="text-sm text-gray-600 mb-4">
+            <p className="text-sm text-slate-600 mb-4">
               Format: Soal 1 / A. Opsi A / Jawaban: A
             </p>
-            <input
+            <Input
               type="file"
               accept=".txt"
               onChange={(e) => setImportFile(e.target.files?.[0] || null)}
-              className="w-full border border-gray-300 rounded-lg p-2 mb-4"
+              className="mb-4"
             />
             <div className="flex gap-2">
-              <button
+              <Button
                 onClick={importQuestions}
                 disabled={loading || !importFile}
-                className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
               >
                 {loading ? 'Mengimpor...' : 'Impor'}
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={() => setShowImportModal(false)}
-                className="flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400"
+                variant="outline"
               >
                 Batal
-              </button>
+              </Button>
             </div>
-          </div>
+          </Card>
         </div>
       )}
-    </div>
+      </Container>
+    </section>
   );
 }

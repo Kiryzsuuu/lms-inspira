@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-
+import { Card, Container, Button, Input } from '../components/ui';
 import { useAuth } from '../lib/auth';
 
 export default function AssignmentSubmit() {
@@ -140,72 +140,81 @@ export default function AssignmentSubmit() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-100">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Memuat assignment...</p>
-        </div>
-      </div>
+      <section className="py-10">
+        <Container>
+          <div className="flex items-center justify-center min-h-96">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+              <p className="mt-4 text-slate-600">Memuat assignment...</p>
+            </div>
+          </div>
+        </Container>
+      </section>
     );
   }
 
   if (!assignment) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-100">
-        <div className="text-center text-red-600">
-          <AlertCircle size={48} className="mx-auto mb-2" />
-          <p>Assignment tidak ditemukan</p>
-        </div>
-      </div>
+      <section className="py-10">
+        <Container>
+          <div className="flex items-center justify-center min-h-96">
+            <div className="text-center">
+              <div className="text-4xl mb-2">❌</div>
+              <p className="text-red-600 font-medium">Assignment tidak ditemukan</p>
+            </div>
+          </div>
+        </Container>
+      </section>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 p-6">
-      <div className="max-w-2xl mx-auto">
+    <section className="py-10">
+      <Container className="max-w-2xl">
         {error && (
-          <div className="mb-4 p-4 bg-red-100 text-red-700 rounded-lg flex justify-between items-center">
-            <span>{error}</span>
-            <button onClick={() => setError(null)}>
-              <X size={20} />
-            </button>
-          </div>
+          <Card className="mb-6 p-4 border-l-4 border-l-red-500 bg-red-50">
+            <div className="flex justify-between items-center">
+              <span className="text-red-700 font-medium">{error}</span>
+              <button onClick={() => setError(null)} className="text-sm text-red-600 hover:text-red-800 font-medium">Tutup</button>
+            </div>
+          </Card>
         )}
 
         {success && (
-          <div className="mb-4 p-4 bg-green-100 text-green-700 rounded-lg flex justify-between items-center">
-            <div className="flex items-center gap-2">
-              <CheckCircle size={20} /> {success}
+          <Card className="mb-6 p-4 border-l-4 border-l-green-500 bg-green-50">
+            <div className="flex justify-between items-center">
+              <div className="flex items-center gap-2">
+                <span className="text-2xl">✓</span>
+                <span className="text-green-700 font-medium">{success}</span>
+              </div>
+              <button onClick={() => setSuccess(null)} className="text-sm text-green-600 hover:text-green-800 font-medium">Tutup</button>
             </div>
-            <button onClick={() => setSuccess(null)}>
-              <X size={20} />
-            </button>
-          </div>
+          </Card>
         )}
 
         {/* Assignment Header */}
-        <div className="bg-white rounded-lg shadow p-6 mb-6">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">{assignment.title}</h1>
+        <Card className="mb-6 p-6">
+          <h1 className="text-3xl font-extrabold text-slate-900 mb-2">{assignment.title}</h1>
 
           <div className="grid grid-cols-2 gap-4 mb-4">
             <div>
-              <p className="text-sm text-gray-600">Tipe</p>
-              <p className="font-medium">
+              <p className="text-sm text-slate-600">Tipe</p>
+              <p className="font-medium text-slate-900">
                 {assignment.type === 'file_upload' ? 'Upload File' : 'Jawab Pertanyaan'}
               </p>
             </div>
             <div>
-              <p className="text-sm text-gray-600">Poin</p>
-              <p className="font-medium">{assignment.points || 100} poin</p>
+              <p className="text-sm text-slate-600">Poin</p>
+              <p className="font-medium text-slate-900">{assignment.points || 100} poin</p>
             </div>
             <div>
-              <p className="text-sm text-gray-600">Percobaan</p>
-              <p className="font-medium">
+              <p className="text-sm text-slate-600">Percobaan</p>
+              <p className="font-medium text-slate-900">
                 {assignment.attemptCount} / {assignment.maxAttempts}
               </p>
             </div>
             <div>
-              <p className="text-sm text-gray-600">Status</p>
+              <p className="text-sm text-slate-600">Status</p>
               <p className={`font-medium ${assignment.isOpen ? 'text-green-600' : 'text-red-600'}`}>
                 {assignment.isOpen ? 'Dibuka' : 'Ditutup'}
               </p>
@@ -213,17 +222,17 @@ export default function AssignmentSubmit() {
           </div>
 
           {assignment.description && (
-            <div className="bg-gray-50 p-4 rounded text-sm text-gray-700">
+            <div className="bg-slate-50 p-4 rounded text-sm text-slate-700 border border-slate-200">
               {assignment.description}
             </div>
           )}
-        </div>
+        </Card>
 
         {/* Student Submission Status */}
         {submitted && assignment.currentAttempt?.submittedAt && (
-          <div className="bg-green-50 border border-green-200 rounded-lg p-6 mb-6">
+          <Card className="mb-6 p-6 border border-green-200 bg-green-50">
             <div className="flex items-center gap-3 mb-3">
-              <CheckCircle size={24} className="text-green-600" />
+              <span className="text-3xl">✓</span>
               <h2 className="text-lg font-semibold text-green-900">Assignment Disubmit</h2>
             </div>
             <div className="space-y-2 text-sm text-green-800">
@@ -247,13 +256,14 @@ export default function AssignmentSubmit() {
                 </>
               )}
             </div>
-            <button
+            <Button
               onClick={() => navigate(-1)}
-              className="mt-4 bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700"
+              variant="outline"
+              className="mt-4"
             >
               Kembali
-            </button>
-          </div>
+            </Button>
+          </Card>
         )}
 
         {/* Submission Form */}
@@ -277,7 +287,7 @@ export default function AssignmentSubmit() {
                 </p>
               </div>
             ) : startedAttempt && assignment.currentAttempt ? (
-              <div className="bg-white rounded-lg shadow p-6 space-y-6">
+              <Card className="p-6 space-y-6">
                 {/* File Upload Assignment */}
                 {assignment.type === 'file_upload' && (
                   <div>
@@ -365,38 +375,37 @@ export default function AssignmentSubmit() {
                   </div>
                 )}
 
-                {/* Submit Button */}
-                <div className="flex gap-3">
-                  <button
-                    onClick={submitAssignment}
-                    disabled={submitting}
-                    className="flex-1 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 disabled:opacity-50 font-medium"
-                  >
-                    {submitting ? 'Menyubmit...' : 'Submit Assignment'}
-                  </button>
-                  <button
-                    onClick={() => navigate(-1)}
-                    className="px-6 py-3 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 font-medium"
-                  >
-                    Batal
-                  </button>
-                </div>
+              {/* Submit Button */}
+              <div className="flex gap-3">
+                <Button
+                  onClick={submitAssignment}
+                  disabled={submitting}
+                >
+                  {submitting ? 'Menyubmit...' : 'Submit Assignment'}
+                </Button>
+                <Button
+                  onClick={() => navigate(-1)}
+                  variant="outline"
+                >
+                  Batal
+                </Button>
               </div>
+            </Card>
             ) : (
-              <div className="bg-white rounded-lg shadow p-6 text-center">
-                <p className="text-gray-700 mb-4">Silakan mulai mengerjakan assignment</p>
-                <button
+              <Card className="p-6 text-center">
+                <div className="text-4xl mb-4">👋</div>
+                <p className="text-slate-700 mb-4">Silakan mulai mengerjakan assignment</p>
+                <Button
                   onClick={startAttempt}
                   disabled={loading}
-                  className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 disabled:opacity-50 font-medium"
                 >
                   {loading ? 'Memproses...' : 'Mulai Assignment'}
-                </button>
-              </div>
+                </Button>
+              </Card>
             )}
           </>
         )}
-      </div>
-    </div>
+      </Container>
+    </section>
   );
 }
