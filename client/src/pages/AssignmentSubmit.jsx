@@ -270,22 +270,22 @@ export default function AssignmentSubmit() {
         {!submitted && (
           <>
             {!assignment.canAttempt ? (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
-                <AlertCircle size={32} className="mx-auto mb-3 text-red-600" />
-                <p className="text-red-900 font-medium mb-2">Batas Percobaan Tercapai</p>
+              <Card className="p-6 text-center border border-red-200 bg-red-50">
+                <div className="text-4xl mb-3">❌</div>
+                <p className="text-red-900 font-semibold mb-2">Batas Percobaan Tercapai</p>
                 <p className="text-red-800 text-sm">
                   Anda telah mencapai batas maksimal percobaan ({assignment.maxAttempts}). 
                   Hubungi guru untuk reopen.
                 </p>
-              </div>
+              </Card>
             ) : !assignment.isOpen ? (
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
-                <AlertCircle size={32} className="mx-auto mb-3 text-yellow-600" />
-                <p className="text-yellow-900 font-medium mb-2">Assignment Belum Dibuka / Sudah Ditutup</p>
+              <Card className="p-6 text-center border border-yellow-200 bg-yellow-50">
+                <div className="text-4xl mb-3">⏳</div>
+                <p className="text-yellow-900 font-semibold mb-2">Assignment Belum Dibuka / Sudah Ditutup</p>
                 <p className="text-yellow-800 text-sm">
                   {assignment.openedAt && `Selesai pada: ${new Date(assignment.closedAt).toLocaleString('id-ID')}`}
                 </p>
-              </div>
+              </Card>
             ) : startedAttempt && assignment.currentAttempt ? (
               <Card className="p-6 space-y-6">
                 {/* File Upload Assignment */}
@@ -313,15 +313,15 @@ export default function AssignmentSubmit() {
                     <div className="mt-4 p-4 bg-slate-50 rounded-lg flex items-center gap-3 border border-slate-200">
                       <div className="text-2xl">📄</div>
                       <span className="text-sm text-slate-700">{filePreview}</span>
-                        <button
-                          onClick={() => {
-                            setUploadedFile(null);
-                            setFilePreview(null);
-                          }}
-                          className="ml-auto text-red-600 hover:text-red-700"
-                        >
-                          <X size={18} />
-                        </button>
+                      <button
+                        onClick={() => {
+                          setUploadedFile(null);
+                          setFilePreview(null);
+                        }}
+                        className="ml-auto text-red-600 hover:text-red-700 font-semibold"
+                      >
+                        ✕
+                      </button>
                       </div>
                     )}
                   </div>
