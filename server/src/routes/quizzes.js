@@ -296,6 +296,7 @@ function quizzesRouter({ requireAuth, requireRole }) {
         collectionId: z.string().min(1),
         count: z.coerce.number().int().min(1).max(200),
         shuffle: z.coerce.boolean().optional().default(true),
+        questionTypes: z.array(z.enum(['mcq', 'essay', 'matching'])).optional().default(['mcq', 'essay', 'matching']),
       });
       const data = schema.parse(req.body);
 
@@ -312,7 +313,12 @@ function quizzesRouter({ requireAuth, requireRole }) {
 
       const bankById = new Map(bankQuestions.map((q) => [String(q._id), q]));
       const ordered = (collection.questions || []).map((qid) => bankById.get(String(qid))).filter(Boolean);
-      const source = data.shuffle ? shuffleCopy(ordered) : ordered;
+      
+      // Filter by question types
+      const filtered = ordered.filter((q) => data.questionTypes.includes(q.type || 'mcq'));
+      if (!filtered.length) return res.json({ imported: 0 });
+      
+      const source = data.shuffle ? shuffleCopy(filtered) : filtered;
       const picked = source.slice(0, Math.min(data.count, source.length));
 
       const last = await Question.findOne({ quizId: quiz._id }).sort({ order: -1 }).select('order').lean();

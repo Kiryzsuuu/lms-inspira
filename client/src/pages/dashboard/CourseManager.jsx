@@ -86,6 +86,7 @@ export default function CourseManager() {
   const [bankCollections, setBankCollections] = useState([]);
   const [bankCollectionId, setBankCollectionId] = useState('');
   const [bankCount, setBankCount] = useState(10);
+  const [bankQuestionTypes, setBankQuestionTypes] = useState(['mcq', 'essay', 'matching']);
   const [questionForm, setQuestionForm] = useState({
     type: 'mcq',
     promptHtml: '<p>Tulis pertanyaan di sini...</p>',
@@ -230,11 +231,16 @@ export default function CourseManager() {
     e.preventDefault();
     if (!activeQuizId) return;
     setError('');
+    if (bankQuestionTypes.length === 0) {
+      setError('Pilih minimal satu tipe soal');
+      return;
+    }
     try {
       const res = await api.post(`/quizzes/${activeQuizId}/import-from-bank`, {
         collectionId: bankCollectionId,
         count: bankCount,
         shuffle: true,
+        questionTypes: bankQuestionTypes,
       });
       await loadQuestions(activeQuizId);
       const imported = Number(res.data?.imported || 0);
@@ -1216,11 +1222,39 @@ export default function CourseManager() {
                                 </div>
                               </div>
                             </div>
+
+                            <div>
+                              <Label>Tipe Soal (Campur atau pilih spesifik)</Label>
+                              <div className="mt-2 grid gap-2 sm:grid-cols-3">
+                                {[
+                                  { id: 'mcq', label: 'Pilihan Ganda' },
+                                  { id: 'essay', label: 'Essay' },
+                                  { id: 'matching', label: 'Mencocokan' },
+                                ].map((type) => (
+                                  <label key={type.id} className="flex items-center gap-2">
+                                    <input
+                                      type="checkbox"
+                                      checked={bankQuestionTypes.includes(type.id)}
+                                      onChange={(e) => {
+                                        if (e.target.checked) {
+                                          setBankQuestionTypes([...bankQuestionTypes, type.id]);
+                                        } else {
+                                          setBankQuestionTypes(bankQuestionTypes.filter((t) => t !== type.id));
+                                        }
+                                      }}
+                                      className="h-4 w-4 border border-slate-300 rounded"
+                                    />
+                                    <span className="text-sm text-slate-700">{type.label}</span>
+                                  </label>
+                                ))}
+                              </div>
+                            </div>
+
                             <div className="flex items-center gap-2">
-                              <Button type="submit" disabled={!bankCollectionId}>
+                              <Button type="submit" disabled={!bankCollectionId || bankQuestionTypes.length === 0}>
                                 Ambil Soal
                               </Button>
-                              <div className="text-xs text-slate-500">Soal ditambahkan ke quiz aktif.</div>
+                              <div className="text-xs text-slate-500">Soal dicampur & ditambahkan ke quiz aktif.</div>
                             </div>
                           </form>
 
