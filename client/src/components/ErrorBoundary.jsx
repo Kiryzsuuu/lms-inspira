@@ -12,7 +12,6 @@ export class ErrorBoundary extends Component {
   }
 
   componentDidCatch(err) {
-    // eslint-disable-next-line no-console
     console.error('App crashed:', err);
   }
 

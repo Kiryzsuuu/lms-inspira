@@ -20,6 +20,18 @@ async function assertCanEditCourse(courseId, user) {
 function coursesRouter({ requireAuth, requireRole }) {
   const router = express.Router();
 
+  // Authenticated: list courses owned by the current teacher (or all courses for admin)
+  router.get(
+    '/owned',
+    requireAuth,
+    requireRole('admin', 'teacher'),
+    asyncHandler(async (req, res) => {
+      const filter = req.user.role === 'admin' ? {} : { ownerId: req.user.sub };
+      const courses = await Course.find(filter).sort({ createdAt: -1 });
+      res.json({ courses });
+    })
+  );
+
   // Public list
   router.get(
     '/',

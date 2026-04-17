@@ -14,9 +14,6 @@ export default function QuestionBankManager() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
-
-  // Edit mode for question
-  const [editingQuestion, setEditingQuestion] = useState(null);
   const [questionForm, setQuestionForm] = useState({
     type: 'mcq',
     question: '',
@@ -71,7 +68,7 @@ export default function QuestionBankManager() {
     try {
       setLoading(true);
       await api.post('/question-bank/collections', {
-        name: newCollectionName,
+        title: newCollectionName,
       });
       setSuccess('Koleksi dibuat');
       setNewCollectionName('');
@@ -115,7 +112,7 @@ export default function QuestionBankManager() {
       setLoading(true);
       const payload = {
         type: questionForm.type,
-        prompt: questionForm.question,
+        promptHtml: questionForm.question,
         rubric: questionForm.explanation,
       };
 
@@ -176,7 +173,7 @@ export default function QuestionBankManager() {
               parsedQuestions.push(currentQuestion);
             }
             currentQuestion = {
-              question: trimmed.replace(/^Soal\s+\d+[\s\.]+/, ''),
+              question: trimmed.replace(/^Soal\s+\d+[\s.]+/, ''),
               options: [],
               correctAnswer: null,
             };
@@ -209,7 +206,7 @@ export default function QuestionBankManager() {
           const correctIdx = optionIds.indexOf(q.correctAnswer || 'A');
           const payload = {
             type: 'mcq',
-            prompt: q.question,
+            promptHtml: q.question,
             choices,
             correctChoiceId: optionIds[correctIdx] || 'A',
           };

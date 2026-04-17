@@ -19,7 +19,7 @@ export default function StudentProgressMonitor() {
   const loadCourses = async () => {
     try {
       setLoading(true);
-      const res = await api.get('/api/courses?role=teacher');
+      const res = await api.get('/courses/owned');
       setCourses(res.data.courses || []);
     } catch (err) {
       setError(err.response?.data?.message || 'Gagal memuat course');
@@ -31,7 +31,7 @@ export default function StudentProgressMonitor() {
   const loadStudents = async (courseId) => {
     try {
       setLoading(true);
-      const res = await api.get(`/api/reports/course/${courseId}/students`);
+      const res = await api.get(`/reports/course/${courseId}/students`);
       setStudents(res.data.students || []);
       setSelectedStudent(null);
       setStudentDetail(null);
@@ -45,7 +45,7 @@ export default function StudentProgressMonitor() {
   const loadStudentDetail = async (courseId, studentId) => {
     try {
       setLoading(true);
-      const res = await api.get(`/api/reports/course/${courseId}/students/${studentId}`);
+      const res = await api.get(`/reports/course/${courseId}/students/${studentId}`);
       setStudentDetail(res.data);
     } catch (err) {
       setError(err.response?.data?.message || 'Gagal memuat detail siswa');

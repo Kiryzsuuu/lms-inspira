@@ -4,6 +4,18 @@ import { Button } from './ui';
 import { useAuth } from '../lib/auth';
 import { ConfirmDialog } from './ConfirmDialog';
 
+function MobileMenuItem({ onSelect, children }) {
+  return (
+    <button
+      type="button"
+      className="w-full px-3 py-2 text-left text-sm font-semibold text-slate-900 hover:bg-slate-50"
+      onClick={onSelect}
+    >
+      {children}
+    </button>
+  );
+}
+
 export function Navbar() {
   const { api, isAuthed, role, user, logout } = useAuth();
   const location = useLocation();
@@ -49,19 +61,6 @@ export function Navbar() {
     `text-sm font-medium ${isActive ? 'text-slate-900' : 'text-slate-600 hover:text-slate-900'}`;
 
   const closeMobileMenu = () => setMobileMenuOpen(false);
-
-  const MobileMenuItem = ({ to, children }) => (
-    <button
-      type="button"
-      className="w-full px-3 py-2 text-left text-sm font-semibold text-slate-900 hover:bg-slate-50"
-      onClick={() => {
-        closeMobileMenu();
-        nav(to);
-      }}
-    >
-      {children}
-    </button>
-  );
 
   return (
     <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/80 backdrop-blur">
@@ -206,32 +205,97 @@ export function Navbar() {
                       role="menu"
                       className="absolute right-0 top-[calc(100%+0.5rem)] z-40 w-56 overflow-hidden border border-slate-200 bg-white shadow-sm"
                     >
-                      <MobileMenuItem to="/courses">Courses</MobileMenuItem>
+                      <MobileMenuItem
+                        onSelect={() => {
+                          closeMobileMenu();
+                          nav('/courses');
+                        }}
+                      >
+                        Courses
+                      </MobileMenuItem>
                       {isAuthed && role === 'student' ? (
-                        <MobileMenuItem to="/cart">
+                        <MobileMenuItem
+                          onSelect={() => {
+                            closeMobileMenu();
+                            nav('/cart');
+                          }}
+                        >
                           <span className="flex items-center justify-between">
                             <span>Cart</span>
                             {cartCount > 0 ? <span className="h-2.5 w-2.5 rounded-full bg-rose-500" /> : null}
                           </span>
                         </MobileMenuItem>
                       ) : null}
-                      {isAuthed ? <MobileMenuItem to="/dashboard">Dashboard</MobileMenuItem> : null}
+                      {isAuthed ? (
+                        <MobileMenuItem
+                          onSelect={() => {
+                            closeMobileMenu();
+                            nav('/dashboard');
+                          }}
+                        >
+                          Dashboard
+                        </MobileMenuItem>
+                      ) : null}
                       {role === 'admin' || role === 'teacher' ? (
                         <>
-                          <MobileMenuItem to="/dashboard/heroes">Hero</MobileMenuItem>
-                          <MobileMenuItem to="/dashboard/courses">Kelola</MobileMenuItem>
+                          <MobileMenuItem
+                            onSelect={() => {
+                              closeMobileMenu();
+                              nav('/dashboard/heroes');
+                            }}
+                          >
+                            Hero
+                          </MobileMenuItem>
+                          <MobileMenuItem
+                            onSelect={() => {
+                              closeMobileMenu();
+                              nav('/dashboard/courses');
+                            }}
+                          >
+                            Kelola
+                          </MobileMenuItem>
                         </>
                       ) : null}
-                      {role === 'admin' ? <MobileMenuItem to="/dashboard/users">Users</MobileMenuItem> : null}
+                      {role === 'admin' ? (
+                        <MobileMenuItem
+                          onSelect={() => {
+                            closeMobileMenu();
+                            nav('/dashboard/users');
+                          }}
+                        >
+                          Users
+                        </MobileMenuItem>
+                      ) : null}
                       <div className="border-t border-slate-200" />
                       {!isAuthed ? (
                         <>
-                          <MobileMenuItem to="/login">Login</MobileMenuItem>
-                          <MobileMenuItem to="/register">Register</MobileMenuItem>
+                          <MobileMenuItem
+                            onSelect={() => {
+                              closeMobileMenu();
+                              nav('/login');
+                            }}
+                          >
+                            Login
+                          </MobileMenuItem>
+                          <MobileMenuItem
+                            onSelect={() => {
+                              closeMobileMenu();
+                              nav('/register');
+                            }}
+                          >
+                            Register
+                          </MobileMenuItem>
                         </>
                       ) : (
                         <>
-                          <MobileMenuItem to="/my-profile">Profil Saya</MobileMenuItem>
+                          <MobileMenuItem
+                            onSelect={() => {
+                              closeMobileMenu();
+                              nav('/my-profile');
+                            }}
+                          >
+                            Profil Saya
+                          </MobileMenuItem>
                           <button
                             type="button"
                             className="w-full px-3 py-2 text-left text-sm font-semibold text-slate-900 hover:bg-slate-50"

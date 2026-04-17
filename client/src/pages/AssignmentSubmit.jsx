@@ -28,7 +28,7 @@ export default function AssignmentSubmit() {
   const loadAssignment = async () => {
     try {
       setLoading(true);
-      const res = await api.get(`/api/assignments/${assignmentId}`);
+      const res = await api.get(`/assignments/${assignmentId}`);
       setAssignment(res.data);
 
       //Initialize answers for question-based assignment
@@ -54,7 +54,7 @@ export default function AssignmentSubmit() {
   const startAttempt = async () => {
     try {
       setLoading(true);
-      const res = await api.post(`/api/assignments/${assignmentId}/start`, {});
+      await api.post(`/assignments/${assignmentId}/start`, {});
       setStartedAttempt(true);
       setSuccess('Mulai mengerjakan assignment');
       loadAssignment();
