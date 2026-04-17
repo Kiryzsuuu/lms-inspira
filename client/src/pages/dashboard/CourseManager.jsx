@@ -554,6 +554,47 @@ export default function CourseManager() {
     });
   }
 
+  async function moveQuestion(q, direction) {
+    if (!activeQuizId || !questions.length) return;
+    setError('');
+    try {
+      const currentIdx = questions.findIndex((qi) => qi._id === q._id);
+      const newIdx = direction === 'up' ? currentIdx - 1 : currentIdx + 1;
+      if (newIdx < 0 || newIdx >= questions.length) return;
+
+      const orderedByOrder = [...questions].sort((a, b) => a.order - b.order);
+      const currentQuestion = orderedByOrder[currentIdx];
+      const swapQuestion = orderedByOrder[newIdx];
+
+      const tmp = currentQuestion.order;
+      currentQuestion.order = swapQuestion.order;
+      swapQuestion.order = tmp;
+
+      await api.put(`/quizzes/${activeQuizId}/questions/${currentQuestion._id}`, { order: currentQuestion.order });
+      await api.put(`/quizzes/${activeQuizId}/questions/${swapQuestion._id}`, { order: swapQuestion.order });
+      await loadQuestions(activeQuizId);
+    } catch (e) {
+      setError(e?.response?.data?.error?.message || 'Gagal pindah soal');
+    }
+  }
+
+  async function randomizeQuestionOrder() {
+    if (!activeQuizId || !questions.length) return;
+    setError('');
+    try {
+      const shuffled = [...questions].sort(() => Math.random() - 0.5);
+      const updates = shuffled.map((q, idx) => ({ ...q, order: idx + 1 }));
+      
+      // Update each question's order
+      await Promise.all(
+        updates.map((q) => api.put(`/quizzes/${activeQuizId}/questions/${q._id}`, { order: q.order }))
+      );
+      await loadQuestions(activeQuizId);
+    } catch (e) {
+      setError(e?.response?.data?.error?.message || 'Gagal acak urutan soal');
+    }
+  }
+
   return (
     <section className="flex h-[calc(100vh-4rem)] flex-col overflow-hidden">
       <ConfirmDialog
@@ -1420,24 +1461,57 @@ export default function CourseManager() {
                             <Button type="submit">Tambah Soal</Button>
                           </form>
 
+                          <div className="mt-4 flex flex-wrap items-center gap-2">
+                            <Button type="button" onClick={randomizeQuestionOrder} disabled={questions.length < 2}>
+                              Acak Soal
+                            </Button>
+                            <div className="text-xs text-slate-500">Klik untuk mengacak urutan soal yang sudah ada.</div>
+                          </div>
+
                           <div className="mt-4 grid gap-2">
-                            {questions.map((q) => (
-                              <Card key={q._id} className="p-4">
-                                <div className="flex items-start justify-between gap-3">
-                                  <div className="min-w-0">
-                                    <div className="text-xs font-semibold text-slate-600">{(q.type || 'mcq').toUpperCase()}</div>
-                                    <div className="mt-1 text-sm font-semibold text-slate-900" dangerouslySetInnerHTML={{ __html: q.promptHtml || '' }} />
-                                    <div className="mt-1 text-xs text-slate-500">
-                                      Order: {q.order}
-                                      {q.type === 'mcq' ? ` • Correct: ${q.correctChoiceId}` : ''}
+                            {questions.map((q, idx) => {
+                              const orderedQuestions = [...questions].sort((a, b) => a.order - b.order);
+                              const currentIdx = orderedQuestions.findIndex((qi) => qi._id === q._id);
+                              return (
+                                <Card key={q._id} className="p-4">
+                                  <div className="flex items-start justify-between gap-3">
+                                    <div className="min-w-0 flex-1">
+                                      <div className="text-xs font-semibold text-slate-600">{(q.type || 'mcq').toUpperCase()}</div>
+                                      <div className="mt-1 text-sm font-semibold text-slate-900" dangerouslySetInnerHTML={{ __html: q.promptHtml || '' }} />
+                                      <div className="mt-1 text-xs text-slate-500">
+                                        Order: {q.order}
+                                        {q.type === 'mcq' ? ` • Correct: ${q.correctChoiceId}` : ''}
+                                      </div>
+                                    </div>
+                                    <div className="flex flex-col gap-1">
+                                      <div className="flex gap-1">
+                                        <Button
+                                          type="button"
+                                          variant="secondary"
+                                          className="px-2 py-1 text-xs"
+                                          onClick={() => moveQuestion(q, 'up')}
+                                          disabled={currentIdx === 0}
+                                        >
+                                          ↑
+                                        </Button>
+                                        <Button
+                                          type="button"
+                                          variant="secondary"
+                                          className="px-2 py-1 text-xs"
+                                          onClick={() => moveQuestion(q, 'down')}
+                                          disabled={currentIdx === orderedQuestions.length - 1}
+                                        >
+                                          ↓
+                                        </Button>
+                                      </div>
+                                      <Button variant="danger" className="px-3" onClick={() => deleteQuestion(q)}>
+                                        Hapus
+                                      </Button>
                                     </div>
                                   </div>
-                                  <Button variant="danger" className="px-3" onClick={() => deleteQuestion(q)}>
-                                    Hapus
-                                  </Button>
-                                </div>
-                              </Card>
-                            ))}
+                                </Card>
+                              );
+                            })}
                             {questions.length === 0 ? <div className="text-sm text-slate-600">Belum ada soal.</div> : null}
                           </div>
                         </>
