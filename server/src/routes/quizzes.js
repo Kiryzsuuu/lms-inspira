@@ -439,6 +439,18 @@ function quizzesRouter({ requireAuth, requireRole }) {
 
       await assertStudentCanAccessCourse(quiz.courseId, req.user);
 
+      // Check attempt limiting
+      const maxAttempts = quiz.maxAttempts || 1;
+      const completedAttempts = await Attempt.countDocuments({
+        quizId: quiz._id,
+        userId: req.user.sub,
+        submittedAt: { $exists: true, $ne: null },
+      });
+
+      if (completedAttempts >= maxAttempts) {
+        throw new HttpError(409, `Anda telah mencapai batas maksimal percobaan (${maxAttempts})`);
+      }
+
       const schema = z.object({
         attemptId: z.string().optional(),
         answers: z

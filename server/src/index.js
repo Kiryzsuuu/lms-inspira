@@ -59,7 +59,7 @@ async function main() {
   app.use('/api/progress', progressRouter({ requireAuth: requireAuth(env.JWT_SECRET) }));
   app.use('/api/uploads', uploadsRouter({ requireAuth: requireAuth(env.JWT_SECRET), requireRole }));
   app.use('/api/question-bank', questionBankRouter({ requireAuth: requireAuth(env.JWT_SECRET), requireRole }));
-  app.use('/api/assignments', assignmentsRouter({ requireAuth: requireAuth(env.JWT_SECRET) }));
+  app.use('/api/assignments', assignmentsRouter({ requireAuth: requireAuth(env.JWT_SECRET), requireRole }));
   app.use('/api/cart', cartRouter({ requireAuth: requireAuth(env.JWT_SECRET), requireRole }));
   app.use(
     '/api/payments',
