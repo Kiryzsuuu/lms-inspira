@@ -292,7 +292,7 @@ export default function AssignmentSubmit() {
                 {assignment.type === 'file_upload' && (
                   <div>
                     <h2 className="text-xl font-semibold mb-4">Upload File</h2>
-                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-blue-400 transition">
+                <div className="border-2 border-dashed border-slate-300 rounded-lg p-8 text-center hover:border-blue-400 transition">
                       <input
                         type="file"
                         onChange={handleFileChange}
@@ -301,18 +301,18 @@ export default function AssignmentSubmit() {
                         id="file-input"
                       />
                       <label htmlFor="file-input" className="cursor-pointer">
-                        <Upload size={32} className="mx-auto mb-3 text-gray-400" />
-                        <p className="text-sm text-gray-600 mb-1">
+                        <div className="text-4xl mb-3">📄</div>
+                        <p className="text-sm text-slate-600 mb-1">
                           Klik untuk memilih atau drag-drop file
                         </p>
-                        <p className="text-xs text-gray-500">PDF, DOC, DOCX (Max 10MB)</p>
+                        <p className="text-xs text-slate-500">PDF, DOC, DOCX (Max 10MB)</p>
                       </label>
                     </div>
 
                     {filePreview && (
-                      <div className="mt-4 p-4 bg-gray-50 rounded-lg flex items-center gap-3">
-                        <FileText size={20} className="text-blue-600" />
-                        <span className="text-sm text-gray-700">{filePreview}</span>
+                    <div className="mt-4 p-4 bg-slate-50 rounded-lg flex items-center gap-3 border border-slate-200">
+                      <div className="text-2xl">📄</div>
+                      <span className="text-sm text-slate-700">{filePreview}</span>
                         <button
                           onClick={() => {
                             setUploadedFile(null);
@@ -333,15 +333,15 @@ export default function AssignmentSubmit() {
                     <h2 className="text-xl font-semibold mb-4">Jawab Pertanyaan</h2>
                     <div className="space-y-6">
                       {assignment.questions.map((question, idx) => (
-                        <div key={question._id} className="border border-gray-200 rounded-lg p-4">
-                          <p className="font-medium text-gray-900 mb-3">
+                      <div key={question._id} className="border border-slate-200 rounded-lg p-4">
+                          <p className="font-semibold text-slate-900 mb-3">
                             {idx + 1}. {question.prompt}
                           </p>
 
                           {question.type === 'mcq' && question.choices && (
                             <div className="space-y-2">
                               {question.choices.map((choice) => (
-                                <label key={choice.id} className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded cursor-pointer">
+                                <label key={choice.id} className="flex items-center gap-3 p-2 hover:bg-slate-50 rounded cursor-pointer">
                                   <input
                                     type="radio"
                                     name={`question-${question._id}`}
@@ -352,7 +352,7 @@ export default function AssignmentSubmit() {
                                     }
                                     className="rounded"
                                   />
-                                  <span className="text-sm text-gray-700">{choice.text}</span>
+                                  <span className="text-sm text-slate-700">{choice.text}</span>
                                 </label>
                               ))}
                             </div>
@@ -365,7 +365,7 @@ export default function AssignmentSubmit() {
                                 setAnswers({ ...answers, [question._id]: e.target.value })
                               }
                               placeholder="Jawaban Anda"
-                              className="w-full border border-gray-300 rounded-lg p-3"
+                              className="w-full border border-slate-300 rounded-lg p-3"
                               rows="4"
                             />
                           )}
