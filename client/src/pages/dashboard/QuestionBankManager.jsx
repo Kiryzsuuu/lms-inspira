@@ -56,6 +56,36 @@ export default function QuestionBankManager() {
     setConfirmState((s) => ({ ...s, open: false }));
   };
 
+  const exportQuestion = (question) => {
+    let content = '';
+
+    if (question.type === 'mcq') {
+      content = `${stripHtml(question.promptHtml || question.prompt || '')}\n`;
+      question.choices?.forEach((choice) => {
+        content += `${choice.id}. ${choice.text}\n`;
+      });
+      content += `ANSWER: ${question.correctChoiceId}\n`;
+    } else if (question.type === 'essay') {
+      content = `${stripHtml(question.promptHtml || question.prompt || '')}\n`;
+      if (question.rubric) {
+        content += `JAWABAN: ${question.rubric}\n`;
+      }
+    } else if (question.type === 'matching') {
+      content = `${stripHtml(question.promptHtml || question.prompt || '')}\n`;
+      question.pairs?.forEach((pair) => {
+        content += `${pair.left} -> ${pair.right}\n`;
+      });
+    }
+
+    const blob = new Blob([content], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `soal_${selectedCollection?.title.replace(/\s+/g, '_')}_${question._id}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const stripHtml = (html) => String(html || '').replace(/<[^>]*>/g, '').trim();
 
   useEffect(() => {
@@ -497,12 +527,21 @@ export default function QuestionBankManager() {
                             <button
                               onClick={() => startEditQuestion(question)}
                               className="text-blue-600 hover:text-blue-700 font-medium"
+                              title="Edit soal"
                             >
                               ✏️
                             </button>
                             <button
+                              onClick={() => exportQuestion(question)}
+                              className="text-green-600 hover:text-green-700 font-medium"
+                              title="Simpan soal ke file"
+                            >
+                              💾
+                            </button>
+                            <button
                               onClick={() => deleteQuestion(question._id)}
                               className="text-red-600 hover:text-red-700 font-medium"
+                              title="Hapus soal"
                             >
                               🗑️
                             </button>
