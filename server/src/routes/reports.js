@@ -6,6 +6,8 @@ const { Lesson } = require('../models/Lesson');
 const { LessonProgress } = require('../models/LessonProgress');
 const { Order } = require('../models/Order');
 const { User } = require('../models/User');
+const { Attempt } = require('../models/Attempt');
+const { AssignmentAttempt } = require('../models/AssignmentAttempt');
 const { asyncHandler } = require('../utils/asyncHandler');
 const { HttpError } = require('../utils/errors');
 
@@ -284,6 +286,113 @@ function reportsRouter({ requireAuth, requireRole }) {
       }
 
       doc.end();
+    })
+  );
+
+  // TEACHER MONITORING: GET /reports/course/:courseId/students - Teacher view all students progress in course
+  router.get(
+    '/course/:courseId/students',
+    requireAuth,
+    requireRole('teacher', 'admin'),
+    asyncHandler(async (req, res) => {
+      const course = await Course.findById(req.params.courseId);
+      if (!course) throw new HttpError(404, 'Course not found');
+
+      // Find all students who have this course
+      const students = await User.find({
+        $or: [
+          { activeCourseId: course._id },
+          { completedCourseIds: course._id },
+          { purchasedCourseIds: course._id },
+        ],
+      }).select('name email activeCourseId completedCourseIds').sort({ createdAt: -1 });
+
+      const lessons = await Lesson.find({ courseId: course._id }).sort({ order: 1 });
+
+      // Build detailed student progress
+      const studentProgress = await Promise.all(
+        students.map(async (student) => {
+          const lessonProgresses = await LessonProgress.find({
+            userId: student._id,
+            courseId: course._id,
+          });
+
+          const completedLessons = lessonProgresses.filter((lp) => lp.isCompleted).length;
+
+          return {
+            studentId: student._id,
+            name: student.name,
+            email: student.email,
+            isActive: String(student.activeCourseId) === String(course._id),
+            isCompleted: student.completedCourseIds?.includes(course._id),
+            progress: {
+              lessonsCompleted: completedLessons,
+              lessonsTotal: lessons.length,
+              percentage: lessons.length > 0 ? Math.round((completedLessons / lessons.length) * 100) : 0,
+            },
+          };
+        })
+      );
+
+      res.json({ course, students: studentProgress });
+    })
+  );
+
+  // TEACHER MONITORING: GET /reports/course/:courseId/students/:studentId - Teacher view specific student detail
+  router.get(
+    '/course/:courseId/students/:studentId',
+    requireAuth,
+    requireRole('teacher', 'admin'),
+    asyncHandler(async (req, res) => {
+      const course = await Course.findById(req.params.courseId);
+      if (!course) throw new HttpError(404, 'Course not found');
+
+      const student = await User.findById(req.params.studentId).select('name email');
+      if (!student) throw new HttpError(404, 'Student not found');
+
+      const lessons = await Lesson.find({ courseId: course._id }).sort({ order: 1 });
+      const lessonProgresses = await LessonProgress.find({
+        userId: student._id,
+        courseId: course._id,
+      });
+
+      // Get quiz data for this course
+      const { Quiz } = require('../models/Quiz');
+      const quizzes = await Quiz.find({ courseId: course._id }).select('_id title');
+      const quizAttempts = await Attempt.find({
+        userId: student._id,
+        quizId: { $in: quizzes.map((q) => q._id) },
+      })
+        .populate('quizId', 'title')
+        .sort({ createdAt: -1 });
+
+      // Get assignment data for this course
+      const assignmentAttempts = await AssignmentAttempt.find({
+        userId: student._id,
+        courseId: course._id,
+      }).sort({ createdAt: -1 });
+
+      const lessonDetails = lessons.map((lesson) => {
+        const progress = lessonProgresses.find((lp) => String(lp.lessonId) === String(lesson._id));
+        return {
+          lessonId: lesson._id,
+          title: lesson.title,
+          isCompleted: progress?.isCompleted || false,
+          completedAt: progress?.completedAt,
+        };
+      });
+
+      res.json({
+        student: { _id: student._id, name: student.name, email: student.email },
+        course: { _id: course._id, title: course.title },
+        progress: {
+          lessonsCompleted: lessonDetails.filter((l) => l.isCompleted).length,
+          lessonsTotal: lessonDetails.length,
+          lessons: lessonDetails,
+          quizzes: quizAttempts,
+          assignments: assignmentAttempts,
+        },
+      });
     })
   );
 
