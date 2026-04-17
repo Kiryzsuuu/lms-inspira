@@ -83,6 +83,9 @@ export default function CourseManager() {
 
   const [activeQuizId, setActiveQuizId] = useState('');
   const [questions, setQuestions] = useState([]);
+  const [bankCollections, setBankCollections] = useState([]);
+  const [bankCollectionId, setBankCollectionId] = useState('');
+  const [bankCount, setBankCount] = useState(10);
   const [questionForm, setQuestionForm] = useState({
     type: 'mcq',
     promptHtml: '<p>Tulis pertanyaan di sini...</p>',
@@ -208,6 +211,38 @@ export default function CourseManager() {
     if (!activeQuizId) return;
     loadQuestions(activeQuizId);
   }, [activeQuizId]);
+
+  useEffect(() => {
+    if (activePanel !== 'quiz') return;
+    loadBankCollections();
+  }, [activePanel]);
+
+  async function loadBankCollections() {
+    try {
+      const res = await api.get('/question-bank/collections');
+      setBankCollections(res.data.collections || []);
+    } catch (_) {
+      // ignore; Bank Soal may be unused on this screen
+    }
+  }
+
+  async function importQuestionsFromBank(e) {
+    e.preventDefault();
+    if (!activeQuizId) return;
+    setError('');
+    try {
+      const res = await api.post(`/quizzes/${activeQuizId}/import-from-bank`, {
+        collectionId: bankCollectionId,
+        count: bankCount,
+        shuffle: true,
+      });
+      await loadQuestions(activeQuizId);
+      const imported = Number(res.data?.imported || 0);
+      if (!imported) setError('Tidak ada soal yang diimpor');
+    } catch (e2) {
+      setError(e2?.response?.data?.message || e2?.response?.data?.error?.message || 'Gagal impor soal dari Bank Soal');
+    }
+  }
 
   async function uploadCoverImage(file) {
     const fd = new FormData();
@@ -1155,6 +1190,40 @@ export default function CourseManager() {
 
                       {activeQuizId ? (
                         <>
+                          <form className="mt-3 grid gap-3" onSubmit={importQuestionsFromBank}>
+                            <div className="grid gap-3 sm:grid-cols-3">
+                              <div className="sm:col-span-2">
+                                <Label>Ambil dari Bank Soal (koleksi)</Label>
+                                <div className="mt-1">
+                                  <select
+                                    className="w-full border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400"
+                                    value={bankCollectionId}
+                                    onChange={(e) => setBankCollectionId(e.target.value)}
+                                  >
+                                    <option value="">(pilih koleksi)</option>
+                                    {bankCollections.map((c) => (
+                                      <option key={c._id} value={c._id}>
+                                        {c.title}
+                                      </option>
+                                    ))}
+                                  </select>
+                                </div>
+                              </div>
+                              <div>
+                                <Label>Jumlah Soal</Label>
+                                <div className="mt-1">
+                                  <Input type="number" min={1} max={200} value={bankCount} onChange={(e) => setBankCount(Number(e.target.value))} />
+                                </div>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Button type="submit" disabled={!bankCollectionId}>
+                                Ambil Soal
+                              </Button>
+                              <div className="text-xs text-slate-500">Soal ditambahkan ke quiz aktif.</div>
+                            </div>
+                          </form>
+
                           <form className="mt-3 grid gap-3" onSubmit={createQuestion}>
                             <div>
                               <Label>Tipe Soal</Label>

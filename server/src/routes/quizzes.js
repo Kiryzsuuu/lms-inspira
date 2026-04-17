@@ -3,6 +3,8 @@ const { z } = require('zod');
 const { Course } = require('../models/Course');
 const { Lesson } = require('../models/Lesson');
 const { Quiz, Question } = require('../models/Quiz');
+const { QuestionBankCollection } = require('../models/QuestionBankCollection');
+const { BankQuestion } = require('../models/QuestionBank');
 const { Attempt } = require('../models/Attempt');
 const { User } = require('../models/User');
 const { LessonProgress } = require('../models/LessonProgress');
@@ -277,6 +279,66 @@ function quizzesRouter({ requireAuth, requireRole }) {
 
       await Question.deleteOne({ _id: req.params.questionId, quizId: quiz._id });
       res.status(204).end();
+    })
+  );
+
+  // Teacher/Admin: import N questions from question bank collection into a quiz
+  router.post(
+    '/:quizId/import-from-bank',
+    requireAuth,
+    requireRole('admin', 'teacher'),
+    asyncHandler(async (req, res) => {
+      const quiz = await Quiz.findById(req.params.quizId);
+      if (!quiz) throw new HttpError(404, 'Quiz not found');
+      await assertCanEditCourse(quiz.courseId, req.user);
+
+      const schema = z.object({
+        collectionId: z.string().min(1),
+        count: z.coerce.number().int().min(1).max(200),
+        shuffle: z.coerce.boolean().optional().default(true),
+      });
+      const data = schema.parse(req.body);
+
+      const collectionQuery = { _id: data.collectionId, isActive: true };
+      if (req.user.role !== 'admin') {
+        collectionQuery.createdBy = req.user.sub;
+      }
+
+      const collection = await QuestionBankCollection.findOne(collectionQuery).lean();
+      if (!collection) throw new HttpError(404, 'Koleksi tidak ditemukan');
+
+      const bankQuestions = await BankQuestion.find({ _id: { $in: collection.questions || [] } }).lean();
+      if (!bankQuestions.length) return res.json({ imported: 0 });
+
+      const bankById = new Map(bankQuestions.map((q) => [String(q._id), q]));
+      const ordered = (collection.questions || []).map((qid) => bankById.get(String(qid))).filter(Boolean);
+      const source = data.shuffle ? shuffleCopy(ordered) : ordered;
+      const picked = source.slice(0, Math.min(data.count, source.length));
+
+      const last = await Question.findOne({ quizId: quiz._id }).sort({ order: -1 }).select('order').lean();
+      const startOrder = Number(last?.order || 0) + 1;
+
+      const docs = picked.map((bq, idx) => ({
+        quizId: quiz._id,
+        type: bq.type || 'mcq',
+        promptHtml: bq.promptHtml || '',
+        prompt: '',
+        choices: Array.isArray(bq.choices) ? bq.choices : [],
+        correctChoiceId: bq.correctChoiceId || '',
+        pairs: Array.isArray(bq.pairs) ? bq.pairs : [],
+        rubric: bq.rubric || '',
+        order: startOrder + idx,
+      }));
+
+      // Ensure MCQ questions still validate
+      const safeDocs = docs.filter((d) => {
+        if ((d.type || 'mcq') !== 'mcq') return true;
+        return Array.isArray(d.choices) && d.choices.length >= 2 && Boolean(d.correctChoiceId);
+      });
+
+      if (!safeDocs.length) return res.json({ imported: 0 });
+      await Question.insertMany(safeDocs);
+      res.json({ imported: safeDocs.length });
     })
   );
 

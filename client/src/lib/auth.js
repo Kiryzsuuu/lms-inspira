@@ -16,22 +16,27 @@ function decodeJwtPayload(token) {
 export function AuthProvider({ children }) {
   const [token, setToken] = useState(() => localStorage.getItem('token') || '');
   const [user, setUser] = useState(null);
+  const [authLoading, setAuthLoading] = useState(() => Boolean(localStorage.getItem('token')));
 
   const api = useMemo(() => createApiClient(() => token), [token]);
 
   async function refreshUser() {
     if (!token) return;
     try {
+      setAuthLoading(true);
       const res = await api.get('/auth/me');
       setUser(res.data.user);
     } catch (err) {
       console.error('[Auth] Failed to refresh user:', err?.message);
+    } finally {
+      setAuthLoading(false);
     }
   }
 
   useEffect(() => {
     if (!token) {
       setUser(null);
+      setAuthLoading(false);
       return;
     }
     const payload = decodeJwtPayload(token);
@@ -39,17 +44,32 @@ export function AuthProvider({ children }) {
       setToken('');
       localStorage.removeItem('token');
       setUser(null);
+      setAuthLoading(false);
       return;
     }
 
+    let alive = true;
+    setAuthLoading(true);
     api
       .get('/auth/me')
-      .then((res) => setUser(res.data.user))
+      .then((res) => {
+        if (!alive) return;
+        setUser(res.data.user);
+      })
       .catch(() => {
+        if (!alive) return;
         setToken('');
         localStorage.removeItem('token');
         setUser(null);
+      })
+      .finally(() => {
+        if (!alive) return;
+        setAuthLoading(false);
       });
+
+    return () => {
+      alive = false;
+    };
   }, [token]);
 
   const value = useMemo(
@@ -57,21 +77,26 @@ export function AuthProvider({ children }) {
       token,
       user,
       api,
+      authLoading,
       isAuthed: Boolean(token && user),
       role: user?.role || 'guest',
       setToken: (t) => {
         setToken(t);
         if (t) localStorage.setItem('token', t);
         else localStorage.removeItem('token');
+
+        // If a token is set (e.g. after login), treat auth as loading until /me resolves.
+        setAuthLoading(Boolean(t));
       },
       logout: () => {
         setToken('');
         localStorage.removeItem('token');
         setUser(null);
+        setAuthLoading(false);
       },
       refreshUser,
     }),
-    [token, user, api]
+    [token, user, api, authLoading]
   );
 
   return createElement(AuthContext.Provider, { value }, children);

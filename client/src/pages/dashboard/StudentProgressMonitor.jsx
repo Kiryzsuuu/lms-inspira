@@ -32,7 +32,19 @@ export default function StudentProgressMonitor() {
     try {
       setLoading(true);
       const res = await api.get(`/reports/course/${courseId}/students`);
-      setStudents(res.data.students || []);
+      const rows = Array.isArray(res.data.students) ? res.data.students : [];
+      setStudents(
+        rows.map((s) => ({
+          _id: s.studentId || s._id,
+          name: s.name,
+          email: s.email,
+          isActive: s.isActive,
+          isCompleted: s.isCompleted,
+          progressPercent: s.progress?.percentage ?? s.progressPercent ?? 0,
+          lessonCount: s.progress?.lessonsTotal ?? s.lessonCount ?? 0,
+          lessonsCompleted: s.progress?.lessonsCompleted ?? s.lessonsCompleted ?? 0,
+        }))
+      );
       setSelectedStudent(null);
       setStudentDetail(null);
     } catch (err) {
@@ -46,7 +58,19 @@ export default function StudentProgressMonitor() {
     try {
       setLoading(true);
       const res = await api.get(`/reports/course/${courseId}/students/${studentId}`);
-      setStudentDetail(res.data);
+      const progress = res.data?.progress || {};
+      const lessonsCompleted = progress.lessonsCompleted || 0;
+      const lessonsTotal = progress.lessonsTotal || 0;
+      const overallProgress = lessonsTotal > 0 ? Math.round((lessonsCompleted / lessonsTotal) * 100) : 0;
+
+      setStudentDetail({
+        overallProgress,
+        completedLessons: lessonsCompleted,
+        totalLessons: lessonsTotal,
+        lessons: progress.lessons || [],
+        quizAttempts: progress.quizzes || [],
+        assignmentAttempts: progress.assignments || [],
+      });
     } catch (err) {
       setError(err.response?.data?.message || 'Gagal memuat detail siswa');
     } finally {

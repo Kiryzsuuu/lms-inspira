@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Card, Container, Button, Input, Textarea, Label } from '../../components/ui';
+import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { useAuth } from '../../lib/auth';
 
 export default function QuestionBankManager() {
@@ -8,12 +9,6 @@ export default function QuestionBankManager() {
   const [selectedCollection, setSelectedCollection] = useState(null);
   const [questions, setQuestions] = useState([]);
   const [newCollectionName, setNewCollectionName] = useState('');
-  const [showNewCollectionModal, setShowNewCollectionModal] = useState(false);
-  const [showImportModal, setShowImportModal] = useState(false);
-  const [importFile, setImportFile] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [success, setSuccess] = useState(null);
   const [questionForm, setQuestionForm] = useState({
     type: 'mcq',
     question: '',
@@ -24,16 +19,52 @@ export default function QuestionBankManager() {
     correctAnswer: '1',
     explanation: '',
   });
+  const [editingQuestion, setEditingQuestion] = useState(null);
+  const [showNewCollectionModal, setShowNewCollectionModal] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [importFile, setImportFile] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(null);
+  
+  const confirmActionRef = useRef(null);
+  const [confirmState, setConfirmState] = useState({
+    open: false,
+    title: 'Konfirmasi',
+    message: '',
+    confirmText: 'Hapus',
+    confirmVariant: 'danger',
+  });
+
+  const askConfirm = ({ title, message, confirmText, confirmVariant, onConfirm }) => {
+    confirmActionRef.current = onConfirm;
+    setConfirmState({
+      open: true,
+      title: title || 'Konfirmasi',
+      message: message || '',
+      confirmText: confirmText || 'OK',
+      confirmVariant: confirmVariant || 'primary',
+    });
+  };
+
+  const handleConfirm = () => {
+    confirmActionRef.current?.();
+    setConfirmState((s) => ({ ...s, open: false }));
+  };
+
+  const handleCancelConfirm = () => {
+    setConfirmState((s) => ({ ...s, open: false }));
+  };
+
+  const stripHtml = (html) => String(html || '').replace(/<[^>]*>/g, '').trim();
 
   useEffect(() => {
     loadCollections();
   }, []);
 
   useEffect(() => {
-    if (selectedCollection) {
-      loadQuestions(selectedCollection._id);
-    }
-  }, [selectedCollection]);
+    if (selectedCollection) loadQuestions(selectedCollection._id);
+  }, [selectedCollection?._id]);
 
   const loadCollections = async () => {
     try {
@@ -82,19 +113,25 @@ export default function QuestionBankManager() {
   };
 
   const deleteCollection = async (id) => {
-    if (!confirm('Hapus koleksi ini? Semua soal akan dihapus.')) return;
-
-    try {
-      setLoading(true);
-      await api.delete(`/question-bank/collections/${id}`);
-      setSuccess('Koleksi dihapus');
-      setSelectedCollection(null);
-      loadCollections();
-    } catch (err) {
-      setError(err.response?.data?.message || 'Gagal menghapus koleksi');
-    } finally {
-      setLoading(false);
-    }
+    askConfirm({
+      title: 'Hapus Koleksi?',
+      message: 'Semua soal dalam koleksi ini akan dihapus permanen.',
+      confirmText: 'Hapus',
+      confirmVariant: 'danger',
+      onConfirm: async () => {
+        try {
+          setLoading(true);
+          await api.delete(`/question-bank/collections/${id}`);
+          setSuccess('Koleksi dihapus');
+          setSelectedCollection(null);
+          loadCollections();
+        } catch (err) {
+          setError(err.response?.data?.message || 'Gagal menghapus koleksi');
+        } finally {
+          setLoading(false);
+        }
+      },
+    });
   };
 
   const addQuestion = async () => {
@@ -121,9 +158,14 @@ export default function QuestionBankManager() {
         payload.correctChoiceId = questionForm.correctAnswer;
       }
 
-      await api.post(`/question-bank/collections/${selectedCollection._id}/questions`, payload);
-      setSuccess('Soal ditambahkan');
+      if (editingQuestion) {
+        await api.put(`/question-bank/collections/${selectedCollection._id}/questions/${editingQuestion._id}`, payload);
+      } else {
+        await api.post(`/question-bank/collections/${selectedCollection._id}/questions`, payload);
+      }
+      setSuccess(editingQuestion ? 'Soal diperbarui' : 'Soal ditambahkan');
       resetQuestionForm();
+      setEditingQuestion(null);
       loadQuestions(selectedCollection._id);
     } catch (err) {
       setError(err.response?.data?.message || 'Gagal menambah soal');
@@ -132,24 +174,49 @@ export default function QuestionBankManager() {
     }
   };
 
-  const deleteQuestion = async (questionId) => {
-    if (!confirm('Hapus soal ini?')) return;
+  const startEditQuestion = (question) => {
+    setEditingQuestion(question);
+    setQuestionForm({
+      type: question.type || 'mcq',
+      question: question.promptHtml || question.prompt || '',
+      options: (question.choices || [
+        { id: '1', text: '' },
+        { id: '2', text: '' },
+      ]).map((c) => ({ id: c.id, text: c.text })),
+      correctAnswer: question.correctChoiceId || '1',
+      explanation: question.rubric || '',
+    });
+  };
 
-    try {
-      setLoading(true);
-      await api.delete(`/question-bank/collections/${selectedCollection._id}/questions/${questionId}`);
-      setSuccess('Soal dihapus');
-      loadQuestions(selectedCollection._id);
-    } catch (err) {
-      setError(err.response?.data?.message || 'Gagal menghapus soal');
-    } finally {
-      setLoading(false);
-    }
+  const deleteQuestion = async (questionId) => {
+    askConfirm({
+      title: 'Hapus Soal?',
+      message: 'Soal ini akan dihapus permanen dari koleksi.',
+      confirmText: 'Hapus',
+      confirmVariant: 'danger',
+      onConfirm: async () => {
+        try {
+          setLoading(true);
+          await api.delete(`/question-bank/collections/${selectedCollection._id}/questions/${questionId}`);
+          setSuccess('Soal dihapus');
+          loadQuestions(selectedCollection._id);
+        } catch (err) {
+          setError(err.response?.data?.message || 'Gagal menghapus soal');
+        } finally {
+          setLoading(false);
+        }
+      },
+    });
   };
 
   const importQuestions = async () => {
     if (!importFile) {
       setError('Pilih file terlebih dahulu');
+      return;
+    }
+
+    if (!selectedCollection) {
+      setError('Pilih koleksi terlebih dahulu');
       return;
     }
 
@@ -159,64 +226,16 @@ export default function QuestionBankManager() {
         setLoading(true);
         const content = e.target.result;
 
-        // Parse Ayken format: Soal X / A. Option / Jawaban: A
-        const lines = content.split('\n');
-        const parsedQuestions = [];
-        let currentQuestion = null;
+        const res = await api.post(`/question-bank/collections/${selectedCollection._id}/import-txt`, {
+          content: String(content || ''),
+          shuffleChoices: true,
+        });
 
-        for (const line of lines) {
-          const trimmed = line.trim();
-          if (!trimmed) continue;
-
-          if (trimmed.startsWith('Soal')) {
-            if (currentQuestion && currentQuestion.question) {
-              parsedQuestions.push(currentQuestion);
-            }
-            currentQuestion = {
-              question: trimmed.replace(/^Soal\s+\d+[\s.]+/, ''),
-              options: [],
-              correctAnswer: null,
-            };
-          } else if (trimmed.match(/^[A-E]\.\s/)) {
-            const letter = trimmed.charAt(0);
-            const text = trimmed.replace(/^[A-E]\.\s+/, '');
-            currentQuestion.options.push({ letter, text });
-          } else if (trimmed.startsWith('Jawaban')) {
-            const answer = trimmed.split(':')[1]?.trim();
-            if (answer) {
-              currentQuestion.correctAnswer = answer;
-            }
-          }
-        }
-
-        if (currentQuestion && currentQuestion.question) {
-          parsedQuestions.push(currentQuestion);
-        }
-
-        // Upload parsed questions
-        for (const q of parsedQuestions) {
-          if (!q.question || q.options.length === 0) continue;
-
-          const optionIds = ['A', 'B', 'C', 'D', 'E'];
-          const choices = q.options.map((o, idx) => ({
-            id: optionIds[idx] || String(idx),
-            text: o.text,
-          }));
-
-          const correctIdx = optionIds.indexOf(q.correctAnswer || 'A');
-          const payload = {
-            type: 'mcq',
-            promptHtml: q.question,
-            choices,
-            correctChoiceId: optionIds[correctIdx] || 'A',
-          };
-
-          await api.post(`/question-bank/collections/${selectedCollection._id}/questions`, payload);
-        }
-
-        setSuccess(`${parsedQuestions.length} soal berhasil diimpor`);
+        setSuccess(`${res.data?.imported || 0} soal berhasil diimpor`);
         setImportFile(null);
         setShowImportModal(false);
+        resetQuestionForm();
+        setEditingQuestion(null);
         loadQuestions(selectedCollection._id);
       } catch (err) {
         setError(err.response?.data?.message || 'Gagal impor soal');
@@ -229,7 +248,6 @@ export default function QuestionBankManager() {
   };
 
   const resetQuestionForm = () => {
-    setEditingQuestion(null);
     setQuestionForm({
       type: 'mcq',
       question: '',
@@ -265,7 +283,7 @@ export default function QuestionBankManager() {
             <p className="mt-1 text-sm text-slate-600">Kelola koleksi soal dan impor pertanyaan</p>
           </div>
           <Button onClick={() => setShowNewCollectionModal(true)}>
-            ➕ Koleksi Baru
+            Koleksi Baru
           </Button>
         </div>
 
@@ -303,15 +321,21 @@ export default function QuestionBankManager() {
                 {collections.map((col) => (
                   <button
                     key={col._id}
-                    onClick={() => setSelectedCollection(col)}
-                    className={`w-full text-left p-3 rounded-lg transition ${
+                    onClick={() => {
+                      if (selectedCollection?._id === col._id) {
+                        setSelectedCollection(null);
+                      } else {
+                        setSelectedCollection(col);
+                      }
+                    }}
+                    className={`w-full text-left p-3 rounded transition border ${
                       selectedCollection?._id === col._id
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-slate-50 hover:bg-slate-100 text-slate-900'
+                        ? 'border-orange-500 bg-orange-50 text-slate-900 font-medium'
+                        : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-900'
                     }`}
                   >
                     <div className="font-medium text-sm">{col.title}</div>
-                    <div className="text-xs opacity-75 mt-1">{col.numQuestions || 0} soal</div>
+                    <div className="text-xs text-slate-500 mt-1">{col.numQuestions || 0} soal</div>
                   </button>
                 ))}
               </div>
@@ -334,15 +358,40 @@ export default function QuestionBankManager() {
               <div className="space-y-6">
                 {/* Import Button */}
                 <Card className="p-4 border border-blue-200 bg-blue-50">
-                  <Button onClick={() => setShowImportModal(true)}>
-                    ⬆️ Impor dari TXT
-                  </Button>
-                  <p className="text-sm text-slate-600 mt-2">Format Ayken: Soal X / A. Opsi / Jawaban: A</p>
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <p className="font-medium text-slate-900">Impor Soal dari File TXT</p>
+                      <p className="text-xs text-slate-600 mt-1">Format Ayken: Soal X / A. Opsi / Jawaban: A</p>
+                    </div>
+                    <Button onClick={() => setShowImportModal(true)}>
+                      Impor TXT
+                    </Button>
+                  </div>
                 </Card>
 
+                {/* Divider */}
+                <div className="border-t border-slate-200 pt-6">
+                  <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-4">Atau tambah soal manual</p>
+                </div>
+
                 {/* Add Question Form */}
-                <Card className="p-6">
-                  <h3 className="font-semibold mb-4 text-slate-900">Tambah Soal</h3>
+                <Card className="p-6 border-2 border-slate-200">
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="font-semibold text-slate-900">
+                      {editingQuestion ? 'Edit Soal' : 'Tambah Soal Manual'}
+                    </h3>
+                    {editingQuestion && (
+                      <button
+                        onClick={() => {
+                          resetQuestionForm();
+                          setEditingQuestion(null);
+                        }}
+                        className="text-sm text-slate-500 hover:text-slate-700 underline"
+                      >
+                        Tutup
+                      </button>
+                    )}
+                  </div>
 
                   <div className="space-y-4">
                     <div>
@@ -403,13 +452,16 @@ export default function QuestionBankManager() {
                         onClick={addQuestion}
                         disabled={loading}
                       >
-                        {loading ? 'Menyimpan...' : 'Simpan Soal'}
+                        {loading ? 'Menyimpan...' : editingQuestion ? 'Perbarui Soal' : 'Simpan Soal'}
                       </Button>
                       <Button
-                        onClick={resetQuestionForm}
+                        onClick={() => {
+                          resetQuestionForm();
+                          setEditingQuestion(null);
+                        }}
                         variant="outline"
                       >
-                        Reset
+                        {editingQuestion ? 'Batal Edit' : 'Reset'}
                       </Button>
                     </div>
                   </div>
@@ -425,7 +477,7 @@ export default function QuestionBankManager() {
                         <div className="flex justify-between items-start mb-2">
                           <div className="flex-1">
                             <div className="font-medium text-sm text-slate-900">
-                              {idx + 1}. {question.prompt}
+                              {idx + 1}. {stripHtml(question.promptHtml || question.prompt || '')}
                             </div>
                             {question.type === 'mcq' && question.choices && (
                               <div className="mt-2 space-y-1 text-sm text-slate-600">
@@ -441,12 +493,20 @@ export default function QuestionBankManager() {
                               </div>
                             )}
                           </div>
-                          <button
-                            onClick={() => deleteQuestion(question._id)}
-                            className="text-red-600 hover:text-red-700 ml-2 font-medium"
-                          >
-                            🗑️
-                          </button>
+                          <div className="flex gap-2 ml-2">
+                            <button
+                              onClick={() => startEditQuestion(question)}
+                              className="text-blue-600 hover:text-blue-700 font-medium"
+                            >
+                              ✏️
+                            </button>
+                            <button
+                              onClick={() => deleteQuestion(question._id)}
+                              className="text-red-600 hover:text-red-700 font-medium"
+                            >
+                              🗑️
+                            </button>
+                          </div>
                         </div>
                       </div>
                     ))}
@@ -460,6 +520,16 @@ export default function QuestionBankManager() {
             )}
           </div>
         </div>
+
+      <ConfirmDialog
+        open={confirmState.open}
+        title={confirmState.title}
+        message={confirmState.message}
+        confirmText={confirmState.confirmText}
+        confirmVariant={confirmState.confirmVariant}
+        onConfirm={handleConfirm}
+        onCancel={handleCancelConfirm}
+      />
 
       {/* New Collection Modal */}
       {showNewCollectionModal && (
@@ -496,26 +566,40 @@ export default function QuestionBankManager() {
       {showImportModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <Card className="max-w-md w-full p-6">
-            <h2 className="text-xl font-bold mb-4">Impor Soal dari TXT</h2>
-            <p className="text-sm text-slate-600 mb-4">
-              Format: Soal 1 / A. Opsi A / Jawaban: A
-            </p>
+            <h2 className="text-xl font-bold mb-2">Impor Soal dari TXT</h2>
+            <p className="text-xs text-slate-500 mb-4">Paste format Ayken: Soal X / A. Opsi / Jawaban: A</p>
+            
+            <div className="mb-4 p-3 bg-slate-50 rounded border border-slate-200">
+              <p className="text-xs font-medium text-slate-600 mb-2">File yang dipilih:</p>
+              {importFile ? (
+                <p className="text-sm font-medium text-slate-900 truncate">{importFile.name}</p>
+              ) : (
+                <p className="text-sm text-slate-500 italic">Belum ada file dipilih</p>
+              )}
+            </div>
+            
             <Input
               type="file"
               accept=".txt"
               onChange={(e) => setImportFile(e.target.files?.[0] || null)}
               className="mb-4"
             />
+            
             <div className="flex gap-2">
               <Button
                 onClick={importQuestions}
                 disabled={loading || !importFile}
+                className="flex-1"
               >
                 {loading ? 'Mengimpor...' : 'Impor'}
               </Button>
               <Button
-                onClick={() => setShowImportModal(false)}
+                onClick={() => {
+                  setShowImportModal(false);
+                  setImportFile(null);
+                }}
                 variant="outline"
+                className="flex-1"
               >
                 Batal
               </Button>

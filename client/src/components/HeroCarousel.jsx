@@ -18,7 +18,7 @@ export function HeroCarousel({ slides }) {
   return (
     <section className="pt-0">
       {/* Full-width hero image (edge-to-edge, no box, no top gap) */}
-      <Container className="max-w-none px-0">
+      <Container className="max-w-none px-0 mx-0">
         <div className="aspect-video w-full overflow-hidden bg-slate-100">
           <img src={slide?.imageUrl || '/hero-frame.png'} alt="" className="h-full w-full object-cover" />
         </div>
