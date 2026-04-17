@@ -2,7 +2,8 @@ const mongoose = require('mongoose');
 
 const heroSlideSchema = new mongoose.Schema(
   {
-    title: { type: String, required: true, trim: true },
+    // UI uses image-only slides. Keep legacy fields optional for backward compatibility.
+    title: { type: String, default: 'Slide', trim: true },
     subtitle: { type: String, default: '', trim: true },
     ctaText: { type: String, default: 'Mulai' },
     ctaHref: { type: String, default: '/courses' },

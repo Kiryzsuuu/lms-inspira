@@ -6,7 +6,13 @@ export default function HeroManager() {
   const { api } = useAuth();
   const [slides, setSlides] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [form, setForm] = useState({ title: '', subtitle: '', ctaText: 'Mulai', ctaHref: '/courses', imageUrl: '', order: 0, isActive: true });
+  const [form, setForm] = useState({ imageUrl: '', order: 0, isActive: true });
+  const [heroText, setHeroText] = useState({
+    kicker: 'Belajar & Quiz Interaktif',
+    heading: 'Belajar Skill Baru, Setiap Hari',
+    subheading: 'Course singkat + quiz interaktif ala Kahoot/Quizizz.',
+  });
+  const [savingText, setSavingText] = useState(false);
   const [error, setError] = useState('');
   const [sidebarWidth, setSidebarWidth] = useState(320);
   const [isResizing, setIsResizing] = useState(false);
@@ -15,8 +21,9 @@ export default function HeroManager() {
     setLoading(true);
     setError('');
     try {
-      const res = await api.get('/heroes/all');
-      setSlides(res.data.slides || []);
+      const [slidesRes, textRes] = await Promise.all([api.get('/heroes/all'), api.get('/heroes/text')]);
+      setSlides(slidesRes.data.slides || []);
+      if (textRes?.data?.text) setHeroText(textRes.data.text);
     } catch (e) {
       setError(e?.response?.data?.error?.message || 'Gagal memuat hero');
     } finally {
@@ -52,10 +59,24 @@ export default function HeroManager() {
     setError('');
     try {
       await api.post('/heroes', form);
-      setForm({ title: '', subtitle: '', ctaText: 'Mulai', ctaHref: '/courses', imageUrl: '', order: 0, isActive: true });
+      setForm({ imageUrl: '', order: 0, isActive: true });
       await load();
     } catch (e) {
       setError(e?.response?.data?.error?.message || 'Gagal membuat hero');
+    }
+  }
+
+  async function saveHeroText(e) {
+    e.preventDefault();
+    setError('');
+    setSavingText(true);
+    try {
+      const res = await api.put('/heroes/text', heroText);
+      if (res?.data?.text) setHeroText(res.data.text);
+    } catch (e) {
+      setError(e?.response?.data?.error?.message || 'Gagal menyimpan tulisan hero');
+    } finally {
+      setSavingText(false);
     }
   }
 
@@ -106,60 +127,24 @@ export default function HeroManager() {
           <div className="cursor-col-resize select-none" />
           
           <div>
-            <div className="text-base font-bold text-slate-900">Buat Slide Baru</div>
+            <div className="text-base font-bold text-slate-900">Buat Slide Baru (Gambar)</div>
             <form className="mt-4 grid gap-2" onSubmit={createSlide}>
               <div>
-                <Label className="block text-xs sm:text-sm">Title</Label>
-                <Input 
-                  className="mt-1 text-xs sm:text-sm" 
-                  value={form.title} 
-                  onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} 
-                  placeholder="Masukkan title"
-                />
-              </div>
-              <div>
-                <Label className="block text-xs sm:text-sm">Subtitle</Label>
-                <Input 
-                  className="mt-1 text-xs sm:text-sm" 
-                  value={form.subtitle} 
-                  onChange={(e) => setForm((f) => ({ ...f, subtitle: e.target.value }))} 
-                  placeholder="Subtitle"
-                />
-              </div>
-              <div>
-                <Label className="block text-xs sm:text-sm">CTA Text</Label>
-                <Input 
-                  className="mt-1 text-xs sm:text-sm" 
-                  value={form.ctaText} 
-                  onChange={(e) => setForm((f) => ({ ...f, ctaText: e.target.value }))} 
-                  placeholder="Button text"
-                />
-              </div>
-              <div>
-                <Label className="block text-xs sm:text-sm">CTA Href</Label>
-                <Input 
-                  className="mt-1 text-xs sm:text-sm" 
-                  value={form.ctaHref} 
-                  onChange={(e) => setForm((f) => ({ ...f, ctaHref: e.target.value }))} 
-                  placeholder="/courses"
-                />
-              </div>
-              <div>
                 <Label className="block text-xs sm:text-sm">Image URL</Label>
-                <Input 
-                  className="mt-1 text-xs sm:text-sm" 
-                  value={form.imageUrl} 
-                  onChange={(e) => setForm((f) => ({ ...f, imageUrl: e.target.value }))} 
+                <Input
+                  className="mt-1 text-xs sm:text-sm"
+                  value={form.imageUrl}
+                  onChange={(e) => setForm((f) => ({ ...f, imageUrl: e.target.value }))}
                   placeholder="https://..."
                 />
               </div>
               <div>
                 <Label className="block text-xs sm:text-sm">Order</Label>
-                <Input 
-                  type="number" 
-                  className="mt-1 text-xs sm:text-sm" 
-                  value={form.order} 
-                  onChange={(e) => setForm((f) => ({ ...f, order: Number(e.target.value) }))} 
+                <Input
+                  type="number"
+                  className="mt-1 text-xs sm:text-sm"
+                  value={form.order}
+                  onChange={(e) => setForm((f) => ({ ...f, order: Number(e.target.value) }))}
                 />
               </div>
               <div className="flex items-center gap-2">
@@ -172,11 +157,44 @@ export default function HeroManager() {
                 />
                 <Label htmlFor="isActive" className="text-xs sm:text-sm">Active</Label>
               </div>
-              <Button 
-                type="submit" 
-                className="bg-[#d76810] text-white hover:bg-[#c55a0a] mt-2"
-              >
+              <Button type="submit" className="bg-[#d76810] text-white hover:bg-[#c55a0a] mt-2">
                 Tambah Slide
+              </Button>
+            </form>
+          </div>
+
+          <div className="border-t border-slate-200 pt-4">
+            <div className="text-base font-bold text-slate-900">Teks di Bawah Hero</div>
+            <form className="mt-4 grid gap-2" onSubmit={saveHeroText}>
+              <div>
+                <Label className="block text-xs sm:text-sm">Kicker</Label>
+                <Input
+                  className="mt-1 text-xs sm:text-sm"
+                  value={heroText.kicker}
+                  onChange={(e) => setHeroText((t) => ({ ...t, kicker: e.target.value }))}
+                  placeholder="Belajar & Quiz Interaktif"
+                />
+              </div>
+              <div>
+                <Label className="block text-xs sm:text-sm">Heading</Label>
+                <Input
+                  className="mt-1 text-xs sm:text-sm"
+                  value={heroText.heading}
+                  onChange={(e) => setHeroText((t) => ({ ...t, heading: e.target.value }))}
+                  placeholder="Belajar Skill Baru, Setiap Hari"
+                />
+              </div>
+              <div>
+                <Label className="block text-xs sm:text-sm">Subheading</Label>
+                <Input
+                  className="mt-1 text-xs sm:text-sm"
+                  value={heroText.subheading}
+                  onChange={(e) => setHeroText((t) => ({ ...t, subheading: e.target.value }))}
+                  placeholder="Course singkat + quiz interaktif..."
+                />
+              </div>
+              <Button type="submit" variant="outline" disabled={savingText} className="mt-2">
+                {savingText ? 'Menyimpan...' : 'Simpan Teks'}
               </Button>
             </form>
           </div>
@@ -190,10 +208,16 @@ export default function HeroManager() {
               {slides.map((s) => (
                 <Card key={s._id} className="p-4 border border-slate-200">
                   <div className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
-                    <div className="min-w-0 break-words">
-                      <div className="font-bold text-slate-900">{s.title}</div>
-                      <div className="mt-1 text-sm text-slate-600">{s.subtitle}</div>
-                      <div className="mt-2 text-xs text-slate-500">Order: {s.order} • Active: {String(s.isActive)}</div>
+                    <div className="min-w-0 break-words w-full">
+                      <div className="flex items-start gap-3">
+                        <div className="h-16 w-28 shrink-0 overflow-hidden bg-slate-100">
+                          {s.imageUrl ? <img src={s.imageUrl} alt="" className="h-full w-full object-cover" /> : null}
+                        </div>
+                        <div className="min-w-0">
+                          <div className="text-sm font-semibold text-slate-900">{s.imageUrl || '(tanpa image url)'}</div>
+                          <div className="mt-2 text-xs text-slate-500">Order: {s.order} • Active: {String(s.isActive)}</div>
+                        </div>
+                      </div>
                     </div>
                     <div className="flex shrink-0 flex-row gap-2 sm:flex-col">
                       <Button 

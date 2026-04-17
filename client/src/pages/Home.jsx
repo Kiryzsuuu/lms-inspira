@@ -8,9 +8,15 @@ export default function Home() {
   const { api } = useAuth();
   const [slides, setSlides] = useState([]);
   const [courses, setCourses] = useState([]);
+  const [heroText, setHeroText] = useState({
+    kicker: 'Belajar & Quiz Interaktif',
+    heading: 'Belajar Skill Baru, Setiap Hari',
+    subheading: 'Course singkat + quiz interaktif ala Kahoot/Quizizz.',
+  });
 
   useEffect(() => {
     api.get('/heroes').then((res) => setSlides(res.data.slides)).catch(() => setSlides([]));
+    api.get('/heroes/text').then((res) => setHeroText(res.data.text || heroText)).catch(() => {});
     api.get('/courses').then((res) => setCourses(res.data.courses)).catch(() => setCourses([]));
   }, []);
 
@@ -18,7 +24,18 @@ export default function Home() {
     <>
       <HeroCarousel slides={slides} />
 
-      <section className="mt-9 pb-14">
+      {/* Text section (separate from hero image) */}
+      <section className="mt-7 pb-4">
+        <Container>
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{heroText.kicker}</p>
+          <h1 className="mt-2 text-balance text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">
+            {heroText.heading}
+          </h1>
+          <p className="mt-3 text-pretty text-slate-600">{heroText.subheading}</p>
+        </Container>
+      </section>
+
+      <section className="mt-6 pb-14">
         <Container>
           <div className="flex items-end justify-between gap-4">
             <div>

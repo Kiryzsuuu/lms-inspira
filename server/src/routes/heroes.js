@@ -1,7 +1,14 @@
 const express = require('express');
 const { z } = require('zod');
 const { HeroSlide } = require('../models/HeroSlide');
+const { Setting } = require('../models/Setting');
 const { asyncHandler } = require('../utils/asyncHandler');
+
+const DEFAULT_HERO_TEXT = {
+  kicker: 'Belajar & Quiz Interaktif',
+  heading: 'Belajar Skill Baru, Setiap Hari',
+  subheading: 'Course singkat + quiz interaktif ala Kahoot/Quizizz.',
+};
 
 function heroesRouter({ requireAuth, requireRole }) {
   const router = express.Router();
@@ -11,6 +18,38 @@ function heroesRouter({ requireAuth, requireRole }) {
     asyncHandler(async (req, res) => {
       const slides = await HeroSlide.find({ isActive: true }).sort({ order: 1, createdAt: 1 });
       res.json({ slides });
+    })
+  );
+
+  // Hero text (separate from slides)
+  router.get(
+    '/text',
+    asyncHandler(async (req, res) => {
+      const doc = await Setting.findOne({ key: 'heroText' });
+      const value = doc?.value && typeof doc.value === 'object' ? doc.value : DEFAULT_HERO_TEXT;
+      res.json({ text: { ...DEFAULT_HERO_TEXT, ...value } });
+    })
+  );
+
+  router.put(
+    '/text',
+    requireAuth,
+    requireRole('admin', 'teacher'),
+    asyncHandler(async (req, res) => {
+      const schema = z.object({
+        kicker: z.string().optional().default(DEFAULT_HERO_TEXT.kicker),
+        heading: z.string().optional().default(DEFAULT_HERO_TEXT.heading),
+        subheading: z.string().optional().default(DEFAULT_HERO_TEXT.subheading),
+      });
+      const data = schema.parse(req.body);
+
+      const doc = await Setting.findOneAndUpdate(
+        { key: 'heroText' },
+        { $set: { value: data } },
+        { new: true, upsert: true }
+      );
+
+      res.json({ text: { ...DEFAULT_HERO_TEXT, ...(doc?.value || {}) } });
     })
   );
 
@@ -30,7 +69,8 @@ function heroesRouter({ requireAuth, requireRole }) {
     requireRole('admin', 'teacher'),
     asyncHandler(async (req, res) => {
       const schema = z.object({
-        title: z.string().min(1),
+        // Slides are image-only in UI; keep these optional for backward compatibility.
+        title: z.string().optional().default('Slide'),
         subtitle: z.string().optional().default(''),
         ctaText: z.string().optional().default('Mulai'),
         ctaHref: z.string().optional().default('/courses'),
@@ -50,7 +90,7 @@ function heroesRouter({ requireAuth, requireRole }) {
     requireRole('admin', 'teacher'),
     asyncHandler(async (req, res) => {
       const schema = z.object({
-        title: z.string().min(1),
+        title: z.string().optional().default('Slide'),
         subtitle: z.string().optional().default(''),
         ctaText: z.string().optional().default('Mulai'),
         ctaHref: z.string().optional().default('/courses'),
