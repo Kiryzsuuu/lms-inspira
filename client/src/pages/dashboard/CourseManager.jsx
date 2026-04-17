@@ -87,6 +87,7 @@ export default function CourseManager() {
   const [bankCollectionId, setBankCollectionId] = useState('');
   const [bankCount, setBankCount] = useState(10);
   const [bankQuestionTypes, setBankQuestionTypes] = useState(['mcq', 'essay', 'matching']);
+  const [editingQuestionId, setEditingQuestionId] = useState('');
   const [questionForm, setQuestionForm] = useState({
     type: 'mcq',
     promptHtml: '<p>Tulis pertanyaan di sini...</p>',
@@ -486,36 +487,68 @@ export default function CourseManager() {
     });
   }
 
+  function editQuestion(q) {
+    setEditingQuestionId(q._id);
+    setQuestionForm({
+      type: q.type || 'mcq',
+      promptHtml: q.promptHtml || '',
+      rubric: q.rubric || '',
+      order: q.order || 1,
+      choices: Array.isArray(q.choices) ? q.choices : [{ id: 'a', text: '' }, { id: 'b', text: '' }, { id: 'c', text: '' }, { id: 'd', text: '' }],
+      correctChoiceId: q.correctChoiceId || 'a',
+      pairs: Array.isArray(q.pairs) ? q.pairs : [{ left: '', right: '' }, { left: '', right: '' }],
+    });
+  }
+
+  function cancelEditQuestion() {
+    setEditingQuestionId('');
+    setQuestionForm((q) => ({
+      ...q,
+      type: 'mcq',
+      promptHtml: '<p>Tulis pertanyaan di sini...</p>',
+      rubric: '',
+      choices: q.choices.map((c) => ({ ...c, text: '' })),
+      correctChoiceId: 'a',
+      pairs: q.pairs?.map(() => ({ left: '', right: '' })) || [
+        { left: '', right: '' },
+        { left: '', right: '' },
+      ],
+    }));
+  }
+
   async function createQuestion(e) {
     e.preventDefault();
     if (!activeQuizId) return;
     setError('');
     try {
+      const payload = {};
       if (questionForm.type === 'essay') {
-        await api.post(`/quizzes/${activeQuizId}/questions`, {
-          type: 'essay',
-          promptHtml: questionForm.promptHtml,
-          rubric: questionForm.rubric,
-          order: questionForm.order,
-        });
+        payload.type = 'essay';
+        payload.promptHtml = questionForm.promptHtml;
+        payload.rubric = questionForm.rubric;
+        if (!editingQuestionId) payload.order = questionForm.order;
       } else if (questionForm.type === 'matching') {
         const cleanedPairs = (questionForm.pairs || []).filter((p) => (p.left || '').trim() && (p.right || '').trim());
-        await api.post(`/quizzes/${activeQuizId}/questions`, {
-          type: 'matching',
-          promptHtml: questionForm.promptHtml,
-          order: questionForm.order,
-          pairs: cleanedPairs,
-        });
+        payload.type = 'matching';
+        payload.promptHtml = questionForm.promptHtml;
+        payload.pairs = cleanedPairs;
+        if (!editingQuestionId) payload.order = questionForm.order;
       } else {
         const cleanedChoices = questionForm.choices.filter((c) => c.text.trim());
-        await api.post(`/quizzes/${activeQuizId}/questions`, {
-          type: 'mcq',
-          promptHtml: questionForm.promptHtml,
-          order: questionForm.order,
-          choices: cleanedChoices,
-          correctChoiceId: questionForm.correctChoiceId,
-        });
+        payload.type = 'mcq';
+        payload.promptHtml = questionForm.promptHtml;
+        payload.choices = cleanedChoices;
+        payload.correctChoiceId = questionForm.correctChoiceId;
+        if (!editingQuestionId) payload.order = questionForm.order;
       }
+
+      if (editingQuestionId) {
+        await api.put(`/quizzes/${activeQuizId}/questions/${editingQuestionId}`, payload);
+      } else {
+        await api.post(`/quizzes/${activeQuizId}/questions`, payload);
+      }
+
+      setEditingQuestionId('');
       setQuestionForm((q) => ({
         ...q,
         type: 'mcq',
@@ -531,7 +564,7 @@ export default function CourseManager() {
       }));
       await loadQuestions(activeQuizId);
     } catch (e) {
-      setError(e?.response?.data?.error?.message || 'Gagal tambah soal');
+      setError(e?.response?.data?.error?.message || 'Gagal ' + (editingQuestionId ? 'update' : 'tambah') + ' soal');
     }
   }
 
@@ -1300,6 +1333,14 @@ export default function CourseManager() {
                           </form>
 
                           <form className="mt-3 grid gap-3" onSubmit={createQuestion}>
+                            {editingQuestionId && (
+                              <div className="flex items-center justify-between rounded bg-slate-100 p-2">
+                                <div className="text-xs font-semibold text-slate-700">Mode: Edit soal</div>
+                                <Button type="button" variant="secondary" className="px-2 py-1 text-xs" onClick={cancelEditQuestion}>
+                                  Batal
+                                </Button>
+                              </div>
+                            )}
                             <div>
                               <Label>Tipe Soal</Label>
                               <div className="mt-1">
@@ -1458,7 +1499,7 @@ export default function CourseManager() {
                               </div>
                             </div>
 
-                            <Button type="submit">Tambah Soal</Button>
+                            <Button type="submit">{editingQuestionId ? 'Update Soal' : 'Tambah Soal'}</Button>
                           </form>
 
                           <div className="mt-4 flex flex-wrap items-center gap-2">
@@ -1504,6 +1545,9 @@ export default function CourseManager() {
                                           ↓
                                         </Button>
                                       </div>
+                                      <Button variant="primary" className="px-3" onClick={() => editQuestion(q)}>
+                                        Edit
+                                      </Button>
                                       <Button variant="danger" className="px-3" onClick={() => deleteQuestion(q)}>
                                         Hapus
                                       </Button>
