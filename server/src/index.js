@@ -31,9 +31,21 @@ async function main() {
 
   app.use(morgan('dev'));
   app.use(express.json({ limit: '1mb' }));
+  const allowedOrigins = String(env.CLIENT_ORIGIN || '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+
   app.use(
     cors({
-      origin: env.CLIENT_ORIGIN,
+      origin: (origin, callback) => {
+        // allow non-browser clients / same-origin
+        if (!origin) return callback(null, true);
+        if (allowedOrigins.length === 0) return callback(null, true);
+        if (allowedOrigins.includes('*')) return callback(null, true);
+        if (allowedOrigins.includes(origin)) return callback(null, true);
+        return callback(new Error('Not allowed by CORS'));
+      },
       credentials: false,
     })
   );
@@ -46,7 +58,7 @@ async function main() {
 
   // Root (helpful in dev when user opens backend URL)
   app.get('/', (req, res) => {
-    if (env.CLIENT_ORIGIN) return res.redirect(env.CLIENT_ORIGIN);
+    if (allowedOrigins[0]) return res.redirect(allowedOrigins[0]);
     return res.json({ ok: true, message: 'API server running. Visit the client app for UI.' });
   });
 
