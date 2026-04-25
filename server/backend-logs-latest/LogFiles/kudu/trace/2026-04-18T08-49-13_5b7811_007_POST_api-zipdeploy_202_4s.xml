@@ -1,0 +1,15 @@
+<step title="Incoming Request" date="2026-04-18T08:49:13.556" instance="5b7811" url="/api/zipdeploy?isAsync=true" method="POST" type="request" pid="833,1,24" Accept="*/*" Host="lms-inspira-api.scm.azurewebsites.net" User-Agent="AZURECLI/2.85.0 (MSI)" Accept-Encoding="gzip, deflate" Authorization="Bas..." Cache-Control="no-cache" Content-Type="application/octet-stream" Content-Length="2747597" x-ms-client-request-id="76657cd9-3b03-11f1-bf42-9c6b00385cf4" x-ms-artifact-checksum="bf71a64951dbf3228de051a7e98925d2be6df175381f5f72aad3563f3fdb88ca" X-ARR-LOG-ID="76657cd9-3b03-11f1-bf42-9c6b00385cf4" CLIENT-IP="36.70.82.121:56554" X-SITE-DEPLOYMENT-ID="lms-inspira-api" WAS-DEFAULT-HOSTNAME="lms-inspira-api.scm.azurewebsites.net" X-Forwarded-Proto="https" X-AppService-Proto="https" X-Forwarded-TlsVersion="1.3" X-WAWS-Unencoded-URL="/api/zipdeploy?isAsync=true" X-Client-IP="36.70.82.121" X-Client-Port="56554" >
+  <step title="Cleanup Xml Logs" date="2026-04-18T08:49:13.611" /><!-- duration: 30ms -->
+  <step title="ZipPushDeploy" date="2026-04-18T08:49:13.950" >
+    <step title="ZipDeploy. Extract zip. Remote build." date="2026-04-18T08:49:14.070" /><!-- duration: 22ms -->
+    <step title="Starting PushDeployAsync" date="2026-04-18T08:49:14.118" /><!-- duration: 20ms -->
+    <step title="Writing artifact to /tmp/zipdeploy/2eb55bca-7598-47c6-bbba-4cd4304568fe.zip" date="2026-04-18T08:49:14.211" >
+      <step title="Writing multipart request body to /tmp/zipdeploy/2eb55bca-7598-47c6-bbba-4cd4304568fe.zip" date="2026-04-18T08:49:14.238" /><!-- duration: 32ms -->
+    </step><!-- duration: 2264ms -->
+    <step title="Start deployment in the background" date="2026-04-18T08:49:16.685" >
+      <step title="Acquiring Deployment Lock" date="2026-04-18T08:49:17.027" /><!-- duration: 60ms -->
+      <step title="Acquired Deployment Lock" date="2026-04-18T08:49:17.238" /><!-- duration: 11ms -->
+    </step><!-- duration: 831ms -->
+  </step><!-- duration: 3628ms -->
+  <step title="Outgoing response" date="2026-04-18T08:49:17.620" type="response" statusCode="202" statusText="Accepted" /><!-- duration: 68ms -->
+</step><!-- duration: 4153ms -->

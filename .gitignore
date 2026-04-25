@@ -46,3 +46,4 @@ Desktop.ini
 
 # server uploads (avoid committing user-generated content)
 server/uploads/
+.azure

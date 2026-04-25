@@ -1,0 +1,14 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/Azure/azure-dev/main/schemas/v1.0/azure.yaml.json
+
+name: lms-inspira
+metadata:
+    template: azd-init@1.24.1
+services:
+    lms-inspira:
+        project: .
+        host: containerapp
+        language: js
+resources:
+    lms-inspira:
+        type: host.containerapp
+        port: 80

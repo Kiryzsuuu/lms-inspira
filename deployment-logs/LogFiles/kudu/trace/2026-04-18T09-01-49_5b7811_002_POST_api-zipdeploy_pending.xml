@@ -1,0 +1,19 @@
+<step title="Incoming Request" date="2026-04-18T09:01:49.100" instance="5b7811" url="/api/zipdeploy?isAsync=true" method="POST" type="request" pid="833,1,5" Accept="*/*" Host="lms-inspira-api.scm.azurewebsites.net" User-Agent="AZURECLI/2.85.0 (MSI)" Accept-Encoding="gzip, deflate" Authorization="Bas..." Cache-Control="no-cache" Content-Type="application/octet-stream" Content-Length="2747597" x-ms-client-request-id="2dc73b64-3b05-11f1-ba23-9c6b00385cf4" x-ms-artifact-checksum="bf71a64951dbf3228de051a7e98925d2be6df175381f5f72aad3563f3fdb88ca" X-ARR-LOG-ID="2dc73b64-3b05-11f1-ba23-9c6b00385cf4" CLIENT-IP="36.70.82.121:53844" X-SITE-DEPLOYMENT-ID="lms-inspira-api" WAS-DEFAULT-HOSTNAME="lms-inspira-api.scm.azurewebsites.net" X-Forwarded-Proto="https" X-AppService-Proto="https" X-Forwarded-TlsVersion="1.3" X-WAWS-Unencoded-URL="/api/zipdeploy?isAsync=true" X-Client-IP="36.70.82.121" X-Client-Port="53844" >
+  <step title="ZipPushDeploy" date="2026-04-18T09:01:49.797" >
+    <step title="ZipDeploy. Extract zip. Remote build." date="2026-04-18T09:01:49.809" /><!-- duration: 7ms -->
+    <step title="None repository commit" date="2026-04-18T09:01:49.822" >
+      <step title="Commit id: 7a4ad573-3791-4b45-9ced-cf13b5f6664c" date="2026-04-18T09:01:49.825" Message="N/A" AuthorName="N/A" AuthorEmail="N/A" /><!-- duration: 3ms -->
+    </step><!-- duration: 9ms -->
+    <step title="Starting PushDeployAsync" date="2026-04-18T09:01:49.833" /><!-- duration: 3ms -->
+    <step title="Removing _del_node_modules symlink" date="2026-04-18T09:01:49.862" >
+      <step title="Writing artifact to /tmp/zipdeploy/c8cc181f-a0ad-4fbe-a819-8f8838ef8f7e.zip" date="2026-04-18T09:01:49.930" >
+        <step title="Writing multipart request body to /tmp/zipdeploy/c8cc181f-a0ad-4fbe-a819-8f8838ef8f7e.zip" date="2026-04-18T09:01:49.960" /><!-- duration: 4ms -->
+      </step><!-- duration: 203ms -->
+      <step title="Removing previous build artifact&apos;s manifest file" date="2026-04-18T09:01:50.154" >
+        <step title="Start deployment in the background" date="2026-04-18T09:01:50.174" >
+          <step title="Acquiring Deployment Lock" date="2026-04-18T09:01:50.202" /><!-- duration: 4ms -->
+          <step title="Acquired Deployment Lock" date="2026-04-18T09:01:50.255" /><!-- duration: 8ms -->
+        </step><!-- duration: 168ms -->
+      </step><!-- duration: 194ms -->
+      <step title="Outgoing response" date="2026-04-18T09:01:50.373" type="response" statusCode="202" statusText="Accepted" /><!-- duration: 7ms -->
+    </step><!-- duration: 526ms -->
