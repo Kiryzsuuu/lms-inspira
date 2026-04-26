@@ -91,6 +91,7 @@ export default function CourseManager() {
   const [questionForm, setQuestionForm] = useState({
     type: 'mcq',
     promptHtml: '<p>Tulis pertanyaan di sini...</p>',
+    imageUrl: '',
     rubric: '',
     order: 1,
     choices: [
@@ -492,6 +493,7 @@ export default function CourseManager() {
     setQuestionForm({
       type: q.type || 'mcq',
       promptHtml: q.promptHtml || '',
+      imageUrl: q.imageUrl || '',
       rubric: q.rubric || '',
       order: q.order || 1,
       choices: Array.isArray(q.choices) ? q.choices : [{ id: 'a', text: '' }, { id: 'b', text: '' }, { id: 'c', text: '' }, { id: 'd', text: '' }],
@@ -506,6 +508,7 @@ export default function CourseManager() {
       ...q,
       type: 'mcq',
       promptHtml: '<p>Tulis pertanyaan di sini...</p>',
+      imageUrl: '',
       rubric: '',
       choices: q.choices.map((c) => ({ ...c, text: '' })),
       correctChoiceId: 'a',
@@ -525,18 +528,21 @@ export default function CourseManager() {
       if (questionForm.type === 'essay') {
         payload.type = 'essay';
         payload.promptHtml = questionForm.promptHtml;
+        payload.imageUrl = questionForm.imageUrl || '';
         payload.rubric = questionForm.rubric;
         if (!editingQuestionId) payload.order = questionForm.order;
       } else if (questionForm.type === 'matching') {
         const cleanedPairs = (questionForm.pairs || []).filter((p) => (p.left || '').trim() && (p.right || '').trim());
         payload.type = 'matching';
         payload.promptHtml = questionForm.promptHtml;
+        payload.imageUrl = questionForm.imageUrl || '';
         payload.pairs = cleanedPairs;
         if (!editingQuestionId) payload.order = questionForm.order;
       } else {
         const cleanedChoices = questionForm.choices.filter((c) => c.text.trim());
         payload.type = 'mcq';
         payload.promptHtml = questionForm.promptHtml;
+        payload.imageUrl = questionForm.imageUrl || '';
         payload.choices = cleanedChoices;
         payload.correctChoiceId = questionForm.correctChoiceId;
         if (!editingQuestionId) payload.order = questionForm.order;
@@ -553,6 +559,7 @@ export default function CourseManager() {
         ...q,
         type: 'mcq',
         promptHtml: '<p>Tulis pertanyaan di sini...</p>',
+        imageUrl: '',
         rubric: '',
         order: q.order + 1,
         choices: q.choices.map((c) => ({ ...c, text: '' })),
@@ -853,6 +860,9 @@ export default function CourseManager() {
                     <div className="mt-1 text-sm text-slate-600">Published: {String(selected.isPublished)}</div>
                   </div>
                   <div className="flex gap-2">
+                    <Button variant="outline" onClick={() => window.open(`/dashboard/courses/${selected._id}/stats`, '_blank')}>
+                      Lihat Statistik
+                    </Button>
                     <Button variant="outline" onClick={() => updateSelectedCourse({ isPublished: !selected.isPublished })}>
                       Toggle Publish
                     </Button>
@@ -1401,6 +1411,62 @@ export default function CourseManager() {
                                   return res.data.url;
                                 }}
                               />
+                            </div>
+
+                            <div>
+                              <Label>Gambar Soal (opsional)</Label>
+                              {questionForm.imageUrl && (
+                                <div className="mt-2 max-w-md">
+                                  <img
+                                    src={questionForm.imageUrl}
+                                    alt="Question"
+                                    className="w-full h-auto rounded border border-slate-200"
+                                  />
+                                </div>
+                              )}
+                              <div className="mt-2 grid gap-2">
+                                <Input
+                                  value={questionForm.imageUrl}
+                                  onChange={(e) => setQuestionForm((f) => ({ ...f, imageUrl: e.target.value }))}
+                                  placeholder="URL gambar atau upload di bawah"
+                                />
+                                <label className="inline-flex items-center">
+                                  <span className="inline-flex items-center justify-center px-4 py-2 text-sm font-semibold border border-slate-200 bg-white text-slate-900 hover:bg-slate-50 cursor-pointer">
+                                    Upload Gambar
+                                  </span>
+                                  <input
+                                    type="file"
+                                    accept="image/*"
+                                    className="hidden"
+                                    onChange={async (e) => {
+                                      const file = e.target.files?.[0];
+                                      if (!file) return;
+                                      setError('');
+                                      try {
+                                        const fd = new FormData();
+                                        fd.append('file', file);
+                                        const res = await api.post('/uploads/image', fd, {
+                                          headers: { 'Content-Type': 'multipart/form-data' },
+                                        });
+                                        setQuestionForm((f) => ({ ...f, imageUrl: res.data.url }));
+                                      } catch (err) {
+                                        setError(err?.response?.data?.error?.message || 'Gagal upload gambar');
+                                      } finally {
+                                        e.target.value = '';
+                                      }
+                                    }}
+                                  />
+                                </label>
+                                {questionForm.imageUrl && (
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={() => setQuestionForm((f) => ({ ...f, imageUrl: '' }))}
+                                  >
+                                    Hapus Gambar
+                                  </Button>
+                                )}
+                              </div>
                             </div>
 
                             {questionForm.type === 'essay' ? (

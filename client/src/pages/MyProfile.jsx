@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Card, Button, Input, Label } from '../components/ui';
+import { SidebarShell } from '../components/SidebarShell';
 import { useAuth } from '../lib/auth';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 
@@ -188,60 +189,59 @@ export default function MyProfile() {
   const completedCourses = courses.filter((c) => user.completedCourseIds?.includes(c._id));
   const activeCourse = user.activeCourseId ? courses.find((c) => c._id === user.activeCourseId) : null;
 
+  const renderProfileSidebar = (closeDrawer) => (
+    <div className="space-y-2">
+      <button
+        onClick={() => {
+          setActiveTab('profile');
+          closeDrawer();
+        }}
+        className={`w-full rounded-2xl px-4 py-3 text-left text-sm font-semibold transition ${
+          activeTab === 'profile'
+            ? 'bg-orange-100 text-orange-900 shadow-sm'
+            : 'text-slate-700 hover:bg-white hover:shadow-sm'
+        }`}
+      >
+        Informasi Pribadi
+      </button>
+      <button
+        onClick={() => {
+          setActiveTab('courses');
+          closeDrawer();
+        }}
+        className={`w-full rounded-2xl px-4 py-3 text-left text-sm font-semibold transition ${
+          activeTab === 'courses'
+            ? 'bg-orange-100 text-orange-900 shadow-sm'
+            : 'text-slate-700 hover:bg-white hover:shadow-sm'
+        }`}
+      >
+        Riwayat Courses
+      </button>
+      <button
+        onClick={() => {
+          setActiveTab('certificates');
+          closeDrawer();
+        }}
+        className={`w-full rounded-2xl px-4 py-3 text-left text-sm font-semibold transition ${
+          activeTab === 'certificates'
+            ? 'bg-orange-100 text-orange-900 shadow-sm'
+            : 'text-slate-700 hover:bg-white hover:shadow-sm'
+        }`}
+      >
+        Sertifikat
+      </button>
+    </div>
+  );
+
   return (
-    <div className="flex min-h-screen flex-col">
-      {/* Header */}
-      <div className="flex shrink-0 flex-col gap-4 border-b border-slate-200 px-4 py-6 sm:px-6">
-        <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-start">
-          <div className="flex flex-col items-start gap-1 text-left">
-            <h1 className="text-3xl font-extrabold tracking-tight">Profil Saya</h1>
-            <p className="text-sm text-slate-600">Kelola informasi pribadi dan lihat riwayat belajar Anda</p>
-          </div>
-        </div>
-        {error ? <div className="bg-rose-50 p-3 text-sm text-rose-700">{error}</div> : null}
-        {success ? <div className="bg-green-50 p-3 text-sm text-green-700">{success}</div> : null}
-      </div>
-
-      {/* Main Layout */}
-      <div className="flex flex-1 overflow-hidden">
-        {/* Sidebar */}
-        <div className="w-48 border-r border-slate-200 bg-slate-50 p-4 overflow-auto">
-          <div className="space-y-2">
-            <button
-              onClick={() => setActiveTab('profile')}
-              className={`w-full text-left px-3 py-2 rounded text-sm font-medium transition ${
-                activeTab === 'profile'
-                  ? 'bg-orange-100 text-orange-900'
-                  : 'text-slate-700 hover:bg-slate-100'
-              }`}
-            >
-              Informasi Pribadi
-            </button>
-            <button
-              onClick={() => setActiveTab('courses')}
-              className={`w-full text-left px-3 py-2 rounded text-sm font-medium transition ${
-                activeTab === 'courses'
-                  ? 'bg-orange-100 text-orange-900'
-                  : 'text-slate-700 hover:bg-slate-100'
-              }`}
-            >
-              Riwayat Courses
-            </button>
-            <button
-              onClick={() => setActiveTab('certificates')}
-              className={`w-full text-left px-3 py-2 rounded text-sm font-medium transition ${
-                activeTab === 'certificates'
-                  ? 'bg-orange-100 text-orange-900'
-                  : 'text-slate-700 hover:bg-slate-100'
-              }`}
-            >
-              Sertifikat
-            </button>
-          </div>
-        </div>
-
-        {/* Main Content */}
-        <div className="flex-1 overflow-auto p-4 sm:p-6">
+    <SidebarShell
+      title="Profil Saya"
+      description="Kelola informasi pribadi, pantau course yang sedang dipelajari, dan akses sertifikat Anda dalam satu tampilan yang lebih rapi."
+      sidebarTitle="Navigasi profil"
+      renderSidebar={renderProfileSidebar}
+    >
+      {error ? <div className="mb-5 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div> : null}
+      {success ? <div className="mb-5 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{success}</div> : null}
           {/* Profile Tab */}
           {activeTab === 'profile' && (
             <div className="space-y-6">
@@ -619,9 +619,11 @@ export default function MyProfile() {
                             <h4 className="font-semibold text-slate-900">✓ {c.title}</h4>
                             <p className="mt-1 text-sm text-slate-600">Selesai 100%</p>
                           </div>
-                          <Button variant="outline" className="shrink-0 text-xs">
-                            Download
-                          </Button>
+                          <Link to={`/certificate/${c._id}`}>
+                            <Button variant="outline" className="shrink-0 text-xs">
+                              Lihat Sertifikat
+                            </Button>
+                          </Link>
                         </div>
                       </Card>
                     ))}
@@ -632,8 +634,6 @@ export default function MyProfile() {
               </div>
             </div>
           )}
-        </div>
-      </div>
-    </div>
+    </SidebarShell>
   );
 }

@@ -16,7 +16,7 @@ export function Card({ className, ...props }) {
   return (
     <div
       className={clsx(
-        'border border-slate-200 bg-white shadow-sm',
+        'rounded-2xl border border-slate-200 bg-white shadow-sm',
         'dark:border-slate-800 dark:bg-slate-950',
         className
       )}
@@ -30,7 +30,7 @@ export function Button({ variant = 'primary', className, ...props }) {
     'inline-flex items-center justify-center px-4 py-2 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-orange-400 disabled:opacity-50 disabled:pointer-events-none';
 
   const variants = {
-    primary: 'bg-[#d76810] text-white hover:bg-[#c55a0a]',
+    primary: 'bg-primary text-white hover:bg-primary/90',
     ghost: 'bg-transparent text-slate-900 hover:bg-slate-100',
     outline: 'border border-slate-200 bg-white text-slate-900 hover:bg-slate-50',
     danger: 'bg-rose-600 text-white hover:bg-rose-500',
@@ -43,7 +43,7 @@ export function Input({ className, ...props }) {
   return (
     <input
       className={clsx(
-        'w-full border border-slate-200 bg-white px-3 py-2 text-sm',
+        'w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm',
         'focus:outline-none focus:ring-2 focus:ring-orange-400',
         className
       )}
@@ -56,7 +56,7 @@ export function Textarea({ className, ...props }) {
   return (
     <textarea
       className={clsx(
-        'w-full border border-slate-200 bg-white px-3 py-2 text-sm',
+        'w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm',
         'focus:outline-none focus:ring-2 focus:ring-orange-400',
         className
       )}

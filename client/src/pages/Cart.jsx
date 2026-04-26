@@ -45,6 +45,7 @@ export default function Cart() {
   const [totalIdr, setTotalIdr] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [successMsg, setSuccessMsg] = useState('');
 
   const [paying, setPaying] = useState(false);
   const [midtransConfig, setMidtransConfig] = useState(null);
@@ -54,11 +55,9 @@ export default function Cart() {
     setError('');
     try {
       const res = await api.get('/cart');
-      console.log('[Cart] Loaded items:', res.data.items?.length || 0);
       setItems(res.data.items || []);
       setTotalIdr(res.data.totalIdr || 0);
     } catch (e) {
-      console.error('[Cart] Gagal load cart:', e?.response?.data?.error?.message);
       setItems([]);
       setTotalIdr(0);
       setError(e?.response?.data?.error?.message || 'Gagal load cart');
@@ -68,16 +67,13 @@ export default function Cart() {
   }
 
   useEffect(() => {
-    console.log('[Cart] Component mounted, loading cart...');
     refresh();
     api
       .get('/payments/config')
       .then((res) => {
-        console.log('[Cart] Midtrans config loaded');
         setMidtransConfig(res.data);
       })
       .catch(() => {
-        console.warn('[Cart] Failed to load Midtrans config');
         setMidtransConfig({ clientKey: '', isProduction: false });
       });
   }, []);
@@ -98,6 +94,7 @@ export default function Cart() {
   async function checkout() {
     setPaying(true);
     setError('');
+    setSuccessMsg('');
     try {
       const cfg = midtransConfig || (await api.get('/payments/config')).data;
       const res = await api.post('/payments/checkout', {});
@@ -112,20 +109,18 @@ export default function Cart() {
 
       window.snap.pay(res.data.snapToken, {
         onSuccess: async () => {
-          // "Success" from Snap does not always mean the transaction is already settled.
-          // Course access will be unlocked only after webhook status becomes "settlement".
           await refresh();
           setError('');
-          alert('Pembayaran diterima. Course akan terbuka otomatis setelah status settlement.');
+          setSuccessMsg('Pembayaran diterima. Course akan terbuka otomatis setelah status settlement.');
         },
         onPending: () => {
-          // pending payment; user can return later; webhook will unlock
+          setSuccessMsg('Pembayaran pending. Silakan selesaikan pembayaran sesuai instruksi yang muncul.');
         },
         onError: () => {
           setError('Pembayaran gagal / dibatalkan');
         },
         onClose: () => {
-          // user closed popup
+          setSuccessMsg('');
         },
       });
     } catch (e) {
@@ -136,21 +131,42 @@ export default function Cart() {
   }
 
   return (
-    <section className="py-10">
-      <Container className="max-w-3xl">
-        <div className="flex items-end justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-extrabold tracking-tight">Cart</h1>
-            <p className="mt-1 text-sm text-slate-600">Checkout via Midtrans (VA / QRIS).</p>
+    <section className="bg-slate-100/70 py-8 sm:py-10">
+      <Container className="max-w-6xl space-y-6">
+        <Card className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+          <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-[#d76810] px-6 py-8 text-white sm:px-8">
+            <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+              <div>
+                <div className="text-xs font-semibold uppercase tracking-[0.2em] text-orange-100">Midtrans checkout</div>
+                <h1 className="mt-2 text-3xl font-extrabold tracking-tight">Keranjang Course</h1>
+                <p className="mt-3 max-w-2xl text-sm text-slate-100/90">Pembayaran course diproses melalui Midtrans dengan metode QRIS dan virtual account.</p>
+              </div>
+              <Link to="/courses">
+                <Button variant="outline" className="rounded-2xl border-white/30 bg-white/10 text-white hover:bg-white/20">Tambah course</Button>
+              </Link>
+            </div>
           </div>
-          <Link to="/courses">
-            <Button variant="outline">Tambah course</Button>
-          </Link>
-        </div>
+          <div className="grid gap-4 p-6 md:grid-cols-3">
+            <div className="rounded-2xl bg-slate-50 p-4">
+              <div className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Jumlah item</div>
+              <div className="mt-2 text-3xl font-extrabold text-slate-900">{items.length}</div>
+            </div>
+            <div className="rounded-2xl bg-blue-50 p-4 text-blue-900">
+              <div className="text-xs font-semibold uppercase tracking-[0.16em]">Metode bayar</div>
+              <div className="mt-2 text-xl font-extrabold">QRIS / VA</div>
+            </div>
+            <div className="rounded-2xl bg-orange-50 p-4 text-orange-900">
+              <div className="text-xs font-semibold uppercase tracking-[0.16em]">Total sementara</div>
+              <div className="mt-2 text-3xl font-extrabold">Rp {formatIdr(totalIdr)}</div>
+            </div>
+          </div>
+        </Card>
 
-        {error ? <div className="mt-4 bg-rose-50 p-3 text-sm text-rose-700">{error}</div> : null}
+        {error ? <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div> : null}
+        {successMsg ? <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{successMsg}</div> : null}
 
-        <div className="mt-6 grid gap-3">
+        <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+          <div className="grid gap-4">
           {loading ? (
             <Card className="p-6 text-sm text-slate-600">Memuat...</Card>
           ) : items.length === 0 ? (
@@ -164,7 +180,7 @@ export default function Cart() {
             </Card>
           ) : (
             items.map((it) => (
-              <Card key={it.course._id} className="p-5">
+              <Card key={it.course._id} className="rounded-3xl border border-slate-200 p-5 shadow-sm">
                 <div className="flex flex-col gap-4 sm:flex-row">
                   <div className="w-full sm:w-56">
                     <div className="aspect-[16/9] overflow-hidden bg-slate-100">
@@ -196,22 +212,38 @@ export default function Cart() {
             ))
           )}
 
-          {items.length > 0 && !loading ? (
-            <Card className="p-5">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-sm text-slate-600">Total</div>
-                  <div className="text-2xl font-extrabold">Rp {formatIdr(totalIdr)}</div>
+          </div>
+
+          <div>
+            <Card className="rounded-3xl border border-slate-200 p-6 shadow-sm">
+              <h2 className="text-xl font-bold text-slate-900">Ringkasan pembayaran</h2>
+              <div className="mt-5 space-y-4 text-sm text-slate-600">
+                <div className="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3">
+                  <span>Subtotal</span>
+                  <span className="font-semibold text-slate-900">Rp {formatIdr(totalIdr)}</span>
                 </div>
-                <Button disabled={!canCheckout} onClick={checkout}>
-                  {paying ? 'Memproses...' : 'Checkout & Bayar'}
-                </Button>
+                <div className="rounded-2xl border border-orange-200 bg-orange-50 px-4 py-4 text-orange-900">
+                  <div className="font-semibold">Informasi Midtrans</div>
+                  <ul className="mt-2 list-disc space-y-1 pl-4 text-sm">
+                    <li>Pembayaran dibuka melalui Snap Midtrans.</li>
+                    <li>Metode yang aktif: QRIS dan Virtual Account.</li>
+                    <li>Akses course aktif otomatis setelah status settlement.</li>
+                  </ul>
+                </div>
               </div>
+              <div className="mt-6 rounded-2xl bg-slate-900 px-5 py-5 text-white">
+                <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-300">Total pembayaran</div>
+                <div className="mt-2 text-3xl font-extrabold">Rp {formatIdr(totalIdr)}</div>
+                <div className="mt-2 text-xs text-slate-300">{items.length} course siap diproses</div>
+              </div>
+              <Button disabled={!canCheckout} onClick={checkout} className="mt-6 w-full rounded-2xl py-3 text-base">
+                {paying ? 'Memproses...' : 'Checkout & Bayar'}
+              </Button>
               <div className="mt-3 text-xs text-slate-500">
                 Course akan terbuka otomatis setelah status pembayaran <span className="font-semibold">settlement</span>.
               </div>
             </Card>
-          ) : null}
+          </div>
         </div>
       </Container>
     </section>

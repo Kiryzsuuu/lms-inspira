@@ -244,7 +244,8 @@ function questionBankRouter({ requireAuth, requireRole }) {
         .object({
           type: z.enum(['mcq', 'essay', 'matching']).optional().default('mcq'),
           promptHtml: z.string().optional().default(''),
-          choices: z.array(z.object({ id: z.string().min(1), text: z.string().min(1) })).optional().default([]),
+          questionImageUrl: z.string().optional().default(''),
+          choices: z.array(z.object({ id: z.string().min(1), text: z.string().min(1), imageUrl: z.string().optional().default('') })).optional().default([]),
           correctChoiceId: z.string().optional().default(''),
           pairs: z.array(z.object({ left: z.string().min(1), right: z.string().min(1) })).optional().default([]),
           rubric: z.string().optional().default(''),
@@ -299,7 +300,8 @@ function questionBankRouter({ requireAuth, requireRole }) {
         .object({
           type: z.enum(['mcq', 'essay', 'matching']).optional(),
           promptHtml: z.string().optional(),
-          choices: z.array(z.object({ id: z.string().min(1), text: z.string().min(1) })).optional(),
+          questionImageUrl: z.string().optional().default(''),
+          choices: z.array(z.object({ id: z.string().min(1), text: z.string().min(1), imageUrl: z.string().optional().default('') })).optional(),
           correctChoiceId: z.string().optional(),
           pairs: z.array(z.object({ left: z.string().min(1), right: z.string().min(1) })).optional(),
           rubric: z.string().optional(),
@@ -329,6 +331,7 @@ function questionBankRouter({ requireAuth, requireRole }) {
       const update = {};
       if (data.type !== undefined) update.type = data.type;
       if (data.promptHtml !== undefined) update.promptHtml = data.promptHtml;
+      if (data.questionImageUrl !== undefined) update.questionImageUrl = data.questionImageUrl;
       if (data.choices !== undefined) update.choices = data.choices;
       if (data.correctChoiceId !== undefined) update.correctChoiceId = data.correctChoiceId;
       if (data.pairs !== undefined) update.pairs = data.pairs;
@@ -384,7 +387,8 @@ function questionBankRouter({ requireAuth, requireRole }) {
         .object({
           type: z.enum(['mcq', 'essay', 'matching']).optional().default('mcq'),
           promptHtml: z.string().optional().default(''),
-          choices: z.array(z.object({ id: z.string().min(1), text: z.string().min(1) })).optional().default([]),
+          questionImageUrl: z.string().optional().default(''),
+          choices: z.array(z.object({ id: z.string().min(1), text: z.string().min(1), imageUrl: z.string().optional().default('') })).optional().default([]),
           correctChoiceId: z.string().optional().default(''),
           pairs: z.array(z.object({ left: z.string().min(1), right: z.string().min(1) })).optional().default([]),
           rubric: z.string().optional().default(''),
@@ -430,7 +434,7 @@ function questionBankRouter({ requireAuth, requireRole }) {
         .object({
           type: z.enum(['mcq', 'essay', 'matching']).optional().default(existing.type),
           promptHtml: z.string().optional().default(existing.promptHtml),
-          choices: z.array(z.object({ id: z.string().min(1), text: z.string().min(1) })).optional().default(existing.choices || []),
+          choices: z.array(z.object({ id: z.string().min(1), text: z.string().min(1), imageUrl: z.string().optional().default('') })).optional().default(existing.choices || []),
           correctChoiceId: z.string().optional().default(existing.correctChoiceId || ''),
           pairs: z.array(z.object({ left: z.string().min(1), right: z.string().min(1) })).optional().default(existing.pairs || []),
           rubric: z.string().optional().default(existing.rubric || ''),

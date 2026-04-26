@@ -1,0 +1,91 @@
+import { useEffect, useState } from 'react';
+import clsx from 'clsx';
+import { Button, Card, Container } from './ui';
+
+export function SidebarShell({
+  title,
+  description,
+  actions,
+  sidebarTitle,
+  sidebar,
+  renderSidebar,
+  children,
+  sidebarWidth = 'w-72',
+  contentClassName = '',
+}) {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  useEffect(() => {
+    function handleResize() {
+      if (window.innerWidth >= 1024) setSidebarOpen(false);
+    }
+
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  return (
+    <section className="min-h-screen bg-slate-100/70 py-6 sm:py-8">
+      <Container className="space-y-6">
+        <Card className="overflow-hidden rounded-3xl border border-slate-200/80 bg-white shadow-sm">
+          <div className="border-b border-slate-200 bg-gradient-to-r from-white via-orange-50/40 to-white px-5 py-6 sm:px-8">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+              <div className="space-y-2">
+                <div className="inline-flex items-center rounded-full border border-orange-200 bg-orange-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-orange-700">
+                  LMS Inspira
+                </div>
+                <div>
+                  <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">{title}</h1>
+                  {description ? <p className="mt-2 max-w-2xl text-sm text-slate-600">{description}</p> : null}
+                </div>
+              </div>
+              <div className="flex flex-wrap items-center gap-3">{actions}</div>
+            </div>
+          </div>
+
+          <div className="relative flex min-h-[calc(100vh-14rem)] bg-white">
+            <aside
+              className={clsx(
+                'hidden border-r border-slate-200 bg-slate-50/90 lg:block',
+                sidebarWidth
+              )}
+            >
+              <div className="sticky top-0 space-y-4 p-5">
+                {sidebarTitle ? <div className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">{sidebarTitle}</div> : null}
+                <div className="space-y-3">{renderSidebar ? renderSidebar(() => {}) : sidebar}</div>
+              </div>
+            </aside>
+
+            <div className="flex-1">
+              <div className="border-b border-slate-200 px-5 py-3 lg:hidden">
+                <Button variant="outline" className="w-full justify-center rounded-2xl" onClick={() => setSidebarOpen(true)}>
+                  Buka menu
+                </Button>
+              </div>
+              <div className={clsx('p-5 sm:p-6 lg:p-8', contentClassName)}>{children}</div>
+            </div>
+          </div>
+        </Card>
+      </Container>
+
+      {sidebarOpen ? (
+        <div className="fixed inset-0 z-50 lg:hidden">
+          <div className="absolute inset-0 bg-slate-950/35" onClick={() => setSidebarOpen(false)} />
+          <div className="absolute left-0 top-0 h-full w-[88vw] max-w-sm border-r border-slate-200 bg-white shadow-2xl">
+            <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
+              <div>
+                {sidebarTitle ? <div className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">{sidebarTitle}</div> : null}
+                <div className="text-lg font-bold text-slate-900">Menu</div>
+              </div>
+              <Button variant="ghost" className="rounded-xl px-3" onClick={() => setSidebarOpen(false)}>
+                Tutup
+              </Button>
+            </div>
+            <div className="h-[calc(100%-72px)] overflow-y-auto p-5">{renderSidebar ? renderSidebar(() => setSidebarOpen(false)) : sidebar}</div>
+          </div>
+        </div>
+      ) : null}
+    </section>
+  );
+}
