@@ -21,6 +21,7 @@ const { assignmentsRouter } = require('./routes/assignments');
 const { cartRouter } = require('./routes/cart');
 const { paymentsRouter } = require('./routes/payments');
 const { reportsRouter } = require('./routes/reports');
+const { certificatesRouter } = require('./routes/certificates');
 
 async function main() {
   dotenv.config();
@@ -96,6 +97,7 @@ async function main() {
     })
   );
   app.use('/api/reports', reportsRouter({ requireAuth: requireAuth(env.JWT_SECRET), requireRole }));
+  app.use('/api/certificates', certificatesRouter({ requireAuth: requireAuth(env.JWT_SECRET), requireRole }));
 
   // Serve built client in production (SPA fallback)
   if (process.env.NODE_ENV === 'production') {

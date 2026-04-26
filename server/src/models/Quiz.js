@@ -23,8 +23,9 @@ const questionSchema = new mongoose.Schema(
     type: { type: String, enum: ['mcq', 'essay', 'matching'], default: 'mcq', index: true },
     prompt: { type: String, default: '' },
     promptHtml: { type: String, default: '' },
+    imageUrl: { type: String, default: '' },
     choices: {
-      type: [{ id: { type: String, required: true }, text: { type: String, required: true } }],
+      type: [{ id: { type: String, required: true }, text: { type: String, required: true }, imageUrl: { type: String, default: '' } }],
       default: [],
       validate: {
         validator: function (arr) {

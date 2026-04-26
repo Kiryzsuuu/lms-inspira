@@ -97,7 +97,6 @@ export default function Courses() {
     <>
       <HeroCarousel slides={slides} />
 
-      {/* Text section (separate from hero image) */}
       <section className="mt-7 pb-4">
         <Container>
           <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{heroText.kicker}</p>
@@ -110,100 +109,100 @@ export default function Courses() {
 
       <section className="mt-6 pb-14">
         <Container>
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <h1 className="text-3xl font-extrabold tracking-tight">Courses</h1>
-            <p className="mt-1 text-sm text-slate-600">Pilih course, baca materi, lalu kerjakan quiz.</p>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <h1 className="text-3xl font-extrabold tracking-tight">Courses</h1>
+              <p className="mt-1 text-sm text-slate-600">Pilih course, baca materi, lalu kerjakan quiz.</p>
+            </div>
+            <div className="w-full sm:w-80">
+              <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cari course..." />
+            </div>
           </div>
-          <div className="w-full sm:w-80">
-            <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cari course..." />
-          </div>
-        </div>
 
-        {error ? <div className="mt-4 bg-rose-50 p-3 text-sm text-rose-700">{error}</div> : null}
+          {error ? <div className="mt-4 bg-rose-50 p-3 text-sm text-rose-700">{error}</div> : null}
 
-        <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {filtered.map((c) => {
-            const isFree = !c.priceIdr || c.priceIdr === 0;
-            const isPurchased = purchasedCourseIds.has(c._id);
-            const isCompleted = completedCourseIds.has(String(c._id));
-            const isOngoing = isAuthed && activeCourseId && String(c._id) === String(activeCourseId) && !isCompleted;
-            const shouldBeGrayed = isAuthed && !isFree && !isPurchased;
+          <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {filtered.map((c) => {
+              const isFree = !c.priceIdr || c.priceIdr === 0;
+              const isPurchased = purchasedCourseIds.has(c._id);
+              const isCompleted = completedCourseIds.has(String(c._id));
+              const isOngoing = isAuthed && activeCourseId && String(c._id) === String(activeCourseId) && !isCompleted;
+              const shouldBeGrayed = isAuthed && !isFree && !isPurchased;
 
-            return (
-              <Card 
-                key={c._id} 
-                className={`relative flex h-full flex-col p-5 ${shouldBeGrayed ? 'opacity-60' : ''}`}
-              >
-                {isAuthed && isCompleted ? (
-                  <div
-                    className="absolute right-3 top-3 flex items-center gap-1 rounded-full bg-emerald-600 px-2 py-1 text-[11px] font-extrabold text-white"
-                    aria-label="Course selesai"
-                  >
-                    <span aria-hidden="true">✓</span>
-                    <span>SELESAI</span>
-                  </div>
-                ) : isOngoing ? (
-                  <div
-                    className="absolute right-3 top-3 rounded-full bg-amber-500 px-2 py-1 text-[11px] font-extrabold text-white"
-                    aria-label="Course sedang dikerjakan"
-                  >
-                    ON GOING
-                  </div>
-                ) : null}
-                <div className="aspect-[16/9] overflow-hidden bg-slate-100">
-                  {c.coverImageUrl ? (
-                    <img src={c.coverImageUrl} alt="" className="h-full w-full object-cover" />
-                  ) : (
-                    <div className="flex h-full w-full items-center justify-center text-xs font-semibold text-slate-600">
-                      Cover (opsional)
-                    </div>
-                  )}
-                </div>
-                <div className="mt-3 line-clamp-2 min-h-[3.25rem] text-lg font-bold leading-snug text-slate-900">
-                  {c.title}
-                </div>
-                <div className="mt-1 text-sm font-semibold text-slate-900">Rp {formatIdr(c.priceIdr || 0)}</div>
-
-                <div className="mt-auto pt-4 flex gap-2 flex-col sm:flex-row">
-                  {!isAuthed ? (
-                    <Button
-                      className="w-full"
-                      onClick={() => nav('/login')}
+              return (
+                <Card 
+                  key={c._id} 
+                  className={`relative flex h-full flex-col p-5 ${shouldBeGrayed ? 'opacity-60' : ''}`}
+                >
+                  {isAuthed && isCompleted ? (
+                    <div
+                      className="absolute right-3 top-3 flex items-center gap-1 rounded-full bg-emerald-600 px-2 py-1 text-[11px] font-extrabold text-white"
+                      aria-label="Course selesai"
                     >
-                      Login untuk Lihat
-                    </Button>
-                  ) : purchasedCourseIds.has(c._id) ? (
-                    <Link to={`/courses/${c._id}`} className="w-full">
-                      <Button className="w-full">Buka</Button>
-                    </Link>
-                  ) : (
-                    <>
-                      <Link to={`/courses/${c._id}`} className="flex-1">
-                        <Button variant="outline" className="w-full">Detail</Button>
-                      </Link>
-                      {role === 'student' && (
-                        <Button
-                          variant="default"
-                          className="flex-1"
-                          onClick={() => addToCart(c._id)}
-                        >
-                          Tambah ke Cart
-                        </Button>
-                      )}
-                    </>
-                  )}
-                </div>
-              </Card>
-            );
-          })}
+                      <span aria-hidden="true">✓</span>
+                      <span>SELESAI</span>
+                    </div>
+                  ) : isOngoing ? (
+                    <div
+                      className="absolute right-3 top-3 rounded-full bg-amber-500 px-2 py-1 text-[11px] font-extrabold text-white"
+                      aria-label="Course sedang dikerjakan"
+                    >
+                      ON GOING
+                    </div>
+                  ) : null}
+                  <div className="aspect-[16/9] overflow-hidden bg-slate-100">
+                    {c.coverImageUrl ? (
+                      <img src={c.coverImageUrl} alt="" className="h-full w-full object-cover" />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center text-xs font-semibold text-slate-600">
+                        Cover (opsional)
+                      </div>
+                    )}
+                  </div>
+                  <div className="mt-3 line-clamp-2 min-h-[3.25rem] text-lg font-bold leading-snug text-slate-900">
+                    {c.title}
+                  </div>
+                  <div className="mt-1 text-sm font-semibold text-slate-900">Rp {formatIdr(c.priceIdr || 0)}</div>
 
-          {filtered.length === 0 && (
-            <Card className="p-8 sm:col-span-2 lg:col-span-3">
-              <div className="text-sm text-slate-600">Course tidak ditemukan.</div>
-            </Card>
-          )}
-        </div>
+                  <div className="mt-auto pt-4 flex gap-2 flex-col sm:flex-row">
+                    {!isAuthed ? (
+                      <Button
+                        className="w-full"
+                        onClick={() => nav('/login')}
+                      >
+                        Login untuk Lihat
+                      </Button>
+                    ) : purchasedCourseIds.has(c._id) ? (
+                      <Link to={`/courses/${c._id}`} className="w-full">
+                        <Button className="w-full">Buka</Button>
+                      </Link>
+                    ) : (
+                      <>
+                        <Link to={`/courses/${c._id}`} className="flex-1">
+                          <Button variant="outline" className="w-full">Detail</Button>
+                        </Link>
+                        {role === 'student' && (
+                          <Button
+                            variant="default"
+                            className="flex-1"
+                            onClick={() => addToCart(c._id)}
+                          >
+                            Tambah ke Cart
+                          </Button>
+                        )}
+                      </>
+                    )}
+                  </div>
+                </Card>
+              );
+            })}
+
+            {filtered.length === 0 && (
+              <Card className="p-8 sm:col-span-2 lg:col-span-3">
+                <div className="text-sm text-slate-600">Course tidak ditemukan.</div>
+              </Card>
+            )}
+          </div>
         </Container>
       </section>
     </>

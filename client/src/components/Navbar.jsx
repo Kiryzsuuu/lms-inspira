@@ -131,7 +131,6 @@ export function Navbar() {
             </nav>
 
             <div className="flex items-center gap-2">
-              {/* Desktop actions */}
               <div className="hidden items-center gap-2 sm:flex">
                 {!isAuthed ? (
                   <>
@@ -181,7 +180,6 @@ export function Navbar() {
                 )}
               </div>
 
-              {/* Mobile overflow menu */}
               <div className="relative sm:hidden">
                 <Button
                   variant="outline"

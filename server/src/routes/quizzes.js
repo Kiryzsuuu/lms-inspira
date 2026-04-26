@@ -184,7 +184,8 @@ function quizzesRouter({ requireAuth, requireRole }) {
           type: z.enum(['mcq', 'essay', 'matching']).optional().default('mcq'),
           prompt: z.string().optional().default(''),
           promptHtml: z.string().optional().default(''),
-          choices: z.array(z.object({ id: z.string().min(1), text: z.string().min(1) })).optional().default([]),
+          imageUrl: z.string().optional().default(''),
+          choices: z.array(z.object({ id: z.string().min(1), text: z.string().min(1), imageUrl: z.string().optional().default('') })).optional().default([]),
           correctChoiceId: z.string().optional().default(''),
           pairs: z
             .array(z.object({ left: z.string().min(1), right: z.string().min(1) }))
@@ -230,7 +231,8 @@ function quizzesRouter({ requireAuth, requireRole }) {
           type: z.enum(['mcq', 'essay', 'matching']).optional(),
           prompt: z.string().optional(),
           promptHtml: z.string().optional(),
-          choices: z.array(z.object({ id: z.string().min(1), text: z.string().min(1) })).optional(),
+          imageUrl: z.string().optional(),
+          choices: z.array(z.object({ id: z.string().min(1), text: z.string().min(1), imageUrl: z.string().optional().default('') })).optional(),
           correctChoiceId: z.string().optional(),
           pairs: z
             .array(z.object({ left: z.string().min(1), right: z.string().min(1) }))
@@ -347,6 +349,7 @@ function quizzesRouter({ requireAuth, requireRole }) {
         type: bq.type || 'mcq',
         promptHtml: bq.promptHtml || '',
         prompt: '',
+        imageUrl: bq.questionImageUrl || '',
         choices: Array.isArray(bq.choices) ? bq.choices : [],
         correctChoiceId: bq.correctChoiceId || '',
         pairs: Array.isArray(bq.pairs) ? bq.pairs : [],
@@ -447,6 +450,7 @@ function quizzesRouter({ requireAuth, requireRole }) {
           type: q.type || 'mcq',
           prompt: q.prompt,
           promptHtml: q.promptHtml,
+          imageUrl: q.imageUrl,
           choices: q.type === 'mcq' ? q.choices : [],
           pairs: q.type === 'matching' ? q.pairs : [],
           order: q.order,

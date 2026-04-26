@@ -12,9 +12,10 @@ export default function QuestionBankManager() {
   const [questionForm, setQuestionForm] = useState({
     type: 'mcq',
     question: '',
+    questionImageUrl: '',
     options: [
-      { id: '1', text: '' },
-      { id: '2', text: '' },
+      { id: '1', text: '', imageUrl: '' },
+      { id: '2', text: '', imageUrl: '' },
     ],
     correctAnswer: '1',
     explanation: '',
@@ -131,6 +132,15 @@ export default function QuestionBankManager() {
 
   const stripHtml = (html) => String(html || '').replace(/<[^>]*>/g, '').trim();
 
+  const uploadImage = async (file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const res = await api.post('/uploads/image', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return res.data?.url || '';
+  };
+
   useEffect(() => {
     loadCollections();
   }, []);
@@ -223,6 +233,7 @@ export default function QuestionBankManager() {
       const payload = {
         type: questionForm.type,
         promptHtml: questionForm.question,
+        questionImageUrl: questionForm.questionImageUrl,
         rubric: questionForm.explanation,
       };
 
@@ -252,10 +263,11 @@ export default function QuestionBankManager() {
     setQuestionForm({
       type: question.type || 'mcq',
       question: question.promptHtml || question.prompt || '',
+      questionImageUrl: question.questionImageUrl || '',
       options: (question.choices || [
-        { id: '1', text: '' },
-        { id: '2', text: '' },
-      ]).map((c) => ({ id: c.id, text: c.text })),
+        { id: '1', text: '', imageUrl: '' },
+        { id: '2', text: '', imageUrl: '' },
+      ]).map((c) => ({ id: c.id, text: c.text, imageUrl: c.imageUrl || '' })),
       correctAnswer: question.correctChoiceId || '1',
       explanation: question.rubric || '',
     });
@@ -324,18 +336,19 @@ export default function QuestionBankManager() {
     setQuestionForm({
       type: 'mcq',
       question: '',
+      questionImageUrl: '',
       options: [
-        { id: '1', text: '' },
-        { id: '2', text: '' },
+        { id: '1', text: '', imageUrl: '' },
+        { id: '2', text: '', imageUrl: '' },
       ],
       correctAnswer: '1',
       explanation: '',
     });
   };
 
-  const updateOption = (idx, text) => {
+  const updateOption = (idx, key, value) => {
     const newOptions = [...questionForm.options];
-    newOptions[idx].text = text;
+    newOptions[idx][key] = value;
     setQuestionForm({ ...questionForm, options: newOptions });
   };
 
@@ -343,7 +356,7 @@ export default function QuestionBankManager() {
     const newId = Math.max(...questionForm.options.map((o) => parseInt(o.id) || 0)) + 1;
     setQuestionForm({
       ...questionForm,
-      options: [...questionForm.options, { id: String(newId), text: '' }],
+      options: [...questionForm.options, { id: String(newId), text: '', imageUrl: '' }],
     });
   };
 
@@ -478,25 +491,75 @@ export default function QuestionBankManager() {
                       />
                     </div>
 
+                    <div className="space-y-3 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                      <div>
+                        <Label className="text-sm font-medium text-slate-700 mb-1">Gambar soal</Label>
+                        <Input
+                          type="file"
+                          accept="image/*"
+                          onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            if (!file) return;
+                            try {
+                              setLoading(true);
+                              const url = await uploadImage(file);
+                              setQuestionForm((prev) => ({ ...prev, questionImageUrl: url }));
+                            } catch (err) {
+                              setError(err.response?.data?.error?.message || 'Gagal upload gambar soal');
+                            } finally {
+                              setLoading(false);
+                            }
+                          }}
+                        />
+                      </div>
+                      {questionForm.questionImageUrl ? (
+                        <img src={questionForm.questionImageUrl} alt="Preview soal" className="max-h-48 rounded-2xl border border-slate-200 object-contain" />
+                      ) : null}
+                    </div>
+
                     {questionForm.type === 'mcq' && (
                       <div>
                         <Label className="text-sm font-medium text-slate-700 mb-2">Opsi</Label>
                         {questionForm.options.map((option, idx) => (
-                          <div key={option.id} className="flex gap-2 mb-2">
-                            <input
-                              type="radio"
-                              name="correctAnswer"
-                              value={option.id}
-                              checked={questionForm.correctAnswer === option.id}
-                              onChange={(e) => setQuestionForm({ ...questionForm, correctAnswer: e.target.value })}
-                              className="mt-2"
-                            />
-                            <Input
-                              type="text"
-                              value={option.text}
-                              onChange={(e) => updateOption(idx, e.target.value)}
-                              placeholder={`Opsi ${String.fromCharCode(65 + idx)}`}
-                            />
+                          <div key={option.id} className="mb-3 rounded-2xl border border-slate-200 p-3">
+                            <div className="flex gap-2">
+                              <input
+                                type="radio"
+                                name="correctAnswer"
+                                value={option.id}
+                                checked={questionForm.correctAnswer === option.id}
+                                onChange={(e) => setQuestionForm({ ...questionForm, correctAnswer: e.target.value })}
+                                className="mt-2"
+                              />
+                              <Input
+                                type="text"
+                                value={option.text}
+                                onChange={(e) => updateOption(idx, 'text', e.target.value)}
+                                placeholder={`Opsi ${String.fromCharCode(65 + idx)}`}
+                              />
+                            </div>
+                            <div className="mt-3 space-y-2">
+                              <Input
+                                type="file"
+                                accept="image/*"
+                                onChange={async (e) => {
+                                  const file = e.target.files?.[0];
+                                  if (!file) return;
+                                  try {
+                                    setLoading(true);
+                                    const url = await uploadImage(file);
+                                    updateOption(idx, 'imageUrl', url);
+                                  } catch (err) {
+                                    setError(err.response?.data?.error?.message || 'Gagal upload gambar opsi');
+                                  } finally {
+                                    setLoading(false);
+                                  }
+                                }}
+                              />
+                              {option.imageUrl ? (
+                                <img src={option.imageUrl} alt={`Preview opsi ${idx + 1}`} className="max-h-32 rounded-xl border border-slate-200 object-contain" />
+                              ) : null}
+                            </div>
                           </div>
                         ))}
                         <Button
@@ -562,15 +625,23 @@ export default function QuestionBankManager() {
                             <div className="font-medium text-sm text-slate-900">
                               {idx + 1}. {stripHtml(question.promptHtml || question.prompt || '')}
                             </div>
+                            {question.questionImageUrl ? (
+                              <img src={question.questionImageUrl} alt={`Soal ${idx + 1}`} className="mt-3 max-h-40 rounded-2xl border border-slate-200 object-contain" />
+                            ) : null}
                             {question.type === 'mcq' && question.choices && (
-                              <div className="mt-2 space-y-1 text-sm text-slate-600">
+                              <div className="mt-2 space-y-2 text-sm text-slate-600">
                                 {question.choices.map((choice, idx) => (
                                   <div
                                     key={choice.id}
-                                    className={choice.id === question.correctChoiceId ? 'text-green-600 font-medium' : ''}
+                                    className={`rounded-xl border border-slate-200 p-3 ${choice.id === question.correctChoiceId ? 'border-green-300 bg-green-50 text-green-700 font-medium' : ''}`}
                                   >
-                                    {String.fromCharCode(65 + idx)}. {choice.text}
-                                    {choice.id === question.correctChoiceId && ' ✓'}
+                                    <div>
+                                      {String.fromCharCode(65 + idx)}. {choice.text}
+                                      {choice.id === question.correctChoiceId && ' ✓'}
+                                    </div>
+                                    {choice.imageUrl ? (
+                                      <img src={choice.imageUrl} alt={`Opsi ${idx + 1}`} className="mt-2 max-h-28 rounded-xl border border-slate-200 object-contain" />
+                                    ) : null}
                                   </div>
                                 ))}
                               </div>

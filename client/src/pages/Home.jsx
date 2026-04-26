@@ -24,7 +24,6 @@ export default function Home() {
     <>
       <HeroCarousel slides={slides} />
 
-      {/* Text section (separate from hero image) */}
       <section className="mt-7 pb-4">
         <Container>
           <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{heroText.kicker}</p>

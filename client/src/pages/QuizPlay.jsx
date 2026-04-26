@@ -344,6 +344,17 @@ export default function QuizPlay() {
                   <div className="mt-2 text-lg font-bold text-slate-900">{currentQuestion.prompt}</div>
                 )}
 
+                {currentQuestion.imageUrl && (
+                  <div className="mt-4">
+                    <img
+                      src={currentQuestion.imageUrl}
+                      alt="Question"
+                      className="max-w-full h-auto rounded border border-slate-200"
+                      style={{ maxHeight: '400px' }}
+                    />
+                  </div>
+                )}
+
                 {(currentQuestion.type || 'mcq') === 'essay' ? (
                   <div className="mt-4">
                     <textarea
@@ -431,7 +442,10 @@ export default function QuizPlay() {
                                   : 'border-slate-200 bg-white hover:bg-slate-50')
                           }
                         >
-                          {c.text}
+                          <div>{c.text}</div>
+                          {c.imageUrl ? (
+                            <img src={c.imageUrl} alt={`Opsi ${c.id}`} className="mt-3 max-h-40 rounded-xl border border-slate-200 object-contain" />
+                          ) : null}
                         </button>
                       );
                     })}

@@ -20,6 +20,8 @@ import Accounting from './pages/dashboard/Accounting';
 import QuestionBankManager from './pages/dashboard/QuestionBankManager';
 import StudentProgressMonitor from './pages/dashboard/StudentProgressMonitor';
 import AssignmentSubmit from './pages/AssignmentSubmit';
+import CertificateView from './pages/CertificateView';
+import CourseStats from './pages/dashboard/CourseStats';
 import { RequireAuth } from './components/RequireAuth';
 import { Container } from './components/ui';
 
@@ -109,6 +111,22 @@ export default function App() {
           element={
             <RequireAuth roles={['admin', 'teacher']}>
               <StudentProgressMonitor />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/certificate/:courseId"
+          element={
+            <RequireAuth roles={['student']}>
+              <CertificateView />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/dashboard/courses/:courseId/stats"
+          element={
+            <RequireAuth roles={['admin', 'teacher']}>
+              <CourseStats />
             </RequireAuth>
           }
         />
