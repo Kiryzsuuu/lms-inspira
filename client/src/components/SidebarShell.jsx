@@ -14,6 +14,21 @@ export function SidebarShell({
   contentClassName = '',
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(() => {
+    try {
+      return localStorage.getItem('sidebar-collapsed') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('sidebar-collapsed', String(collapsed));
+    } catch {
+      // Silently ignore localStorage errors
+    }
+  }, [collapsed]);
 
   useEffect(() => {
     function handleResize() {
@@ -47,8 +62,8 @@ export function SidebarShell({
           <div className="relative flex min-h-[calc(100vh-14rem)] bg-white">
             <aside
               className={clsx(
-                'hidden border-r border-slate-200 bg-slate-50/90 lg:block',
-                sidebarWidth
+                'hidden border-r border-slate-200 bg-slate-50/90 lg:block relative transition-all duration-300',
+                collapsed ? 'w-0 overflow-hidden' : sidebarWidth
               )}
             >
               <div className="sticky top-0 space-y-4 p-5">
@@ -56,6 +71,21 @@ export function SidebarShell({
                 <div className="space-y-3">{renderSidebar ? renderSidebar(() => {}) : sidebar}</div>
               </div>
             </aside>
+
+            <button
+              onClick={() => setCollapsed(!collapsed)}
+              className="hidden lg:flex absolute top-4 left-0 z-10 h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white shadow-sm hover:bg-slate-50 transition-all"
+              style={{ left: collapsed ? '8px' : `calc(${sidebarWidth === 'w-72' ? '288px' : sidebarWidth === 'w-80' ? '320px' : sidebarWidth} - 16px)` }}
+              title={collapsed ? 'Buka sidebar' : 'Tutup sidebar'}
+            >
+              <svg className="h-4 w-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                {collapsed ? (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                ) : (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                )}
+              </svg>
+            </button>
 
             <div className="flex-1">
               <div className="border-b border-slate-200 px-5 py-3 lg:hidden">

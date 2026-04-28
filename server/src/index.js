@@ -22,6 +22,7 @@ const { cartRouter } = require('./routes/cart');
 const { paymentsRouter } = require('./routes/payments');
 const { reportsRouter } = require('./routes/reports');
 const { certificatesRouter } = require('./routes/certificates');
+const { aboutRouter } = require('./routes/about');
 
 async function main() {
   dotenv.config();
@@ -76,6 +77,7 @@ async function main() {
   // Public/Auth
   app.use('/api/auth', authRouter({ jwtSecret: env.JWT_SECRET }));
   app.use('/api/heroes', heroesRouter({ requireAuth: requireAuth(env.JWT_SECRET), requireRole }));
+  app.use('/api/about', aboutRouter({ requireAuth: requireAuth(env.JWT_SECRET), requireRole }));
   app.use('/api/courses', coursesRouter({ requireAuth: requireAuth(env.JWT_SECRET), requireRole }));
   app.use('/api/quizzes', quizzesRouter({ requireAuth: requireAuth(env.JWT_SECRET), requireRole }));
   app.use('/api/admin', adminRouter({ requireAuth: requireAuth(env.JWT_SECRET), requireRole }));

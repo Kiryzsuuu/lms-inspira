@@ -36,6 +36,7 @@ ehthumbs.db
 Desktop.ini
 
 .vscode/
+!.vscode/
 !.vscode/extensions.json
 !.vscode/settings.json
 !.vscode/launch.json
@@ -44,6 +45,17 @@ Desktop.ini
 # misc
 *.local
 
+# local AI/assistant settings
+.claude/settings.local.json
+
 # server uploads (avoid committing user-generated content)
 server/uploads/
 .azure
+
+# deployment/diagnostic files with secrets
+MIDTRANS_DEPLOYMENT_READY.md
+deploy-midtrans.ps1
+DPAPI_FIX_GUIDE.md
+MIDTRANS_401_DIAGNOSTIC.md
+MIDTRANS_401_ROOT_CAUSE.md
+PORTAL_UPDATE_GUIDE.md

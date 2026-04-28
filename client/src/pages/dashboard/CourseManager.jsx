@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Card, Container, Button, Input, Label, Textarea } from '../../components/ui';
+import { SidebarShell } from '../../components/SidebarShell';
 import { useAuth } from '../../lib/auth';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { RichTextEditor } from '../../components/RichTextEditor';
@@ -11,10 +12,9 @@ export default function CourseManager() {
   const [selectedId, setSelectedId] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
-  const [sidebarWidth, setSidebarWidth] = useState(320); // adjustable sidebar width
-  const [isResizing, setIsResizing] = useState(false);
 
   const selected = useMemo(() => courses.find((c) => c._id === selectedId) || null, [courses, selectedId]);
+  const [activeTab, setActiveTab] = useState('settings');
 
   const [courseForm, setCourseForm] = useState({ title: '', description: '', coverImageUrl: '', priceIdr: 0, isPublished: false });
   const [coverUploading, setCoverUploading] = useState(false);
@@ -107,27 +107,6 @@ export default function CourseManager() {
     ],
   });
 
-  // Handle sidebar resize
-  useEffect(() => {
-    const handleMouseMove = (e) => {
-      if (!isResizing) return;
-      const newWidth = Math.max(220, Math.min(e.clientX, 600)); // min 220px, max 600px
-      setSidebarWidth(newWidth);
-    };
-
-    const handleMouseUp = () => {
-      setIsResizing(false);
-    };
-
-    if (isResizing) {
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
-      return () => {
-        document.removeEventListener('mousemove', handleMouseMove);
-        document.removeEventListener('mouseup', handleMouseUp);
-      };
-    }
-  }, [isResizing]);
 
   async function loadCourses() {
     setLoading(true);
@@ -622,12 +601,17 @@ export default function CourseManager() {
     if (!activeQuizId || !questions.length) return;
     setError('');
     try {
+      const types = ['mcq', 'essay', 'matching'];
       const shuffled = [...questions].sort(() => Math.random() - 0.5);
-      const updates = shuffled.map((q, idx) => ({ ...q, order: idx + 1 }));
-      
-      // Update each question's order
+      const updates = shuffled.map((q, idx) => ({
+        ...q,
+        order: idx + 1,
+        type: types[Math.floor(Math.random() * types.length)]
+      }));
+
+      // Update each question's order and type
       await Promise.all(
-        updates.map((q) => api.put(`/quizzes/${activeQuizId}/questions/${q._id}`, { order: q.order }))
+        updates.map((q) => api.put(`/quizzes/${activeQuizId}/questions/${q._id}`, { order: q.order, type: q.type }))
       );
       await loadQuestions(activeQuizId);
     } catch (e) {
@@ -665,8 +649,49 @@ export default function CourseManager() {
     });
   }
 
+  const renderSidebar = () => (
+    <div className="grid gap-2">
+      {courses.map((c) => (
+        <button
+          key={c._id}
+          onClick={() => {
+            setSelectedId(c._id);
+            setActiveTab('settings');
+          }}
+          className={
+            'px-3 py-2 text-left text-sm font-medium rounded-lg transition break-words ' +
+            (selectedId === c._id ? 'bg-[#d76810] text-white' : 'bg-slate-100 text-slate-900 hover:bg-slate-200')
+          }
+        >
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0 font-semibold leading-snug line-clamp-2 break-words">{c.title}</div>
+            <span
+              className={
+                'mt-0.5 shrink-0 rounded border px-2 py-0.5 text-[10px] font-extrabold ' +
+                (c.isPublished
+                  ? selectedId === c._id
+                    ? 'border-emerald-300 bg-emerald-50 text-emerald-900'
+                    : 'border-emerald-200 bg-emerald-50 text-emerald-900'
+                  : selectedId === c._id
+                    ? 'border-rose-300 bg-rose-50 text-rose-900'
+                    : 'border-rose-200 bg-rose-50 text-rose-900')
+              }
+            >
+              {c.isPublished ? 'PUBLISHED' : 'DRAFT'}
+            </span>
+          </div>
+        </button>
+      ))}
+      {!loading && courses.length === 0 ? <div className="text-sm text-slate-600">Belum ada course.</div> : null}
+      {loading ? <div className="text-sm text-slate-600">Loading...</div> : null}
+      <Button onClick={() => { setSelectedId(''); setActiveTab('new'); }} className="w-full mt-4">
+        Tambah Course Baru
+      </Button>
+    </div>
+  );
+
   return (
-    <section className="flex h-[calc(100vh-4rem)] flex-col overflow-hidden">
+    <>
       <ConfirmDialog
         open={confirmState.open}
         title={confirmState.title}
@@ -680,178 +705,117 @@ export default function CourseManager() {
           if (typeof action === 'function') await action();
         }}
       />
-
-      <div className="flex shrink-0 flex-col gap-4 border-b border-slate-200 px-4 py-6 sm:px-6">
-        <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-start">
-          <div className="flex flex-col items-start gap-1 text-left">
-            <h1 className="text-3xl font-extrabold tracking-tight">Kelola Course</h1>
-            <p className="text-sm text-slate-600">Buat course, tambah materi (markdown), buat quiz dan soal.</p>
-          </div>
-          <Button variant="outline" onClick={loadCourses} disabled={loading} className="shrink-0">
-            Refresh
-          </Button>
-        </div>
-        {error ? <div className="bg-rose-50 p-3 text-sm text-rose-700">{error}</div> : null}
-      </div>
-
-      <div className="flex flex-1 min-h-0 flex-col overflow-auto px-4 py-4 lg:px-6 lg:py-4">
-        <div className="flex flex-1 min-h-0 flex-col gap-4 lg:flex-row lg:gap-6">
-          <div
-            style={{ width: `${sidebarWidth}px` }}
-            className="group relative lg:shrink-0"
-          >
-            {/* Resize handle: only this thin area should be draggable */}
-            <div
-              role="separator"
-              aria-orientation="vertical"
-              aria-label="Resize sidebar"
-              onMouseDown={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                setIsResizing(true);
-              }}
-              className="absolute right-0 top-0 h-full w-2 cursor-col-resize"
-              style={{ touchAction: 'none' }}
-            />
-
-            <aside className="flex min-h-0 h-full flex-col border border-slate-200 bg-white p-3 sm:p-4 overflow-auto">
-            <div className="text-lg font-bold text-slate-900">Course Saya</div>
-            <div className="mt-3 flex-1 min-h-0 overflow-auto space-y-3">
-              <div className="grid gap-2">
-                {courses.map((c) => (
-                  <button
-                    key={c._id}
-                    onClick={() => setSelectedId(c._id)}
-                    className={
-                      'px-2 py-2 text-left text-xs sm:text-sm font-medium rounded transition break-words ' +
-                      (selectedId === c._id ? 'bg-[#d76810] text-white' : 'bg-slate-100 text-slate-900 hover:bg-slate-200')
-                    }
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0 font-semibold leading-snug line-clamp-2 break-words">{c.title}</div>
-                      <span
-                        className={
-                          'mt-0.5 shrink-0 rounded border px-2 py-0.5 text-[10px] font-extrabold ' +
-                          (c.isPublished
-                            ? selectedId === c._id
-                              ? 'border-emerald-300 bg-emerald-50 text-emerald-900'
-                              : 'border-emerald-200 bg-emerald-50 text-emerald-900'
-                            : selectedId === c._id
-                              ? 'border-rose-300 bg-rose-50 text-rose-900'
-                              : 'border-rose-200 bg-rose-50 text-rose-900')
-                        }
-                      >
-                        {c.isPublished ? 'PUBLISHED' : 'DRAFT'}
-                      </span>
-                    </div>
-                  </button>
-                ))}
-                {!loading && courses.length === 0 ? <div className="text-sm text-slate-600">Belum ada course.</div> : null}
-                {loading ? <div className="text-sm text-slate-600">Loading...</div> : null}
-              </div>
-
-              <div className="mt-6 border-t border-slate-200 pt-4">
-                <div className="text-sm font-semibold">Buat Course Baru</div>
-                <form className="mt-3 grid gap-3" onSubmit={createCourse}>
-                <div>
-                  <Label>Title</Label>
-                  <div className="mt-1">
-                    <Input value={courseForm.title} onChange={(e) => setCourseForm((f) => ({ ...f, title: e.target.value }))} />
-                  </div>
-                </div>
-                <div>
-                  <Label>Description</Label>
-                  <div className="mt-1">
-                    <RichTextEditor
-                      label=""
-                      valueHtml={courseForm.description || ''}
-                      onChangeHtml={(html) => setCourseForm((f) => ({ ...f, description: html }))}
-                      editorClassName="min-h-[160px]"
-                      onUploadImage={async (file) => {
-                        const fd = new FormData();
-                        fd.append('file', file);
-                        const res = await api.post('/uploads/image', fd, {
-                          headers: { 'Content-Type': 'multipart/form-data' },
-                        });
-                        return res.data.url;
-                      }}
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <Label>Cover (opsional)</Label>
-                  {courseForm.coverImageUrl ? (
-                    <div className="mt-2 aspect-[16/9] overflow-hidden border border-slate-200 bg-slate-100">
-                      <img src={courseForm.coverImageUrl} alt="" className="h-full w-full object-cover" />
-                    </div>
-                  ) : null}
-                  <div className="mt-2 grid gap-2">
-                    <Input
-                      value={courseForm.coverImageUrl}
-                      onChange={(e) => setCourseForm((f) => ({ ...f, coverImageUrl: e.target.value }))}
-                      placeholder="Tempel URL gambar (atau upload file di bawah)"
-                    />
-                    <input
-                      type="file"
-                      accept="image/*"
-                      disabled={coverUploading}
-                      onChange={async (e) => {
-                        const file = e.target.files?.[0];
-                        if (!file) return;
-                        setError('');
-                        setCoverUploading(true);
-                        try {
-                          const url = await uploadCoverImage(file);
-                          setCourseForm((f) => ({ ...f, coverImageUrl: url }));
-                        } catch (err) {
-                          setError(err?.response?.data?.error?.message || err?.message || 'Gagal upload cover');
-                        } finally {
-                          setCoverUploading(false);
-                          e.target.value = '';
-                        }
-                      }}
-                    />
-                    {coverUploading ? <div className="text-xs text-slate-600">Uploading...</div> : null}
-                  </div>
-                </div>
-                <div>
-                  <Label>Harga (Rp)</Label>
-                  <div className="mt-1">
-                    <Input
-                      type="number"
-                      min="0"
-                      step="10000"
-                      value={courseForm.priceIdr}
-                      onChange={(e) => setCourseForm((f) => ({ ...f, priceIdr: parseInt(e.target.value) || 0 }))}
-                      placeholder="0 untuk gratis"
-                    />
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <input
-                    id="coursePublished"
-                    type="checkbox"
-                    className="h-4 w-4"
-                    checked={courseForm.isPublished}
-                    onChange={(e) => setCourseForm((f) => ({ ...f, isPublished: e.target.checked }))}
-                  />
-                  <Label htmlFor="coursePublished">Publish</Label>
-                </div>
-                  <Button type="submit">Tambah Course</Button>
-                </form>
-              </div>
-            </div>
-            </aside>
-          </div>
-
-          <div className="flex flex-1 min-h-0 flex-col">
+      <SidebarShell
+        title="Kelola Course"
+        description="Buat course, tambah materi (markdown), buat quiz dan soal."
+        actions={<Button variant="outline" onClick={loadCourses} disabled={loading} className="rounded-lg">Refresh</Button>}
+        sidebarTitle="Course Saya"
+        renderSidebar={renderSidebar}
+        sidebarWidth="w-80"
+      >
+        {error ? <div className="mb-4 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div> : null}
+        <div className="flex flex-1 min-h-0 flex-col">
             <Card
               className="flex min-h-0 w-full flex-col overflow-auto p-4 sm:p-6"
               onFocusCapture={() => setActivePanel('course')}
             >
-              {!selected ? (
+              {!selected && activeTab !== 'new' ? (
                 <div className="text-sm text-slate-600">Pilih course di kiri untuk kelola materi & quiz.</div>
+              ) : activeTab === 'new' ? (
+                <div className="max-w-2xl">
+                  <div className="font-bold text-lg mb-6">Buat Course Baru</div>
+                  <form className="grid gap-4" onSubmit={createCourse}>
+                    <div>
+                      <Label>Title</Label>
+                      <div className="mt-1">
+                        <Input value={courseForm.title} onChange={(e) => setCourseForm((f) => ({ ...f, title: e.target.value }))} placeholder="Nama course" />
+                      </div>
+                    </div>
+                    <div>
+                      <Label>Description</Label>
+                      <div className="mt-1">
+                        <RichTextEditor
+                          label=""
+                          valueHtml={courseForm.description || ''}
+                          onChangeHtml={(html) => setCourseForm((f) => ({ ...f, description: html }))}
+                          editorClassName="min-h-[200px]"
+                          onUploadImage={async (file) => {
+                            const fd = new FormData();
+                            fd.append('file', file);
+                            const res = await api.post('/uploads/image', fd, {
+                              headers: { 'Content-Type': 'multipart/form-data' },
+                            });
+                            return res.data.url;
+                          }}
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <Label>Cover (opsional)</Label>
+                      {courseForm.coverImageUrl ? (
+                        <div className="mt-2 aspect-video overflow-hidden border border-slate-200 bg-slate-100 rounded-lg">
+                          <img src={courseForm.coverImageUrl} alt="" className="h-full w-full object-cover" />
+                        </div>
+                      ) : null}
+                      <div className="mt-2 grid gap-2">
+                        <Input
+                          value={courseForm.coverImageUrl}
+                          onChange={(e) => setCourseForm((f) => ({ ...f, coverImageUrl: e.target.value }))}
+                          placeholder="Tempel URL gambar (atau upload file di bawah)"
+                        />
+                        <input
+                          type="file"
+                          accept="image/*"
+                          disabled={coverUploading}
+                          onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            if (!file) return;
+                            setError('');
+                            setCoverUploading(true);
+                            try {
+                              const url = await uploadCoverImage(file);
+                              setCourseForm((f) => ({ ...f, coverImageUrl: url }));
+                            } catch (err) {
+                              setError(err?.response?.data?.error?.message || err?.message || 'Gagal upload cover');
+                            } finally {
+                              setCoverUploading(false);
+                              e.target.value = '';
+                            }
+                          }}
+                        />
+                        {coverUploading ? <div className="text-xs text-slate-600">Uploading...</div> : null}
+                      </div>
+                    </div>
+                    <div>
+                      <Label>Harga (Rp)</Label>
+                      <div className="mt-1">
+                        <Input
+                          type="number"
+                          min="0"
+                          step="10000"
+                          value={courseForm.priceIdr}
+                          onChange={(e) => setCourseForm((f) => ({ ...f, priceIdr: parseInt(e.target.value) || 0 }))}
+                          placeholder="0 untuk gratis"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input
+                        id="coursePublished"
+                        type="checkbox"
+                        className="h-4 w-4"
+                        checked={courseForm.isPublished}
+                        onChange={(e) => setCourseForm((f) => ({ ...f, isPublished: e.target.checked }))}
+                      />
+                      <Label htmlFor="coursePublished">Publish</Label>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button type="submit">Tambah Course</Button>
+                      <Button type="button" variant="outline" onClick={() => setActiveTab('settings')}>Batal</Button>
+                    </div>
+                  </form>
+                </div>
               ) : (
                 <>
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -872,15 +836,50 @@ export default function CourseManager() {
                   </div>
                 </div>
 
-                <div className="mt-6 grid flex-1 min-h-0 gap-4 overflow-auto pr-1">
-                  <Card
-                    className={
-                      'p-5 xl:col-span-2 ' +
-                      (activePanel === 'course' ? 'ring-2 ring-slate-900 ring-offset-2' : '')
-                    }
-                    onFocusCapture={() => setActivePanel('course')}
+                {/* Tab Bar */}
+                <div className="mt-6 flex gap-2 border-b border-slate-200">
+                  <button
+                    onClick={() => setActiveTab('settings')}
+                    className={`px-4 py-2 font-semibold text-sm transition-colors ${
+                      activeTab === 'settings'
+                        ? 'text-primary border-b-2 border-primary'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
                   >
-                    <div className="font-bold">Sampul (Cover)</div>
+                    Pengaturan
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('lessons')}
+                    className={`px-4 py-2 font-semibold text-sm transition-colors ${
+                      activeTab === 'lessons'
+                        ? 'text-primary border-b-2 border-primary'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    Materi
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('quiz')}
+                    className={`px-4 py-2 font-semibold text-sm transition-colors ${
+                      activeTab === 'quiz'
+                        ? 'text-primary border-b-2 border-primary'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    Quiz
+                  </button>
+                </div>
+
+                <div className="mt-4 flex-1 min-h-0 overflow-auto pr-1">
+                  {activeTab === 'settings' && (
+                    <Card
+                      className={
+                        'p-5 xl:col-span-2 ' +
+                        (activePanel === 'course' ? 'ring-2 ring-slate-900 ring-offset-2' : '')
+                      }
+                      onFocusCapture={() => setActivePanel('course')}
+                    >
+                      <div className="font-bold">Pengaturan Kursus</div>
 
                     <div className="mt-3 grid gap-3 sm:grid-cols-2">
                       <div className="aspect-[16/9] overflow-hidden border border-slate-200 bg-slate-100">
@@ -948,10 +947,12 @@ export default function CourseManager() {
                         </Button>
                       </div>
                     </div>
-                  </Card>
+                    </Card>
+                  )}
 
-                  <Card
-                    className={'p-5 ' + (activePanel === 'lesson' ? 'ring-2 ring-slate-900 ring-offset-2' : '')}
+                  {activeTab === 'lessons' && (
+                    <Card
+                      className={'p-5 ' + (activePanel === 'lesson' ? 'ring-2 ring-slate-900 ring-offset-2' : '')}
                     onFocusCapture={() => setActivePanel('lesson')}
                   >
                     <div className="font-bold">Materi (Lessons)</div>
@@ -1206,10 +1207,12 @@ export default function CourseManager() {
                       ))}
                       {lessons.length === 0 ? <div className="text-sm text-slate-600">Belum ada materi.</div> : null}
                     </div>
-                  </Card>
+                    </Card>
+                  )}
 
-                  <Card
-                    className={'p-5 ' + (activePanel === 'quiz' ? 'ring-2 ring-slate-900 ring-offset-2' : '')}
+                  {activeTab === 'quiz' && (
+                    <Card
+                      className={'p-5 ' + (activePanel === 'quiz' ? 'ring-2 ring-slate-900 ring-offset-2' : '')}
                     onFocusCapture={() => setActivePanel('quiz')}
                   >
                     <div className="font-bold">Quiz</div>
@@ -1659,14 +1662,14 @@ export default function CourseManager() {
                         <div className="mt-3 text-sm text-slate-600">Pilih quiz dulu untuk kelola soal.</div>
                       )}
                     </div>
-                  </Card>
+                    </Card>
+                  )}
                 </div>
                 </>
               )}
             </Card>
-          </div>
         </div>
-      </div>
-    </section>
+      </SidebarShell>
+    </>
   );
 }

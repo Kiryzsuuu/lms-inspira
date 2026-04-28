@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { HeroCarousel } from '../components/HeroCarousel';
 import { Card, Container, Button, Input } from '../components/ui';
 import { useAuth } from '../lib/auth';
 
@@ -12,6 +11,12 @@ function formatIdr(n) {
   }
 }
 
+function stripHtml(html) {
+  const div = document.createElement('div');
+  div.innerHTML = html;
+  return div.textContent || div.innerText || '';
+}
+
 export default function Courses() {
   const { api, role, isAuthed } = useAuth();
   const nav = useNavigate();
@@ -19,21 +24,14 @@ export default function Courses() {
   const [purchasedCourseIds, setPurchasedCourseIds] = useState(new Set());
   const [completedCourseIds, setCompletedCourseIds] = useState(new Set());
   const [activeCourseId, setActiveCourseId] = useState(null);
-  const [slides, setSlides] = useState([]);
-  const [heroText, setHeroText] = useState({
-    kicker: 'Belajar & Quiz Interaktif',
-    heading: 'Belajar Skill Baru, Setiap Hari',
-    subheading: 'Course singkat + quiz interaktif ala Kahoot/Quizizz.',
-  });
   const [q, setQ] = useState('');
+  const [priceFilter, setPriceFilter] = useState('all');
   const [error, setError] = useState('');
 
   useEffect(() => {
     let cancelled = false;
 
-    api.get('/heroes').then((res) => setSlides(res.data.slides)).catch(() => setSlides([]));
-    api.get('/heroes/text').then((res) => setHeroText(res.data.text || heroText)).catch(() => {});
-    api.get('/courses').then((res) => setCourses(res.data.courses)).catch(() => setCourses([]));
+    api.get('/courses').then((res) => setCourses(res.data.courses || [])).catch(() => setCourses([]));
 
     function onProgressChanged() {
       loadStudentState();
@@ -88,40 +86,85 @@ export default function Courses() {
   }
 
   const filtered = courses.filter((c) => {
-    if (!q.trim()) return true;
-    const s = q.toLowerCase();
-    return (c.title || '').toLowerCase().includes(s) || (c.description || '').toLowerCase().includes(s);
+    const isFree = !c.priceIdr || c.priceIdr === 0;
+
+    const matchesSearch = !q.trim() ||
+      (c.title || '').toLowerCase().includes(q.toLowerCase()) ||
+      (c.description || '').toLowerCase().includes(q.toLowerCase());
+
+    const matchesPrice =
+      priceFilter === 'all' ||
+      (priceFilter === 'free' && isFree) ||
+      (priceFilter === 'paid' && !isFree);
+
+    return matchesSearch && matchesPrice;
   });
 
   return (
-    <>
-      <HeroCarousel slides={slides} />
-
-      <section className="mt-7 pb-4">
+    <div className="bg-slate-50 min-h-screen">
+      <section className="py-12">
         <Container>
-          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{heroText.kicker}</p>
-          <h1 className="mt-2 text-balance text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">
-            {heroText.heading}
-          </h1>
-          <p className="mt-3 text-pretty text-slate-600">{heroText.subheading}</p>
-        </Container>
-      </section>
+          <div className="mb-8">
+            <h1 className="text-4xl sm:text-5xl font-extrabold text-slate-900 mb-3">Jelajahi Kursus</h1>
+            <p className="text-lg text-slate-600">Pilih kursus yang sesuai dengan kebutuhan Anda dan mulai belajar hari ini</p>
+          </div>
 
-      <section className="mt-6 pb-14">
-        <Container>
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          {/* Search and Filter */}
+          <div className="space-y-6">
+            {/* Search Bar */}
             <div>
-              <h1 className="text-3xl font-extrabold tracking-tight">Courses</h1>
-              <p className="mt-1 text-sm text-slate-600">Pilih course, baca materi, lalu kerjakan quiz.</p>
+              <div className="relative">
+                <svg className="absolute left-4 top-3.5 h-5 w-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                <Input
+                  value={q}
+                  onChange={(e) => setQ(e.target.value)}
+                  placeholder="Cari kursus berdasarkan nama atau deskripsi..."
+                  className="pl-12 py-3 text-base"
+                />
+              </div>
             </div>
-            <div className="w-full sm:w-80">
-              <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cari course..." />
+
+            {/* Filter Pills */}
+            <div className="flex flex-wrap gap-3">
+              <button
+                onClick={() => setPriceFilter('all')}
+                className={`px-4 py-2 rounded-full text-sm font-semibold transition-all ${
+                  priceFilter === 'all'
+                    ? 'bg-primary text-white shadow-md'
+                    : 'bg-white text-slate-700 border border-slate-200 hover:border-slate-300'
+                }`}
+              >
+                Semua Kursus ({courses.length})
+              </button>
+              <button
+                onClick={() => setPriceFilter('free')}
+                className={`px-4 py-2 rounded-full text-sm font-semibold transition-all ${
+                  priceFilter === 'free'
+                    ? 'bg-emerald-500 text-white shadow-md'
+                    : 'bg-white text-slate-700 border border-slate-200 hover:border-slate-300'
+                }`}
+              >
+                Gratis ({courses.filter(c => !c.priceIdr || c.priceIdr === 0).length})
+              </button>
+              <button
+                onClick={() => setPriceFilter('paid')}
+                className={`px-4 py-2 rounded-full text-sm font-semibold transition-all ${
+                  priceFilter === 'paid'
+                    ? 'bg-blue-500 text-white shadow-md'
+                    : 'bg-white text-slate-700 border border-slate-200 hover:border-slate-300'
+                }`}
+              >
+                Berbayar ({courses.filter(c => c.priceIdr && c.priceIdr > 0).length})
+              </button>
             </div>
           </div>
 
-          {error ? <div className="mt-4 bg-rose-50 p-3 text-sm text-rose-700">{error}</div> : null}
+          {error && <div className="mt-6 bg-rose-50 border border-rose-200 rounded-lg p-4 text-sm text-rose-700">{error}</div>}
 
-          <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {/* Course Grid */}
+          <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {filtered.map((c) => {
               const isFree = !c.priceIdr || c.priceIdr === 0;
               const isPurchased = purchasedCourseIds.has(c._id);
@@ -130,81 +173,103 @@ export default function Courses() {
               const shouldBeGrayed = isAuthed && !isFree && !isPurchased;
 
               return (
-                <Card 
-                  key={c._id} 
-                  className={`relative flex h-full flex-col p-5 ${shouldBeGrayed ? 'opacity-60' : ''}`}
+                <Card
+                  key={c._id}
+                  className={`overflow-hidden flex h-full flex-col hover:shadow-lg transition-shadow ${shouldBeGrayed ? 'opacity-60' : ''}`}
                 >
-                  {isAuthed && isCompleted ? (
-                    <div
-                      className="absolute right-3 top-3 flex items-center gap-1 rounded-full bg-emerald-600 px-2 py-1 text-[11px] font-extrabold text-white"
-                      aria-label="Course selesai"
-                    >
-                      <span aria-hidden="true">✓</span>
-                      <span>SELESAI</span>
-                    </div>
-                  ) : isOngoing ? (
-                    <div
-                      className="absolute right-3 top-3 rounded-full bg-amber-500 px-2 py-1 text-[11px] font-extrabold text-white"
-                      aria-label="Course sedang dikerjakan"
-                    >
-                      ON GOING
-                    </div>
-                  ) : null}
-                  <div className="aspect-[16/9] overflow-hidden bg-slate-100">
+                  {/* Course Image */}
+                  <div className="relative aspect-video overflow-hidden bg-gradient-to-br from-slate-200 to-slate-300">
                     {c.coverImageUrl ? (
-                      <img src={c.coverImageUrl} alt="" className="h-full w-full object-cover" />
+                      <img src={c.coverImageUrl} alt={c.title} className="h-full w-full object-cover" />
                     ) : (
-                      <div className="flex h-full w-full items-center justify-center text-xs font-semibold text-slate-600">
-                        Cover (opsional)
+                      <div className="flex h-full w-full items-center justify-center bg-slate-200">
+                        <svg className="h-16 w-16 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
                       </div>
                     )}
-                  </div>
-                  <div className="mt-3 line-clamp-2 min-h-[3.25rem] text-lg font-bold leading-snug text-slate-900">
-                    {c.title}
-                  </div>
-                  <div className="mt-1 text-sm font-semibold text-slate-900">Rp {formatIdr(c.priceIdr || 0)}</div>
 
-                  <div className="mt-auto pt-4 flex gap-2 flex-col sm:flex-row">
-                    {!isAuthed ? (
-                      <Button
-                        className="w-full"
-                        onClick={() => nav('/login')}
-                      >
-                        Login untuk Lihat
-                      </Button>
-                    ) : purchasedCourseIds.has(c._id) ? (
-                      <Link to={`/courses/${c._id}`} className="w-full">
-                        <Button className="w-full">Buka</Button>
-                      </Link>
-                    ) : (
-                      <>
-                        <Link to={`/courses/${c._id}`} className="flex-1">
-                          <Button variant="outline" className="w-full">Detail</Button>
-                        </Link>
-                        {role === 'student' && (
-                          <Button
-                            variant="default"
-                            className="flex-1"
-                            onClick={() => addToCart(c._id)}
-                          >
-                            Tambah ke Cart
-                          </Button>
-                        )}
-                      </>
+                    {/* Status Badge */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+                    <div className="absolute top-3 right-3">
+                      {isCompleted ? (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500 text-white px-3 py-1 text-xs font-bold shadow-lg">
+                          <span>✓</span> Selesai
+                        </span>
+                      ) : isOngoing ? (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-amber-500 text-white px-3 py-1 text-xs font-bold shadow-lg">
+                          ► Berlangsung
+                        </span>
+                      ) : isFree ? (
+                        <span className="inline-flex items-center rounded-full bg-emerald-500 text-white px-3 py-1 text-xs font-bold shadow-lg">
+                          Gratis
+                        </span>
+                      ) : null}
+                    </div>
+                  </div>
+
+                  {/* Course Info */}
+                  <div className="flex-1 p-5 flex flex-col">
+                    <h3 className="font-bold text-lg text-slate-900 line-clamp-2">{c.title}</h3>
+
+                    <p className="mt-2 text-sm text-slate-600 line-clamp-2 flex-1">{stripHtml(c.description) || 'Kursus berkualitas untuk pengembangan skill Anda'}</p>
+
+                    {/* Price */}
+                    {!isFree && (
+                      <div className="mt-4 text-lg font-bold text-primary">
+                        Rp {formatIdr(c.priceIdr)}
+                      </div>
                     )}
+
+                    {/* Action Buttons */}
+                    <div className="mt-4 space-y-2 sm:space-y-0 sm:flex gap-2">
+                      {!isAuthed ? (
+                        <Button className="w-full bg-primary  text-white" onClick={() => nav('/login')}>
+                          Login untuk Lihat
+                        </Button>
+                      ) : purchasedCourseIds.has(c._id) ? (
+                        <Link to={`/courses/${c._id}`} className="w-full">
+                          <Button className="w-full bg-primary  text-white">
+                            Buka Kursus
+                          </Button>
+                        </Link>
+                      ) : (
+                        <>
+                          <Link to={`/courses/${c._id}`} className="flex-1">
+                            <Button variant="outline" className="w-full">Detail</Button>
+                          </Link>
+                          {role === 'student' && (
+                            <Button
+                              className="flex-1 bg-primary  text-white"
+                              onClick={() => addToCart(c._id)}
+                            >
+                              + Cart
+                            </Button>
+                          )}
+                        </>
+                      )}
+                    </div>
                   </div>
                 </Card>
               );
             })}
 
             {filtered.length === 0 && (
-              <Card className="p-8 sm:col-span-2 lg:col-span-3">
-                <div className="text-sm text-slate-600">Course tidak ditemukan.</div>
-              </Card>
+              <div className="sm:col-span-2 lg:col-span-3">
+                <Card className="p-12 text-center">
+                  <div className="text-slate-600">
+                    <svg className="h-16 w-16 mx-auto mb-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <p className="text-lg font-semibold mb-2">Kursus Tidak Ditemukan</p>
+                    <p className="text-sm text-slate-500">Coba ubah filter atau cari dengan kata kunci lain</p>
+                  </div>
+                </Card>
+              </div>
             )}
           </div>
         </Container>
       </section>
-    </>
+    </div>
   );
 }

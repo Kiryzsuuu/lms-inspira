@@ -1,5 +1,6 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { Navbar } from './components/Navbar';
+import { Footer } from './components/Footer';
 import Home from './pages/Home';
 import Courses from './pages/Courses';
 import CourseDetail from './pages/CourseDetail';
@@ -16,19 +17,23 @@ import Dashboard from './pages/Dashboard';
 import HeroManager from './pages/dashboard/HeroManager';
 import CourseManager from './pages/dashboard/CourseManager';
 import UserManager from './pages/dashboard/UserManager';
+import AboutManager from './pages/dashboard/AboutManager';
 import Accounting from './pages/dashboard/Accounting';
 import QuestionBankManager from './pages/dashboard/QuestionBankManager';
 import StudentProgressMonitor from './pages/dashboard/StudentProgressMonitor';
 import AssignmentSubmit from './pages/AssignmentSubmit';
 import CertificateView from './pages/CertificateView';
 import CourseStats from './pages/dashboard/CourseStats';
+import AboutUs from './pages/AboutUs';
+import { InfoPage } from './pages/Info';
 import { RequireAuth } from './components/RequireAuth';
 import { Container } from './components/ui';
 
 export default function App() {
   return (
-    <div className="min-h-full">
+    <div className="flex flex-col min-h-screen">
       <Navbar />
+      <main className="flex-1">
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/courses" element={<Courses />} />
@@ -48,6 +53,13 @@ export default function App() {
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/otp" element={<OtpVerify />} />
+
+        <Route path="/fitur-pembelajaran" element={<InfoPage type="features" />} />
+        <Route path="/quiz-sertifikat" element={<InfoPage type="quiz" />} />
+        <Route path="/analitik-pengguna" element={<InfoPage type="analytics" />} />
+        <Route path="/faq" element={<InfoPage type="faq" />} />
+        <Route path="/kebijakan-privasi" element={<InfoPage type="privacy" />} />
+        <Route path="/tentang-kami" element={<AboutUs />} />
 
         <Route
           path="/my-profile"
@@ -87,6 +99,14 @@ export default function App() {
           element={
             <RequireAuth roles={['admin']}>
               <UserManager />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/dashboard/about"
+          element={
+            <RequireAuth roles={['admin']}>
+              <AboutManager />
             </RequireAuth>
           }
         />
@@ -150,6 +170,8 @@ export default function App() {
           }
         />
       </Routes>
+      </main>
+      <Footer />
     </div>
   );
 }

@@ -205,6 +205,123 @@ function reportsRouter({ requireAuth, requireRole }) {
     })
   );
 
+  // Admin: per-course revenue summary
+  router.get(
+    '/accounting/courses',
+    requireAuth,
+    requireRole('admin'),
+    asyncHandler(async (req, res) => {
+      const { from, to } = parseDateRange(req.query);
+      const match = { status: 'paid', createdAt: { $gte: from, $lte: to } };
+
+      // Aggreg order items by course
+      const rows = await Order.aggregate([
+        { $match: match },
+        { $unwind: '$items' },
+        {
+          $group: {
+            _id: '$items.courseId',
+            title: { $first: '$items.title' },
+            purchaseCount: { $sum: 1 },
+            totalRevenueIdr: { $sum: '$items.priceIdr' },
+          },
+        },
+        { $sort: { totalRevenueIdr: -1 } },
+      ]);
+
+      // Get creator info for each course
+      const courseIds = rows.map((r) => r._id).filter(Boolean);
+      const courses = await Course.find({ _id: { $in: courseIds } }, { ownerId: 1 }).lean();
+      const ownerIds = [...new Set(courses.map((c) => c.ownerId?.toString()).filter(Boolean))];
+      const owners = await User.find({ _id: { $in: ownerIds } }, { name: 1, fullName: 1 }).lean();
+      const ownerMap = new Map(owners.map((u) => [u._id.toString(), u.fullName || u.name || '—']));
+      const courseOwnerMap = new Map(courses.map((c) => [c._id.toString(), ownerMap.get(c.ownerId?.toString()) || '—']));
+
+      // Count students per course
+      const studentCounts = await User.aggregate([
+        { $match: { purchasedCourseIds: { $in: courseIds } } },
+        { $unwind: '$purchasedCourseIds' },
+        { $match: { purchasedCourseIds: { $in: courseIds } } },
+        { $group: { _id: '$purchasedCourseIds', count: { $sum: 1 } } },
+      ]);
+      const studentMap = new Map(studentCounts.map((s) => [s._id.toString(), s.count]));
+
+      const result = rows.map((r) => ({
+        courseId: r._id.toString(),
+        title: r.title || '(Dihapus)',
+        creatorName: courseOwnerMap.get(r._id.toString()) || '—',
+        purchaseCount: r.purchaseCount,
+        studentCount: studentMap.get(r._id.toString()) || 0,
+        totalRevenueIdr: r.totalRevenueIdr,
+      }));
+
+      res.json({ range: { from: from.toISOString(), to: to.toISOString() }, courses: result });
+    })
+  );
+
+  // Admin: export courses CSV
+  router.get(
+    '/accounting/courses.csv',
+    requireAuth,
+    requireRole('admin'),
+    asyncHandler(async (req, res) => {
+      const { from, to } = parseDateRange(req.query);
+      const match = { status: 'paid', createdAt: { $gte: from, $lte: to } };
+
+      const rows = await Order.aggregate([
+        { $match: match },
+        { $unwind: '$items' },
+        {
+          $group: {
+            _id: '$items.courseId',
+            title: { $first: '$items.title' },
+            purchaseCount: { $sum: 1 },
+            totalRevenueIdr: { $sum: '$items.priceIdr' },
+          },
+        },
+        { $sort: { totalRevenueIdr: -1 } },
+      ]);
+
+      const courseIds = rows.map((r) => r._id).filter(Boolean);
+      const courses = await Course.find({ _id: { $in: courseIds } }, { ownerId: 1 }).lean();
+      const ownerIds = [...new Set(courses.map((c) => c.ownerId?.toString()).filter(Boolean))];
+      const owners = await User.find({ _id: { $in: ownerIds } }, { name: 1, fullName: 1 }).lean();
+      const ownerMap = new Map(owners.map((u) => [u._id.toString(), u.fullName || u.name || '—']));
+      const courseOwnerMap = new Map(courses.map((c) => [c._id.toString(), ownerMap.get(c.ownerId?.toString()) || '—']));
+
+      const studentCounts = await User.aggregate([
+        { $match: { purchasedCourseIds: { $in: courseIds } } },
+        { $unwind: '$purchasedCourseIds' },
+        { $match: { purchasedCourseIds: { $in: courseIds } } },
+        { $group: { _id: '$purchasedCourseIds', count: { $sum: 1 } } },
+      ]);
+      const studentMap = new Map(studentCounts.map((s) => [s._id.toString(), s.count]));
+
+      res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+      res.setHeader('Content-Disposition', 'attachment; filename="accounting-courses.csv"');
+      res.write('﻿');
+
+      const header = ['No', 'Judul Course', 'Pembuat', 'Jumlah Pembeli', 'Jumlah Siswa', 'Total Pendapatan (IDR)'];
+      res.write(header.join(',') + '\n');
+
+      rows.forEach((r, idx) => {
+        const creatorName = courseOwnerMap.get(r._id.toString()) || '—';
+        const studentCount = studentMap.get(r._id.toString()) || 0;
+        const row = [
+          toCsvValue(idx + 1),
+          toCsvValue(r.title || '(Dihapus)'),
+          toCsvValue(creatorName),
+          toCsvValue(r.purchaseCount),
+          toCsvValue(studentCount),
+          toCsvValue(r.totalRevenueIdr),
+        ];
+        res.write(row.join(',') + '\n');
+      });
+
+      res.end();
+    })
+  );
+
   // Student: export PDF progress + achievements for a course
   router.get(
     '/courses/:courseId/progress.pdf',

@@ -1,108 +1,220 @@
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Card, Container, Button } from '../components/ui';
 import { useAuth } from '../lib/auth';
 
-export default function Dashboard() {
-  const { user, role } = useAuth();
+function QuickActionCard({ label, description, href }) {
+  return (
+    <Link to={href}>
+      <div className="h-full bg-white border border-slate-200 rounded-lg p-6 hover:shadow-md hover:border-slate-300 transition-all cursor-pointer">
+        <h3 className="font-semibold text-slate-900">{label}</h3>
+        <p className="text-xs text-slate-600 mt-1">{description}</p>
+      </div>
+    </Link>
+  );
+}
 
-  const quickStats = [
-    { label: 'Role aktif', value: role || '-', tone: 'bg-orange-50 text-orange-900' },
-    { label: 'Fokus hari ini', value: role === 'student' ? 'Belajar' : 'Kelola LMS', tone: 'bg-blue-50 text-blue-900' },
-    { label: 'Workspace', value: 'LMS Inspira', tone: 'bg-emerald-50 text-emerald-900' },
-  ];
+function StatCard({ label, value, description }) {
+  return (
+    <Card className="p-6">
+      <p className="text-xs font-semibold uppercase text-slate-600 tracking-wide">{label}</p>
+      <div className="mt-3 inline-flex items-center justify-center h-12 w-12 rounded-lg bg-slate-100">
+        <span className="text-2xl font-extrabold text-slate-900">{value}</span>
+      </div>
+      <p className="mt-3 text-xs text-slate-600">{description}</p>
+    </Card>
+  );
+}
+
+export default function Dashboard() {
+  const { api, user, role } = useAuth();
+  const [courseCount, setCourseCount] = useState(0);
+
+  useEffect(() => {
+    api
+      .get('/courses')
+      .then((res) => {
+        const courses = Array.isArray(res.data.courses) ? res.data.courses : [];
+        setCourseCount(courses.length);
+      })
+      .catch(() => setCourseCount(0));
+  }, [api]);
+
+  const getRoleLabel = () => {
+    if (role === 'admin') return 'Administrator';
+    if (role === 'teacher') return 'Pengajar';
+    return 'Peserta Didik';
+  };
 
   return (
-    <section className="bg-slate-100/70 py-8 sm:py-10">
-      <Container className="space-y-6">
-        <Card className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-          <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-[#d76810] px-6 py-8 text-white sm:px-8">
-            <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-              <div>
-                <div className="text-xs font-semibold uppercase tracking-[0.2em] text-orange-100">Dashboard utama</div>
-                <h1 className="mt-2 text-3xl font-extrabold tracking-tight sm:text-4xl">Halo, {user?.name}</h1>
-                <p className="mt-3 max-w-2xl text-sm text-slate-100/90">
-                  Akses cepat ke course, operasional admin, dan area belajar dalam satu tampilan yang lebih rapi.
-                </p>
-              </div>
-              <Link to="/courses">
-                <Button variant="outline" className="rounded-2xl border-white/30 bg-white/10 text-white hover:bg-white/20">
-                  Buka Courses
-                </Button>
-              </Link>
+    <div className="bg-slate-50 min-h-screen">
+      {/* Welcome Banner */}
+      <section className="bg-gradient-to-r from-slate-900 via-slate-800 to-primary py-12 sm:py-16 text-white">
+        <Container>
+          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+            <div>
+              <h1 className="text-4xl sm:text-5xl font-extrabold">Halo, {user?.name}!</h1>
+              <p className="mt-3 text-lg text-slate-200">
+                Selamat datang di dashboard LMS Inspira
+              </p>
+            </div>
+            <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur border border-white/20 rounded-xl px-4 py-2">
+              <span className="text-sm font-semibold">{getRoleLabel()}</span>
             </div>
           </div>
-          <div className="grid gap-4 p-6 md:grid-cols-3">
-            {quickStats.map((item) => (
-              <div key={item.label} className={`rounded-2xl px-4 py-5 ${item.tone}`}>
-                <div className="text-xs font-semibold uppercase tracking-[0.18em] opacity-80">{item.label}</div>
-                <div className="mt-2 text-2xl font-extrabold">{item.value}</div>
-              </div>
-            ))}
-          </div>
-        </Card>
+        </Container>
+      </section>
 
-        <div className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
-          <div className="space-y-6">
-            <Card className="rounded-3xl border border-slate-200 p-6 shadow-sm">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <h2 className="text-xl font-bold text-slate-900">Area belajar</h2>
-                  <p className="mt-1 text-sm text-slate-600">Masuk ke course publik, lanjutkan pembelajaran, dan kerjakan quiz.</p>
-                </div>
-                <div className="rounded-2xl bg-slate-100 px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-600">Student</div>
-              </div>
-              <div className="mt-5 flex flex-col gap-3 sm:flex-row">
-                <Link to="/courses" className="flex-1">
-                  <Button className="w-full rounded-2xl">Jelajahi Course</Button>
-                </Link>
-                <Link to="/my-profile" className="flex-1">
-                  <Button variant="outline" className="w-full rounded-2xl">Profil Saya</Button>
-                </Link>
-              </div>
-            </Card>
-
-            {(role === 'admin' || role === 'teacher') && (
-              <Card className="rounded-3xl border border-slate-200 p-6 shadow-sm">
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <h2 className="text-xl font-bold text-slate-900">Operasional konten</h2>
-                    <p className="mt-1 text-sm text-slate-600">Kelola hero, course, bank soal, dan monitoring progres siswa.</p>
-                  </div>
-                  <div className="rounded-2xl bg-orange-50 px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-orange-800">Teacher / Admin</div>
-                </div>
-                <div className="mt-5 grid gap-3 md:grid-cols-2">
-                  <Link to="/dashboard/heroes"><Button className="w-full rounded-2xl">Kelola Hero</Button></Link>
-                  <Link to="/dashboard/courses"><Button variant="outline" className="w-full rounded-2xl">Kelola Course</Button></Link>
-                  <Link to="/dashboard/question-bank"><Button className="w-full rounded-2xl">Bank Soal</Button></Link>
-                  <Link to="/dashboard/student-progress"><Button variant="outline" className="w-full rounded-2xl">Monitor Siswa</Button></Link>
-                </div>
-              </Card>
+      {/* Stats Section */}
+      <section className="py-8 -mt-4 relative z-10">
+        <Container>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {role === 'student' ? (
+              <>
+                <StatCard
+                  label="Kursus Tersedia"
+                  value={courseCount}
+                  description="Total kursus yang dapat diikuti"
+                />
+                <StatCard
+                  label="Kursus Diikuti"
+                  value="0"
+                  description="Dari semua kursus publik"
+                />
+                <StatCard
+                  label="Sertifikat"
+                  value="0"
+                  description="Setelah menyelesaikan kursus"
+                />
+              </>
+            ) : (
+              <>
+                <StatCard
+                  label="Total Kursus"
+                  value={courseCount}
+                  description="Kursus yang dipublikasikan"
+                />
+                <StatCard
+                  label="Peran Anda"
+                  value={role === 'admin' ? 'Admin' : 'Pengajar'}
+                  description="Dengan akses penuh ke sistem"
+                />
+                <StatCard
+                  label="Status Sistem"
+                  value="Aktif"
+                  description="Semua layanan berjalan normal"
+                />
+              </>
             )}
           </div>
+        </Container>
+      </section>
 
-          <div className="space-y-6">
-            <Card className="rounded-3xl border border-slate-200 p-6 shadow-sm">
-              <h2 className="text-xl font-bold text-slate-900">Panduan cepat</h2>
-              <div className="mt-4 space-y-3 text-sm text-slate-600">
-                <div className="rounded-2xl bg-slate-50 p-4">Gunakan menu profile untuk lihat riwayat course dan sertifikat.</div>
-                <div className="rounded-2xl bg-slate-50 p-4">Kelola course dari dashboard untuk melihat statistik pendaftar.</div>
-                <div className="rounded-2xl bg-slate-50 p-4">Pembayaran student berjalan via Midtrans dengan status settlement otomatis.</div>
-              </div>
-            </Card>
-
-            {role === 'admin' && (
-              <Card className="rounded-3xl border border-slate-200 p-6 shadow-sm">
-                <h2 className="text-xl font-bold text-slate-900">Kontrol admin</h2>
-                <p className="mt-1 text-sm text-slate-600">Kelola user dan pantau pembukuan dari area admin.</p>
-                <div className="mt-5 grid gap-3">
-                  <Link to="/dashboard/users"><Button className="w-full rounded-2xl">Kelola Users</Button></Link>
-                  <Link to="/dashboard/accounting"><Button variant="outline" className="w-full rounded-2xl">Pembukuan</Button></Link>
-                </div>
-              </Card>
-            )}
+      {/* Quick Access Section */}
+      <section className="py-12">
+        <Container className="space-y-12">
+          {/* Pembelajaran Section - All Roles */}
+          <div>
+            <h2 className="text-2xl font-extrabold text-slate-900 mb-6 flex items-center gap-2">
+               Pembelajaran
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {role === 'student' ? (
+                <>
+                  <QuickActionCard
+                    label="Jelajahi Kursus"
+                    description="Lihat semua kursus yang tersedia dan mulai belajar"
+                    href="/courses"
+                  />
+                  <QuickActionCard
+                    label="Profil Saya"
+                    description="Kelola profil, riwayat kursus, dan sertifikat"
+                    href="/my-profile"
+                  />
+                </>
+              ) : (
+                <>
+                  <QuickActionCard
+                    label="Jelajahi Kursus"
+                    description="Lihat semua kursus yang tersedia"
+                    href="/courses"
+                  />
+                  <QuickActionCard
+                    label="Profil Saya"
+                    description="Kelola akun dan pengaturan Anda"
+                    href="/my-profile"
+                  />
+                </>
+              )}
+            </div>
           </div>
-        </div>
-      </Container>
-    </section>
+
+          {/* Manajemen Konten Section - Teacher & Admin */}
+          {(role === 'admin' || role === 'teacher') && (
+            <div>
+              <h2 className="text-2xl font-extrabold text-slate-900 mb-6 flex items-center gap-2">
+                 Manajemen Konten
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <QuickActionCard
+                  
+                  label="Kelola Kursus"
+                  description="Buat, edit, dan kelola semua kursus Anda"
+                  href="/dashboard/courses"
+                />
+                <QuickActionCard
+                  
+                  label="Bank Soal"
+                  description="Kelola koleksi soal dan pertanyaan kuis"
+                  href="/dashboard/question-bank"
+                />
+                <QuickActionCard
+                  
+                  label="Monitor Siswa"
+                  description="Pantau progress dan hasil belajar siswa"
+                  href="/dashboard/student-progress"
+                />
+                <QuickActionCard
+                  
+                  label="Hero Carousel"
+                  description="Kelola slide hero di halaman utama"
+                  href="/dashboard/heroes"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Administrasi Section - Admin Only */}
+          {role === 'admin' && (
+            <div>
+              <h2 className="text-2xl font-extrabold text-slate-900 mb-6 flex items-center gap-2">
+                 Administrasi
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <QuickActionCard
+                  
+                  label="Kelola Pengguna"
+                  description="Kelola akun pengguna dan peran mereka"
+                  href="/dashboard/users"
+                />
+                <QuickActionCard
+
+                  label="Pembukuan"
+                  description="Lihat laporan keuangan dan transaksi"
+                  href="/dashboard/accounting"
+                />
+                <QuickActionCard
+
+                  label="Kelola Tentang Kami"
+                  description="Kelola info platform dan tim pengajar"
+                  href="/dashboard/about"
+                />
+              </div>
+            </div>
+          )}
+        </Container>
+      </section>
+
+    </div>
   );
 }

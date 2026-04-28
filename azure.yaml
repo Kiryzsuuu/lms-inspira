@@ -8,6 +8,8 @@ services:
         project: .
         host: containerapp
         language: js
+        docker:
+            remoteBuild: true
 resources:
     lms-inspira:
         type: host.containerapp
