@@ -5,6 +5,7 @@ const { Cart } = require('../models/Cart');
 const { Course } = require('../models/Course');
 const { Order } = require('../models/Order');
 const { User } = require('../models/User');
+const { Coupon } = require('../models/Coupon');
 const { asyncHandler } = require('../utils/asyncHandler');
 const { HttpError } = require('../utils/errors');
 const { getEnv } = require('../utils/env');
@@ -58,6 +59,7 @@ function paymentsRouter({ requireAuth, requireRole, midtrans }) {
         throw new HttpError(500, 'Midtrans belum dikonfigurasi (server key/client key)');
       }
 
+      const { couponCode } = req.body;
       const cart = await Cart.findOne({ userId: req.user.sub }).lean();
       const ids = (cart?.items || []).map((i) => i.courseId);
       if (!ids.length) throw new HttpError(400, 'Cart kosong');
@@ -89,6 +91,55 @@ function paymentsRouter({ requireAuth, requireRole, midtrans }) {
       const orderCode = makeOrderCode();
       const amountIdr = payable.reduce((sum, c) => sum + (c.priceIdr || 0), 0);
 
+      // Validate and apply coupon
+      let couponData = null;
+      let discountAmount = 0;
+      let finalAmountIdr = amountIdr;
+
+      if (couponCode) {
+        const coupon = await Coupon.findOne({ code: couponCode.toUpperCase().trim() });
+        if (!coupon) throw new HttpError(404, 'Coupon tidak ditemukan');
+        if (!coupon.isActive) throw new HttpError(400, 'Coupon tidak aktif');
+
+        const now = new Date();
+        if (coupon.validFrom && now < coupon.validFrom) throw new HttpError(400, 'Coupon belum berlaku');
+        if (coupon.validUntil && now > coupon.validUntil) throw new HttpError(400, 'Coupon sudah kadaluarsa');
+        if (coupon.maxTotalUsage && coupon.currentUsageCount >= coupon.maxTotalUsage) {
+          throw new HttpError(400, 'Coupon sudah mencapai batas penggunaan');
+        }
+
+        const userUsageCount = (coupon.usageLog || []).filter((log) => String(log.userId) === String(req.user.sub)).length;
+        if (userUsageCount >= coupon.maxUsagePerUser) {
+          throw new HttpError(400, 'Anda sudah mencapai batas penggunaan coupon ini');
+        }
+
+        if (amountIdr < coupon.minPurchaseAmount) {
+          throw new HttpError(400, `Minimum pembelian adalah Rp ${coupon.minPurchaseAmount}`);
+        }
+
+        if (coupon.applicableCourseIds.length > 0) {
+          const applicableSet = new Set(coupon.applicableCourseIds.map((id) => String(id)));
+          const isApplicable = payable.some((c) => applicableSet.has(String(c._id)));
+          if (!isApplicable) throw new HttpError(400, 'Coupon tidak berlaku untuk course yang dipilih');
+        }
+
+        if (coupon.discountType === 'percentage') {
+          discountAmount = Math.round((amountIdr * coupon.discountValue) / 100);
+        } else if (coupon.discountType === 'fixed') {
+          discountAmount = coupon.discountValue;
+        } else if (coupon.discountType === 'free') {
+          discountAmount = amountIdr;
+        }
+
+        finalAmountIdr = Math.max(0, amountIdr - discountAmount);
+        couponData = {
+          couponId: coupon._id,
+          code: coupon.code,
+          discountAmount,
+          finalAmountIdr,
+        };
+      }
+
       const items = payable.map((c) => ({
         courseId: c._id,
         title: c.title,
@@ -101,6 +152,7 @@ function paymentsRouter({ requireAuth, requireRole, midtrans }) {
         status: 'pending',
         items,
         amountIdr,
+        coupon: couponData || undefined,
         midtrans: {
           orderId: orderCode,
         },
@@ -131,7 +183,7 @@ function paymentsRouter({ requireAuth, requireRole, midtrans }) {
       const transaction = await snap.createTransaction({
         transaction_details: {
           order_id: orderCode,
-          gross_amount: amountIdr,
+          gross_amount: finalAmountIdr,
         },
         item_details: items.map((it) => ({
           id: String(it.courseId),
@@ -161,6 +213,8 @@ function paymentsRouter({ requireAuth, requireRole, midtrans }) {
         orderId: String(order._id),
         orderCode,
         amountIdr,
+        discountAmount,
+        finalAmountIdr,
         snapToken: transaction.token,
         redirectUrl: transaction.redirect_url,
       });
@@ -267,6 +321,18 @@ function paymentsRouter({ requireAuth, requireRole, midtrans }) {
             // Don't fail webhook if email fails
           }
         }
+
+        // Log coupon usage
+        if (order.coupon?.couponId) {
+          await Coupon.updateOne(
+            { _id: order.coupon.couponId },
+            {
+              $inc: { currentUsageCount: 1 },
+              $push: { usageLog: { userId: order.userId, orderId: order._id, usedAt: new Date() } },
+            }
+          );
+        }
+
         await Cart.updateOne({ userId: order.userId }, { $set: { items: [] } });
       }
 

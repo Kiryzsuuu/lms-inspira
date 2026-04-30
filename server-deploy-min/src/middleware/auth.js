@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const { HttpError } = require('../utils/errors');
+const { User } = require('../models/User');
 
 function getBearerToken(req) {
   const header = req.headers.authorization || '';
@@ -24,10 +25,31 @@ function requireAuth(jwtSecret) {
 }
 
 function requireRole(...roles) {
-  return function roleMiddleware(req, res, next) {
-    if (!req.user) return next(new HttpError(401, 'Unauthorized'));
-    if (!roles.includes(req.user.role)) return next(new HttpError(403, 'Forbidden'));
-    return next();
+  const allowedRoles = roles.map((r) => String(r || '').trim().toLowerCase()).filter(Boolean);
+
+  return async function roleMiddleware(req, res, next) {
+    try {
+      if (!req.user) return next(new HttpError(401, 'Unauthorized'));
+
+      // Always prefer the current role from DB so promotions/demotions
+      // take effect immediately (without requiring re-login).
+      const userId = req.user.sub;
+      const tokenRole = String(req.user.role || '').trim().toLowerCase();
+      if (!userId) {
+        // Legacy/invalid tokens without sub: fall back to token role check only.
+        if (tokenRole && allowedRoles.includes(tokenRole)) return next();
+        return next(new HttpError(403, 'Forbidden'));
+      }
+
+      const user = await User.findById(userId).select('role').lean();
+      const effectiveRole = String(user?.role || tokenRole || '').trim().toLowerCase();
+      req.user.role = effectiveRole;
+
+      if (effectiveRole && allowedRoles.includes(effectiveRole)) return next();
+      return next(new HttpError(403, 'Forbidden'));
+    } catch (err) {
+      return next(err);
+    }
   };
 }
 

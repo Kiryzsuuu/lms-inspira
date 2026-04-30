@@ -157,16 +157,15 @@ try {
     New-ZipPosix -SourceDir "server-deploy-min" -ZipPath $API_ZIP
 
     Write-Info "Uploading API to Azure..."
-    az webapp deploy `
-        --resource-group $RESOURCE_GROUP `
-        --name $API_APP_NAME `
-        --type zip `
-        --src-path $API_ZIP `
-        --async true `
-        --restart true
-    if ($LASTEXITCODE -ne 0) {
-        throw "Azure CLI API deploy failed with exit code $LASTEXITCODE"
-    }
+        az webapp deployment source config-zip `
+            --resource-group $RESOURCE_GROUP `
+            --name $API_APP_NAME `
+            --src $API_ZIP
+        if ($LASTEXITCODE -ne 0) { throw "Azure CLI API deploy failed with exit code $LASTEXITCODE" }
+
+        Write-Info "Restarting API app..."
+        az webapp restart --resource-group $RESOURCE_GROUP --name $API_APP_NAME
+        if ($LASTEXITCODE -ne 0) { throw "Azure CLI API restart failed with exit code $LASTEXITCODE" }
 
     Write-Success "API deployed successfully"
     Remove-Item $API_ZIP -Force
@@ -185,16 +184,15 @@ try {
     New-ZipPosix -SourceDir "client-deploy-min" -ZipPath $WEB_ZIP
 
     Write-Info "Uploading Web to Azure..."
-    az webapp deploy `
-        --resource-group $RESOURCE_GROUP `
-        --name $WEB_APP_NAME `
-        --type zip `
-        --src-path $WEB_ZIP `
-        --async true `
-        --restart true
-    if ($LASTEXITCODE -ne 0) {
-        throw "Azure CLI Web deploy failed with exit code $LASTEXITCODE"
-    }
+        az webapp deployment source config-zip `
+            --resource-group $RESOURCE_GROUP `
+            --name $WEB_APP_NAME `
+            --src $WEB_ZIP
+        if ($LASTEXITCODE -ne 0) { throw "Azure CLI Web deploy failed with exit code $LASTEXITCODE" }
+
+        Write-Info "Restarting Web app..."
+        az webapp restart --resource-group $RESOURCE_GROUP --name $WEB_APP_NAME
+        if ($LASTEXITCODE -ne 0) { throw "Azure CLI Web restart failed with exit code $LASTEXITCODE" }
 
     Write-Success "Web deployed successfully"
     Remove-Item $WEB_ZIP -Force

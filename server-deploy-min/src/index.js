@@ -21,6 +21,9 @@ const { assignmentsRouter } = require('./routes/assignments');
 const { cartRouter } = require('./routes/cart');
 const { paymentsRouter } = require('./routes/payments');
 const { reportsRouter } = require('./routes/reports');
+const { certificatesRouter } = require('./routes/certificates');
+const { aboutRouter } = require('./routes/about');
+const { couponsRouter } = require('./routes/coupons');
 
 async function main() {
   dotenv.config();
@@ -75,6 +78,7 @@ async function main() {
   // Public/Auth
   app.use('/api/auth', authRouter({ jwtSecret: env.JWT_SECRET }));
   app.use('/api/heroes', heroesRouter({ requireAuth: requireAuth(env.JWT_SECRET), requireRole }));
+  app.use('/api/about', aboutRouter({ requireAuth: requireAuth(env.JWT_SECRET), requireRole }));
   app.use('/api/courses', coursesRouter({ requireAuth: requireAuth(env.JWT_SECRET), requireRole }));
   app.use('/api/quizzes', quizzesRouter({ requireAuth: requireAuth(env.JWT_SECRET), requireRole }));
   app.use('/api/admin', adminRouter({ requireAuth: requireAuth(env.JWT_SECRET), requireRole }));
@@ -96,6 +100,8 @@ async function main() {
     })
   );
   app.use('/api/reports', reportsRouter({ requireAuth: requireAuth(env.JWT_SECRET), requireRole }));
+  app.use('/api/certificates', certificatesRouter({ requireAuth: requireAuth(env.JWT_SECRET), requireRole }));
+  app.use('/api/coupons', couponsRouter({ requireAuth: requireAuth(env.JWT_SECRET), requireRole }));
 
   // Serve built client in production (SPA fallback)
   if (process.env.NODE_ENV === 'production') {

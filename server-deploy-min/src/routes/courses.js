@@ -169,6 +169,60 @@ function coursesRouter({ requireAuth, requireRole }) {
     })
   );
 
+  // Teacher/Admin: get course enrollment stats
+  router.get(
+    '/:id/stats',
+    requireAuth,
+    requireRole('admin', 'teacher'),
+    asyncHandler(async (req, res) => {
+      await assertCanEditCourse(req.params.id, req.user);
+      
+      const course = await Course.findById(req.params.id);
+      if (!course) throw new HttpError(404, 'Course not found');
+
+      // Count enrolled students (purchased or active)
+      const enrolledStudents = await User.countDocuments({
+        $or: [
+          { purchasedCourseIds: course._id },
+          { activeCourseId: course._id },
+        ],
+      });
+
+      // Count completed students
+      const completedStudents = await User.countDocuments({
+        completedCourseIds: course._id,
+      });
+
+      // Get student list with details
+      const students = await User.find({
+        $or: [
+          { purchasedCourseIds: course._id },
+          { activeCourseId: course._id },
+          { completedCourseIds: course._id },
+        ],
+      }).select('name email fullName createdAt activeCourseId completedCourseIds').sort({ createdAt: -1 });
+
+      const studentDetails = students.map((s) => ({
+        _id: s._id,
+        name: s.name,
+        email: s.email,
+        fullName: s.fullName,
+        enrolledAt: s.createdAt,
+        isActive: String(s.activeCourseId) === String(course._id),
+        isCompleted: (s.completedCourseIds || []).some((id) => String(id) === String(course._id)),
+      }));
+
+      res.json({
+        courseId: course._id,
+        courseTitle: course.title,
+        enrolledCount: enrolledStudents,
+        completedCount: completedStudents,
+        activeCount: studentDetails.filter((s) => s.isActive).length,
+        students: studentDetails,
+      });
+    })
+  );
+
   // Teacher/Admin list own
   router.get(
     '/_manage/mine',
