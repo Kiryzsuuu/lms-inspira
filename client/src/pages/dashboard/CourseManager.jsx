@@ -881,7 +881,57 @@ export default function CourseManager() {
                     >
                       <div className="font-bold">Pengaturan Kursus</div>
 
-                    <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                    <div className="mt-4 space-y-3">
+                      <div>
+                        <Label>Judul Course</Label>
+                        <div className="mt-1">
+                          <Input
+                            value={courseForm.title}
+                            onChange={(e) => setCourseForm((f) => ({ ...f, title: e.target.value }))}
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <Label>Deskripsi</Label>
+                        <div className="mt-1">
+                          <Textarea
+                            value={courseForm.description}
+                            onChange={(e) => setCourseForm((f) => ({ ...f, description: e.target.value }))}
+                            rows={3}
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <Label>Harga (Rp)</Label>
+                        <div className="mt-1">
+                          <Input
+                            type="number"
+                            min="0"
+                            step="10000"
+                            value={courseForm.priceIdr}
+                            onChange={(e) => setCourseForm((f) => ({ ...f, priceIdr: parseInt(e.target.value) || 0 }))}
+                            placeholder="0 untuk gratis"
+                          />
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <input
+                          id="coursePublished"
+                          type="checkbox"
+                          className="h-4 w-4"
+                          checked={courseForm.isPublished}
+                          onChange={(e) => setCourseForm((f) => ({ ...f, isPublished: e.target.checked }))}
+                        />
+                        <Label htmlFor="coursePublished">Publish</Label>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button onClick={updateSelectedCourse}>Simpan Perubahan</Button>
+                      </div>
+                    </div>
+
+                    <div className="mt-6 border-t pt-4">
+                      <div className="font-bold mb-3">Cover Image</div>
+                      <div className="grid gap-3 sm:grid-cols-2">
                       <div className="aspect-[16/9] overflow-hidden border border-slate-200 bg-slate-100">
                         {selected.coverImageUrl ? (
                           <img src={selected.coverImageUrl} alt="" className="h-full w-full object-cover" />
@@ -946,6 +996,7 @@ export default function CourseManager() {
                           Hapus Cover
                         </Button>
                       </div>
+                    </div>
                     </div>
                     </Card>
                   )}

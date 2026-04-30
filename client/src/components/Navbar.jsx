@@ -169,8 +169,11 @@ export function Navbar() {
                   <Link to="/dashboard/users" className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 border-b border-slate-100">
                     Kelola Pengguna
                   </Link>
-                  <Link to="/dashboard/accounting" className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50">
+                  <Link to="/dashboard/accounting" className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 border-b border-slate-100">
                     Pembukuan
+                  </Link>
+                  <Link to="/dashboard/coupons" className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50">
+                    Kelola Kupon
                   </Link>
                 </NavDropdown>
               )}
@@ -226,7 +229,7 @@ export function Navbar() {
                         <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center">
                           <span className="text-sm font-semibold text-primary">{user?.name?.charAt(0)?.toUpperCase() || 'U'}</span>
                         </div>
-                        <span className="text-sm hidden md:block">{user?.name || 'Profile'}</span>
+                        <span className="text-sm hidden md:block text-white">{user?.name || 'Profile'}</span>
                       </button>
 
                       {userMenuOpen && (
@@ -320,6 +323,9 @@ export function Navbar() {
                           </MobileMenuItem>
                           <MobileMenuItem onSelect={() => { closeMobileMenu(); nav('/dashboard/accounting'); }}>
                             Pembukuan
+                          </MobileMenuItem>
+                          <MobileMenuItem onSelect={() => { closeMobileMenu(); nav('/dashboard/coupons'); }}>
+                            Kelola Kupon
                           </MobileMenuItem>
                         </MobileMenuGroup>
                       )}
