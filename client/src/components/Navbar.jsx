@@ -7,7 +7,7 @@ import { ConfirmDialog } from './ConfirmDialog';
 function NavDropdown({ label, isOpen, onHover, children }) {
   return (
     <div className="relative" onMouseEnter={() => onHover(true)} onMouseLeave={() => onHover(false)}>
-      <button className="text-white font-medium hover:scale-105 transition-transform py-2">
+      <button className="text-white font-medium text-sm hover:scale-105 transition-transform py-2">
         {label}
       </button>
       {isOpen && (
@@ -135,7 +135,7 @@ export function Navbar() {
             </Link>
 
             <nav className="hidden flex-1 items-center justify-center gap-8 sm:flex">
-              <Link to="/courses" className="text-white font-medium text-sm hover:scale-105 transition-transform">
+              <Link to="/courses" className="text-white font-medium text-sm hover:scale-105 transition-transform py-2">
                 Kursus
               </Link>
 

@@ -5,7 +5,9 @@
 
 param(
     [switch]$SkipBuild = $false,
-    [switch]$SkipDeploy = $false
+    [switch]$SkipDeploy = $false,
+    [switch]$SkipApi = $false,
+    [switch]$SkipWeb = $false
 )
 
 $ErrorActionPreference = "Stop"
@@ -151,55 +153,67 @@ if ($SkipDeploy) {
 # ========== STEP 4: DEPLOY TO API ==========
 Write-Info ""
 Write-Info "[4/5] Deploying API to Azure ($API_APP_NAME)..."
-try {
-    # Create ZIP of server-deploy-min
-    Write-Info "Creating API deployment package..."
-    New-ZipPosix -SourceDir "server-deploy-min" -ZipPath $API_ZIP
+if ($SkipApi) {
+    Write-Info "Skipping API deployment"
+}
+else {
+    try {
+        # Create ZIP of server-deploy-min
+        Write-Info "Creating API deployment package..."
+        New-ZipPosix -SourceDir "server-deploy-min" -ZipPath $API_ZIP
 
-    Write-Info "Uploading API to Azure..."
-        az webapp deployment source config-zip `
+        Write-Info "Uploading API to Azure..."
+        az webapp deploy `
             --resource-group $RESOURCE_GROUP `
             --name $API_APP_NAME `
-            --src $API_ZIP
+            --src-path $API_ZIP `
+            --type zip
         if ($LASTEXITCODE -ne 0) { throw "Azure CLI API deploy failed with exit code $LASTEXITCODE" }
 
         Write-Info "Restarting API app..."
         az webapp restart --resource-group $RESOURCE_GROUP --name $API_APP_NAME
         if ($LASTEXITCODE -ne 0) { throw "Azure CLI API restart failed with exit code $LASTEXITCODE" }
 
-    Write-Success "API deployed successfully"
-    Remove-Item $API_ZIP -Force
-}
-catch {
-    Write-ErrorMsg "API deployment failed: $_"
-    exit 1
+        Write-Success "API deployed successfully"
+        Remove-Item $API_ZIP -Force
+    }
+    catch {
+        Write-ErrorMsg "API deployment failed: $_"
+        exit 1
+    }
 }
 
 # ========== STEP 5: DEPLOY TO WEB ==========
 Write-Info ""
 Write-Info "[5/5] Deploying Web to Azure ($WEB_APP_NAME)..."
-try {
-    # Create ZIP of client-deploy-min
-    Write-Info "Creating Web deployment package..."
-    New-ZipPosix -SourceDir "client-deploy-min" -ZipPath $WEB_ZIP
+if ($SkipWeb) {
+    Write-Info "Skipping Web deployment"
+}
+else {
+    try {
+        # Create ZIP of client-deploy-min
+        Write-Info "Creating Web deployment package..."
+        New-ZipPosix -SourceDir "client-deploy-min" -ZipPath $WEB_ZIP
 
-    Write-Info "Uploading Web to Azure..."
-        az webapp deployment source config-zip `
+        Write-Info "Uploading Web to Azure..."
+        az webapp deploy `
             --resource-group $RESOURCE_GROUP `
             --name $WEB_APP_NAME `
-            --src $WEB_ZIP
+            --src-path $WEB_ZIP `
+            --type zip
         if ($LASTEXITCODE -ne 0) { throw "Azure CLI Web deploy failed with exit code $LASTEXITCODE" }
 
         Write-Info "Restarting Web app..."
         az webapp restart --resource-group $RESOURCE_GROUP --name $WEB_APP_NAME
         if ($LASTEXITCODE -ne 0) { throw "Azure CLI Web restart failed with exit code $LASTEXITCODE" }
 
-    Write-Success "Web deployed successfully"
-    Remove-Item $WEB_ZIP -Force
-}
-catch {
-    Write-ErrorMsg "Web deployment failed: $_"
-    exit 1
+        Write-Success "Web deployed successfully"
+        Remove-Item $WEB_ZIP -Force
+    }
+    catch {
+        Write-ErrorMsg "Web deployment failed: $_"
+        exit 1
+    }
 }
 
 # ========== SUCCESS ==========
