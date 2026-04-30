@@ -89,6 +89,7 @@ export default function CourseDetail() {
   const [assignmentAnswer, setAssignmentAnswer] = useState('');
   const [lockError, setLockError] = useState('');
   const [openAttachmentUrl, setOpenAttachmentUrl] = useState('');
+  const [quizAttempts, setQuizAttempts] = useState({});
 
   useEffect(() => {
     api
@@ -134,6 +135,12 @@ export default function CourseDetail() {
       .then((res) => setCert(res.data))
       .catch(() => setCert({ eligible: false, completed: 0, total: 0, quizzesEligible: true, quizzesSubmitted: 0, quizzesTotal: 0 }));
   }, [role, id]);
+
+  useEffect(() => {
+    if (selectedLesson?.quizId && isStudent) {
+      loadQuizAttempts(selectedLesson.quizId);
+    }
+  }, [selectedLesson?._id]);
 
   const isStudent = role === 'student';
   const priceIdr = course?.priceIdr || 0;
@@ -223,6 +230,16 @@ export default function CourseDetail() {
       setAssignmentAnswer(res.data.attempt?.textAnswer || '');
     } catch (e) {
       setAssignmentState({ loading: false, attempt: null, error: e?.response?.data?.error?.message || 'Gagal memuat assignment' });
+    }
+  }
+
+  async function loadQuizAttempts(quizId) {
+    if (!quizId || !isStudent) return;
+    try {
+      const res = await api.get(`/quizzes/${quizId}/my-attempts`);
+      setQuizAttempts((prev) => ({ ...prev, [String(quizId)]: res.data.attempts || [] }));
+    } catch (e) {
+      setQuizAttempts((prev) => ({ ...prev, [String(quizId)]: [] }));
     }
   }
 
@@ -644,6 +661,9 @@ export default function CourseDetail() {
                               return <div className="text-sm text-slate-600">Materi ini belum punya quiz.</div>;
                             }
 
+                            const attempts = quizAttempts[String(selectedLesson.quizId)] || [];
+                            const submittedAttempts = attempts.filter((a) => a.submittedAt);
+
                             return (
                               <>
                                 <div className="text-sm text-slate-600">
@@ -652,6 +672,28 @@ export default function CourseDetail() {
                                 <Link to={`/quiz/${selectedLesson.quizId}`}>
                                   <Button className="w-full">Mulai Quiz</Button>
                                 </Link>
+
+                                {submittedAttempts.length > 0 && (
+                                  <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-3">
+                                    <div className="text-xs font-semibold uppercase text-slate-600">Riwayat Percobaan</div>
+                                    <div className="mt-2 space-y-2">
+                                      {submittedAttempts.map((attempt, idx) => (
+                                        <div key={attempt._id} className="flex items-center justify-between rounded bg-white px-2 py-1.5 text-sm">
+                                          <span className="text-slate-700">Percobaan {idx + 1}</span>
+                                          <div className="flex items-center gap-2">
+                                            <span className="font-semibold text-slate-900">
+                                              {attempt.score}/{attempt.maxScore}
+                                            </span>
+                                            <span className="text-xs text-slate-500">
+                                              {new Date(attempt.submittedAt).toLocaleDateString('id-ID', { month: 'short', day: 'numeric' })}
+                                            </span>
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+
                                 <div className="text-xs text-slate-500">
                                   Quiz akan dibuka di halaman quiz. Kamu bisa lanjut/resume jika keluar.
                                 </div>

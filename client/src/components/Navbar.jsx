@@ -7,7 +7,7 @@ import { ConfirmDialog } from './ConfirmDialog';
 function NavDropdown({ label, isOpen, onHover, children }) {
   return (
     <div className="relative" onMouseEnter={() => onHover(true)} onMouseLeave={() => onHover(false)}>
-      <button className="text-slate-300 hover:scale-105 transition-transform py-2">
+      <button className="text-white font-medium hover:scale-105 transition-transform py-2">
         {label}
       </button>
       {isOpen && (
@@ -118,7 +118,7 @@ export function Navbar() {
               aria-label="Kembali ke home"
             >
               <img src="/lms-logo.png" alt="LMS" className="h-6 w-auto sm:h-7" />
-              <span className="hidden sm:block">Inspira Innovation</span>
+              <span className="hidden sm:block font-bold">Inspira Innovation</span>
             </button>
 
             <div className="flex items-center gap-2">
@@ -131,11 +131,11 @@ export function Navbar() {
           <>
             <Link to="/" className="flex items-center gap-2 font-extrabold tracking-tight text-white hover:scale-105 transition-transform">
               <img src="/lms-logo.png" alt="LMS" className="h-6 w-auto sm:h-7" />
-              <span className="hidden sm:block">Inspira Innovation</span>
+              <span className="hidden sm:block font-bold">Inspira Innovation</span>
             </Link>
 
             <nav className="hidden flex-1 items-center justify-center gap-8 sm:flex">
-              <Link to="/courses" className="text-slate-300 font-medium text-sm hover:scale-105 transition-transform">
+              <Link to="/courses" className="text-white font-medium text-sm hover:scale-105 transition-transform">
                 Kursus
               </Link>
 
@@ -195,7 +195,7 @@ export function Navbar() {
                   <>
                     {role === 'student' && (
                       <Link to="/cart" className="relative inline-flex" aria-label="Keranjang">
-                        <div className="text-slate-300 p-2 rounded-lg hover:scale-110 transition-transform">
+                        <div className="text-white p-2 rounded-lg hover:scale-110 transition-transform">
                           <svg
                             xmlns="http://www.w3.org/2000/svg"
                             viewBox="0 0 24 24"
@@ -221,7 +221,7 @@ export function Navbar() {
                     <div className="relative">
                       <button
                         onClick={() => setUserMenuOpen(!userMenuOpen)}
-                        className="flex items-center gap-2 px-3 py-2 rounded-lg text-slate-300 hover:scale-105 transition-transform"
+                        className="flex items-center gap-2 px-3 py-2 rounded-lg text-white hover:scale-105 transition-transform"
                       >
                         <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center">
                           <span className="text-sm font-semibold text-primary">{user?.name?.charAt(0)?.toUpperCase() || 'U'}</span>
@@ -263,7 +263,7 @@ export function Navbar() {
                   aria-haspopup="menu"
                   aria-expanded={mobileMenuOpen}
                   onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                  className="flex items-center justify-center h-10 w-10 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800 transition-colors"
+                  className="flex items-center justify-center h-10 w-10 rounded-lg text-white hover:text-white hover:bg-slate-800 transition-colors"
                 >
                   <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />

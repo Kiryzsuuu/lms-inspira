@@ -20,6 +20,13 @@ const orderSchema = new mongoose.Schema(
     items: { type: [orderItemSchema], default: [] },
     amountIdr: { type: Number, required: true, min: 0 },
 
+    coupon: {
+      couponId: { type: mongoose.Schema.Types.ObjectId, ref: 'Coupon' },
+      code: { type: String },
+      discountAmount: { type: Number, default: 0, min: 0 },
+      finalAmountIdr: { type: Number, min: 0 },
+    },
+
     midtrans: {
       orderId: { type: String },
       snapToken: { type: String },

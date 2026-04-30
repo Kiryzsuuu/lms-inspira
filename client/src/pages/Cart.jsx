@@ -50,6 +50,11 @@ export default function Cart() {
   const [paying, setPaying] = useState(false);
   const [midtransConfig, setMidtransConfig] = useState(null);
 
+  const [couponCode, setCouponCode] = useState('');
+  const [couponError, setCouponError] = useState('');
+  const [appliedCoupon, setAppliedCoupon] = useState(null);
+  const [validateCouponLoading, setValidateCouponLoading] = useState(false);
+
   async function refresh() {
     setLoading(true);
     setError('');
@@ -89,7 +94,41 @@ export default function Cart() {
     }
   }
 
+  const finalTotalIdr = appliedCoupon ? appliedCoupon.finalAmount : totalIdr;
   const canCheckout = useMemo(() => !loading && items.length > 0 && !paying, [loading, items.length, paying]);
+
+  async function validateCoupon() {
+    setCouponError('');
+    if (!couponCode.trim()) {
+      setCouponError('Masukkan kode kupon');
+      return;
+    }
+
+    setValidateCouponLoading(true);
+    try {
+      const res = await api.post('/coupons/validate', {
+        code: couponCode,
+        totalAmount: totalIdr,
+        courseIds: items.map((it) => it.course._id),
+      });
+
+      if (res.data.valid) {
+        setAppliedCoupon(res.data);
+        setCouponError('');
+      }
+    } catch (e) {
+      setCouponError(e?.response?.data?.error?.message || 'Kupon tidak valid');
+      setAppliedCoupon(null);
+    } finally {
+      setValidateCouponLoading(false);
+    }
+  }
+
+  function removeCoupon() {
+    setCouponCode('');
+    setAppliedCoupon(null);
+    setCouponError('');
+  }
 
   async function checkout() {
     setPaying(true);
@@ -97,7 +136,9 @@ export default function Cart() {
     setSuccessMsg('');
     try {
       const cfg = midtransConfig || (await api.get('/payments/config')).data;
-      const res = await api.post('/payments/checkout', {});
+      const res = await api.post('/payments/checkout', {
+        couponCode: appliedCoupon?.coupon.code || undefined,
+      });
 
       if (res.data?.paid) {
         await refresh();
@@ -222,6 +263,58 @@ export default function Cart() {
                   <span>Subtotal</span>
                   <span className="font-semibold text-slate-900">Rp {formatIdr(totalIdr)}</span>
                 </div>
+
+                {/* Coupon Section */}
+                {!appliedCoupon ? (
+                  <div className="space-y-2">
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        placeholder="Masukkan kode kupon"
+                        value={couponCode}
+                        onChange={(e) => setCouponCode(e.target.value)}
+                        className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none"
+                      />
+                      <Button
+                        variant="outline"
+                        onClick={validateCoupon}
+                        disabled={validateCouponLoading || !couponCode.trim()}
+                        className="min-w-20"
+                      >
+                        {validateCouponLoading ? 'Loading...' : 'Pakai'}
+                      </Button>
+                    </div>
+                    {couponError && <div className="text-xs text-rose-600">{couponError}</div>}
+                  </div>
+                ) : (
+                  <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="text-xs font-semibold uppercase text-emerald-700">Kupon diterapkan</div>
+                        <div className="mt-1 text-sm font-semibold text-emerald-900">{appliedCoupon.coupon.code}</div>
+                        {appliedCoupon.coupon.description && (
+                          <div className="text-xs text-emerald-700">{appliedCoupon.coupon.description}</div>
+                        )}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={removeCoupon}
+                        className="text-emerald-700 hover:text-emerald-900"
+                        aria-label="Hapus kupon"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {appliedCoupon && (
+                  <div className="flex items-center justify-between rounded-2xl bg-emerald-50 px-4 py-3 text-emerald-900">
+                    <span>Diskon</span>
+                    <span className="font-semibold">-Rp {formatIdr(appliedCoupon.discountAmount)}</span>
+                  </div>
+                )}
+
                 <div className="rounded-2xl border border-orange-200 bg-orange-50 px-4 py-4 text-orange-900">
                   <div className="font-semibold">Informasi Midtrans</div>
                   <ul className="mt-2 list-disc space-y-1 pl-4 text-sm">
@@ -233,7 +326,7 @@ export default function Cart() {
               </div>
               <div className="mt-6 rounded-2xl bg-slate-900 px-5 py-5 text-white">
                 <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-300">Total pembayaran</div>
-                <div className="mt-2 text-3xl font-extrabold">Rp {formatIdr(totalIdr)}</div>
+                <div className="mt-2 text-3xl font-extrabold">Rp {formatIdr(finalTotalIdr)}</div>
                 <div className="mt-2 text-xs text-slate-300">{items.length} course siap diproses</div>
               </div>
               <Button disabled={!canCheckout} onClick={checkout} className="mt-6 w-full rounded-2xl py-3 text-base">

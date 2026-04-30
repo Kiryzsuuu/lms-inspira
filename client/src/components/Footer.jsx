@@ -12,7 +12,9 @@ export function Footer() {
           <div>
             <div className="flex items-center gap-2 mb-4">
               <img src="/lms-logo.png" alt="Inspira" className="h-6 w-auto" />
-              <span className="font-extrabold text-white">Inspira Innovation</span>
+              <a href="https://www.inspiratekno.com/" target="_blank" rel="noopener noreferrer" className="font-bold text-white hover:text-slate-300 transition-colors">
+                Inspira Innovation
+              </a>
             </div>
             <p className="text-sm text-slate-400">
               Platform pembelajaran online terpadu dengan fitur quiz interaktif untuk pengembangan skill Anda.
@@ -95,7 +97,7 @@ export function Footer() {
         <div className="border-t border-slate-800 pt-8">
           <div className="flex flex-col sm:flex-row items-center justify-between">
             <p className="text-sm text-slate-400">
-              © {currentYear} Inspira Innovation. Semua hak dilindungi.
+              © {currentYear} <a href="https://www.inspiratekno.com/" target="_blank" rel="noopener noreferrer" className="text-slate-300 hover:text-white transition-colors">Inspira Innovation</a>. Semua hak dilindungi.
             </p>
             <div className="flex gap-4 mt-4 sm:mt-0">
               <a href="#" className="text-slate-400 hover:text-white transition-colors" aria-label="Facebook">
