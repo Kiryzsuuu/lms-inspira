@@ -1,0 +1,39 @@
+# Dependencies
+**/node_modules
+**/.pnpm-store
+
+# Vite/React/Node build outputs
+client/dist
+client/build
+server/dist
+server/build
+**/.cache
+
+# Logs & extracted diagnostics (large)
+**/LogFiles
+**/logs
+**/*.log
+backend-logs*
+latest-logs-extracted*
+api-logs-extracted*
+deployment-logs*
+
+# Uploads (should be external in production)
+server/uploads
+server-deploy-min/uploads
+server-deploy-min/src/uploads
+
+# Local env / secrets
+**/.env
+**/.env.*
+
+# Azure local state
+.azure
+
+# Git
+.git
+.gitignore
+
+# OS junk
+.DS_Store
+Thumbs.db
