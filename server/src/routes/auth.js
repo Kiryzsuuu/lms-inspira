@@ -43,7 +43,9 @@ function authRouter({ jwtSecret }) {
       if (process.env.NODE_ENV === 'production') throw new HttpError(500, 'Gagal mengirim OTP');
     }
 
-    if (process.env.NODE_ENV !== 'production') {
+    // Return devOtp in development or when DEBUG_OTP is enabled
+    const shouldShowDevOtp = process.env.NODE_ENV !== 'production' || process.env.DEBUG_OTP === 'true';
+    if (shouldShowDevOtp) {
       return { ok: true, devOtp: code, expiresAt };
     }
 
@@ -406,6 +408,38 @@ function authRouter({ jwtSecret }) {
       res.status(400).json({
         ok: false,
         message: 'Use /auth/password/request-otp and /auth/password/verify-otp',
+      });
+    })
+  );
+
+  // Debug endpoint - Get last OTP code for testing (development only)
+  router.get(
+    '/debug/otp/:email/:type',
+    asyncHandler(async (req, res) => {
+      const { email, type } = req.params;
+
+      // Only allow in development or with debug flag
+      if (process.env.NODE_ENV === 'production' && process.env.DEBUG_OTP !== 'true') {
+        throw new HttpError(403, 'Endpoint not available in production');
+      }
+
+      const normalizedEmail = String(email).toLowerCase();
+      const otp = await OTP.findOne({
+        email: normalizedEmail,
+        type,
+        verified: false
+      }).sort({ createdAt: -1 });
+
+      if (!otp) {
+        throw new HttpError(404, 'No OTP found for this email');
+      }
+
+      res.json({
+        ok: true,
+        email: normalizedEmail,
+        type,
+        message: 'This endpoint is for testing only. OTP was sent via email.',
+        note: 'In production, use the email to get the OTP code'
       });
     })
   );
