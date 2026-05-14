@@ -1,14 +1,14 @@
-# Build stage
+# ── Build stage ──────────────────────────────────────────────────────────────
 FROM node:18-alpine AS builder
 
 WORKDIR /app
 
-# Copy both client and server package files
+# Copy package files first for layer caching
 COPY package*.json ./
 COPY server/package*.json ./server/
 COPY client/package*.json ./client/
 
-# Install dependencies
+# Install all dependencies
 RUN npm ci
 RUN npm ci --prefix server
 RUN npm ci --prefix client
@@ -17,36 +17,37 @@ RUN npm ci --prefix client
 COPY server ./server
 COPY client ./client
 
-# Build client
+# Build React frontend
 RUN npm run build --prefix client
 
-# Runtime stage
+# ── Runtime stage ─────────────────────────────────────────────────────────────
 FROM node:18-alpine
 
 WORKDIR /app
 
-# Install dumb-init for proper signal handling
+# dumb-init: proper PID 1 / signal handling in containers
 RUN apk add --no-cache dumb-init
 
-# Copy from builder
+# Copy production artifacts from builder
 COPY --from=builder /app/server ./server
 COPY --from=builder /app/client/dist ./client/dist
-COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/server/node_modules ./server/node_modules
 
-# Set production environment
+# Create uploads directory (will be overridden by a Docker volume in production)
+RUN mkdir -p /app/server/uploads
+
+# Drop to non-root user for security
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+RUN chown -R appuser:appgroup /app
+USER appuser
+
 ENV NODE_ENV=production
 ENV PORT=8080
 
-# Expose port
 EXPOSE 8080
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:8080/api/health', (r) => {if (r.statusCode !== 200) throw new Error(r.statusCode)})"
+HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \
+  CMD node -e "require('http').get('http://localhost:8080/api/health', (r) => { if (r.statusCode !== 200) process.exit(1); }).on('error', () => process.exit(1))"
 
-# Use dumb-init to handle signals properly
 ENTRYPOINT ["dumb-init", "--"]
-
-# Start server
 CMD ["node", "server/src/index.js"]

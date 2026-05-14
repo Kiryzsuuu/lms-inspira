@@ -40,6 +40,10 @@ async function main() {
 
   const app = express();
 
+  // Trust the first proxy (Nginx) so req.protocol returns 'https'
+  // and uploaded file URLs are generated with https:// scheme
+  app.set('trust proxy', 1);
+
   app.use(morgan('dev'));
   app.use(express.json({ limit: '1mb' }));
   const allowedOrigins = String(env.CLIENT_ORIGIN || '')
