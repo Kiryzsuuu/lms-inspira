@@ -10,6 +10,8 @@ const userSchema = new mongoose.Schema(
     passwordHash: { type: String, required: true },
     role: { type: String, enum: ROLES, default: 'student', index: true },
 
+    avatarUrl: { type: String, default: '' },
+
     // Profile informasi tambahan
     institution: { type: String, trim: true },
     whatsappNumber: { type: String, trim: true },

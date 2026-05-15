@@ -61,6 +61,9 @@ export default function MyProfile() {
   const [testimonialSuccess, setTestimonialSuccess] = useState('');
   const [testimonialLoading, setTestimonialLoading] = useState(false);
 
+  // Avatar upload
+  const [avatarUploading, setAvatarUploading] = useState(false);
+
   // Logout confirmation
   const [logoutOpen, setLogoutOpen] = useState(false);
 
@@ -169,6 +172,28 @@ export default function MyProfile() {
       setError(e?.response?.data?.error?.message || 'Gagal update profil');
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function uploadAvatar(file) {
+    if (!file) return;
+    setAvatarUploading(true);
+    setError('');
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const uploadRes = await api.post('/uploads/avatar', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      const avatarUrl = uploadRes.data.url;
+      const res = await api.put('/auth/me', { avatarUrl });
+      setUser(res.data.user);
+      setSuccess('Foto profil berhasil diperbarui');
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (e) {
+      setError(e?.response?.data?.error?.message || 'Gagal upload foto');
+    } finally {
+      setAvatarUploading(false);
     }
   }
 
@@ -317,6 +342,57 @@ export default function MyProfile() {
           {/* Profile Tab */}
           {activeTab === 'profile' && (
             <div className="space-y-6">
+              {/* Avatar upload */}
+              <Card className="p-5 border border-slate-200 shadow-sm">
+                <div className="flex items-center gap-5">
+                  <div className="relative group">
+                    {user?.avatarUrl ? (
+                      <img
+                        src={user.avatarUrl}
+                        alt={user.name}
+                        className="w-20 h-20 rounded-full object-cover"
+                        style={{ border: '3px solid #E5E7EB' }}
+                      />
+                    ) : (
+                      <div
+                        className="w-20 h-20 rounded-full flex items-center justify-center text-2xl font-bold text-white"
+                        style={{ background: 'linear-gradient(135deg, #0C628D, #0FADA8)' }}
+                      >
+                        {user?.name?.charAt(0)?.toUpperCase() || 'U'}
+                      </div>
+                    )}
+                    <label
+                      htmlFor="avatar-upload"
+                      className="absolute inset-0 rounded-full flex items-center justify-center cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity"
+                      style={{ background: 'rgba(0,0,0,0.45)' }}
+                    >
+                      <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                    </label>
+                    <input
+                      id="avatar-upload"
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => uploadAvatar(e.target.files?.[0])}
+                    />
+                  </div>
+                  <div>
+                    <div className="font-semibold text-slate-900">{user?.fullName || user?.name}</div>
+                    <div className="text-sm text-slate-500 capitalize">{user?.role}</div>
+                    <label
+                      htmlFor="avatar-upload"
+                      className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold cursor-pointer px-3 py-1.5 rounded-[8px] transition-colors"
+                      style={{ background: '#EBF6FC', color: '#0C628D' }}
+                    >
+                      {avatarUploading ? 'Mengupload...' : 'Ganti Foto'}
+                    </label>
+                  </div>
+                </div>
+              </Card>
+
               <div className="grid gap-6 lg:grid-cols-2">
                 {/* Left Column */}
                 <div className="space-y-6 flex flex-col">

@@ -273,12 +273,21 @@ export function Navbar() {
                         onClick={() => setUserMenuOpen(!userMenuOpen)}
                         className="flex items-center gap-2 px-3 py-1.5 rounded-[10px] hover:bg-gray-100 transition-colors"
                       >
-                        <div
-                          className="w-[34px] h-[34px] rounded-full flex items-center justify-center text-sm font-bold text-white flex-shrink-0"
-                          style={{ background: 'linear-gradient(135deg, #0C628D, #2E86B5)' }}
-                        >
-                          {user?.name?.charAt(0)?.toUpperCase() || 'U'}
-                        </div>
+                        {user?.avatarUrl ? (
+                          <img
+                            src={user.avatarUrl}
+                            alt={user.name}
+                            className="w-[34px] h-[34px] rounded-full object-cover flex-shrink-0"
+                            style={{ border: '2px solid rgba(255,255,255,0.3)' }}
+                          />
+                        ) : (
+                          <div
+                            className="w-[34px] h-[34px] rounded-full flex items-center justify-center text-sm font-bold text-white flex-shrink-0"
+                            style={{ background: 'linear-gradient(135deg, #0C628D, #2E86B5)' }}
+                          >
+                            {user?.name?.charAt(0)?.toUpperCase() || 'U'}
+                          </div>
+                        )}
                         <span className="text-sm font-medium text-gray-700 hidden lg:block">{user?.name || 'Profile'}</span>
                       </button>
                       {userMenuOpen && (

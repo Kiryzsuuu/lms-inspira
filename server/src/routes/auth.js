@@ -223,7 +223,7 @@ function authRouter({ jwtSecret }) {
       }
 
       const user = await User.findById(payload.sub).select(
-        'name fullName email role createdAt emailVerified activeCourseId completedCourseIds purchasedCourseIds institution whatsappNumber referralSource reason educationLevel'
+        'name fullName email role createdAt emailVerified activeCourseId completedCourseIds purchasedCourseIds institution whatsappNumber referralSource reason educationLevel avatarUrl'
       );
       if (!user) throw new HttpError(401, 'Unauthorized');
 
@@ -295,11 +295,12 @@ function authRouter({ jwtSecret }) {
         referralSource: z.string().optional(),
         reason: z.string().optional(),
         educationLevel: z.string().optional(),
+        avatarUrl: z.string().optional(),
       });
       const updates = schema.parse(req.body);
 
       const user = await User.findByIdAndUpdate(req.user.sub, updates, { new: true }).select(
-        'name fullName email role institution whatsappNumber referralSource reason educationLevel'
+        'name fullName email role institution whatsappNumber referralSource reason educationLevel avatarUrl'
       );
 
       res.json({ user });
