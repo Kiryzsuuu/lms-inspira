@@ -262,12 +262,20 @@ export default function CourseManager() {
     }
   }
 
-  async function updateSelectedCourse(patch) {
+  async function updateSelectedCourse(patch = {}) {
     if (!selected) return;
+    // Guard: if called directly from onClick, patch is a MouseEvent — ignore it
+    if (patch && typeof patch.preventDefault === 'function') patch = {};
     setError('');
     try {
-      const allowed = { title: selected.title, description: selected.description, coverImageUrl: selected.coverImageUrl, priceIdr: selected.priceIdr, isPublished: selected.isPublished };
-      await api.put(`/courses/${selected._id}`, { ...allowed, ...patch });
+      const payload = {
+        title: patch.title ?? selected.title,
+        description: patch.description ?? selected.description,
+        coverImageUrl: patch.coverImageUrl ?? selected.coverImageUrl,
+        priceIdr: patch.priceIdr ?? selected.priceIdr,
+        isPublished: patch.isPublished ?? selected.isPublished,
+      };
+      await api.put(`/courses/${selected._id}`, payload);
       await loadCourses();
       await loadCourseDetails(selected._id);
     } catch (e) {
@@ -935,7 +943,7 @@ export default function CourseManager() {
                         <Label htmlFor="coursePublished">Publish</Label>
                       </div>
                       <div className="flex gap-2">
-                        <Button onClick={updateSelectedCourse}>Simpan Perubahan</Button>
+                        <Button onClick={() => updateSelectedCourse(courseForm)}>Simpan Perubahan</Button>
                       </div>
                     </div>
 
