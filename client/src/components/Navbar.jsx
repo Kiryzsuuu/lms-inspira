@@ -134,7 +134,7 @@ export function Navbar() {
           style={{ top: 'var(--nav-h)' }}
         >
           <MobileMenuGroup label="Utama">
-            <MobileMenuItem onSelect={() => { closeMobile(); nav('/courses'); }}>Kursus</MobileMenuItem>
+            <MobileMenuItem onSelect={() => { closeMobile(); nav('/courses'); }}>Courses</MobileMenuItem>
             {isAuthed && <MobileMenuItem onSelect={() => { closeMobile(); nav('/dashboard'); }}>Dashboard</MobileMenuItem>}
           </MobileMenuGroup>
           {role === 'student' && (
@@ -213,7 +213,7 @@ export function Navbar() {
               {/* Desktop nav */}
               <nav className="hidden md:flex items-center gap-[0.15rem] flex-1 justify-center">
                 <Link to="/courses" className="text-[0.875rem] font-medium text-gray-600 px-[0.85rem] py-[0.45rem] rounded-[6px] hover:text-gray-900 hover:bg-gray-100 transition-colors">
-                  Kursus
+                  Courses
                 </Link>
 
                 {(role === 'admin' || role === 'teacher') && (

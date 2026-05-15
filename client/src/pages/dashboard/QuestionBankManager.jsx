@@ -9,6 +9,7 @@ export default function QuestionBankManager() {
   const [selectedCollection, setSelectedCollection] = useState(null);
   const [questions, setQuestions] = useState([]);
   const [newCollectionName, setNewCollectionName] = useState('');
+  const [newCollectionCategory, setNewCollectionCategory] = useState('');
   const [questionForm, setQuestionForm] = useState({
     type: 'mcq',
     question: '',
@@ -183,9 +184,11 @@ export default function QuestionBankManager() {
       setLoading(true);
       await api.post('/question-bank/collections', {
         title: newCollectionName,
+        category: newCollectionCategory.trim(),
       });
       setSuccess('Koleksi dibuat');
       setNewCollectionName('');
+      setNewCollectionCategory('');
       setShowNewCollectionModal(false);
       loadCollections();
     } catch (err) {
@@ -402,28 +405,42 @@ export default function QuestionBankManager() {
           {/* Collections List */}
           <div className="lg:col-span-1">
             <Card className="p-4">
-              <h2 className="font-semibold mb-4 text-slate-900">Koleksi</h2>
-              <div className="space-y-2 max-h-96 overflow-y-auto">
-                {collections.map((col) => (
-                  <button
-                    key={col._id}
-                    onClick={() => {
-                      if (selectedCollection?._id === col._id) {
-                        setSelectedCollection(null);
-                      } else {
-                        setSelectedCollection(col);
-                      }
-                    }}
-                    className={`w-full text-left p-3 rounded transition border ${
-                      selectedCollection?._id === col._id
-                        ? 'border-orange-500 bg-orange-50 text-slate-900 font-medium'
-                        : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-900'
-                    }`}
-                  >
-                    <div className="font-medium text-sm">{col.title}</div>
-                    <div className="text-xs text-slate-500 mt-1">{col.numQuestions || 0} soal</div>
-                  </button>
-                ))}
+              <h2 className="font-semibold mb-4 text-slate-900">Collections</h2>
+              <div className="space-y-3 max-h-[32rem] overflow-y-auto pr-0.5">
+                {(() => {
+                  const grouped = {};
+                  for (const col of collections) {
+                    const cat = col.category?.trim() || 'Uncategorized';
+                    if (!grouped[cat]) grouped[cat] = [];
+                    grouped[cat].push(col);
+                  }
+                  return Object.entries(grouped).map(([cat, cols]) => (
+                    <div key={cat}>
+                      <div className="text-[0.68rem] font-bold uppercase tracking-widest text-slate-400 mb-1.5 px-1">{cat}</div>
+                      <div className="space-y-1">
+                        {cols.map((col) => (
+                          <button
+                            key={col._id}
+                            onClick={() => {
+                              setSelectedCollection(selectedCollection?._id === col._id ? null : col);
+                            }}
+                            className={`w-full text-left px-3 py-2 rounded-[8px] transition border text-sm ${
+                              selectedCollection?._id === col._id
+                                ? 'border-orange-400 bg-orange-50 text-slate-900 font-semibold'
+                                : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700'
+                            }`}
+                          >
+                            <div className="font-medium truncate">{col.title}</div>
+                            <div className="text-xs text-slate-400 mt-0.5">{col.numQuestions || 0} questions</div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  ));
+                })()}
+                {collections.length === 0 && (
+                  <p className="text-sm text-slate-400 italic">No collections yet.</p>
+                )}
               </div>
 
               {selectedCollection && (
@@ -432,7 +449,7 @@ export default function QuestionBankManager() {
                   variant="destructive"
                   className="mt-4 w-full text-sm"
                 >
-                  Hapus Koleksi
+                  Delete Collection
                 </Button>
               )}
             </Card>
@@ -698,27 +715,35 @@ export default function QuestionBankManager() {
       {showNewCollectionModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <Card className="max-w-md w-full p-6">
-            <h2 className="text-xl font-bold mb-4">Koleksi Baru</h2>
-            <Input
-              type="text"
-              value={newCollectionName}
-              onChange={(e) => setNewCollectionName(e.target.value)}
-              placeholder="Nama koleksi"
-              className="mb-4"
-              onKeyPress={(e) => e.key === 'Enter' && createCollection()}
-            />
+            <h2 className="text-xl font-bold mb-4">New Collection</h2>
+            <div className="space-y-3 mb-4">
+              <div>
+                <label className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1 block">Collection Name *</label>
+                <Input
+                  type="text"
+                  value={newCollectionName}
+                  onChange={(e) => setNewCollectionName(e.target.value)}
+                  placeholder="e.g. Module 1 — Data Basics"
+                  onKeyPress={(e) => e.key === 'Enter' && createCollection()}
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1 block">Category (optional)</label>
+                <Input
+                  type="text"
+                  value={newCollectionCategory}
+                  onChange={(e) => setNewCollectionCategory(e.target.value)}
+                  placeholder="e.g. Materi 1, Chapter 2, Python Basics"
+                />
+                <p className="text-xs text-slate-400 mt-1">Collections with the same category will be grouped together.</p>
+              </div>
+            </div>
             <div className="flex gap-2">
-              <Button
-                onClick={createCollection}
-                disabled={loading}
-              >
-                {loading ? 'Membuat...' : 'Buat'}
+              <Button onClick={createCollection} disabled={loading}>
+                {loading ? 'Creating...' : 'Create'}
               </Button>
-              <Button
-                onClick={() => setShowNewCollectionModal(false)}
-                variant="outline"
-              >
-                Batal
+              <Button onClick={() => { setShowNewCollectionModal(false); setNewCollectionName(''); setNewCollectionCategory(''); }} variant="outline">
+                Cancel
               </Button>
             </div>
           </Card>

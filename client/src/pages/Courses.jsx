@@ -114,11 +114,11 @@ export default function Courses() {
       <section className="py-14">
         <Container>
           <div className="mb-10">
-            <div className="section-eyebrow">Katalog Kursus</div>
+            <div className="section-eyebrow">Course Catalog</div>
             <h1 className="font-display text-4xl sm:text-5xl font-extrabold mb-3" style={{ color: '#111827', letterSpacing: '-0.03em' }}>
-              Jelajahi Kursus
+              Explore Courses
             </h1>
-            <p className="text-lg text-gray-500">Pilih kursus yang sesuai dengan kebutuhan Anda dan mulai belajar hari ini</p>
+            <p className="text-lg text-gray-500">Choose a course that fits your needs and start learning today</p>
           </div>
 
           {/* Search and Filter */}
@@ -133,7 +133,7 @@ export default function Courses() {
               <Input
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
-                placeholder="Cari kursus berdasarkan nama atau deskripsi..."
+                placeholder="Search courses by name or description..."
                 className="pl-11 py-3 text-base"
               />
             </div>
@@ -251,7 +251,7 @@ export default function Courses() {
                             onMouseEnter={(e) => { e.currentTarget.style.background = '#0A527A'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
                             onMouseLeave={(e) => { e.currentTarget.style.background = '#0C628D'; e.currentTarget.style.transform = 'none'; }}
                           >
-                            Buka Kursus
+                            Open Course
                           </button>
                         </Link>
                       ) : (
@@ -287,7 +287,7 @@ export default function Courses() {
             {filtered.length === 0 && (
               <div className="sm:col-span-2 lg:col-span-3">
                 <div className="p-14 text-center rounded-[20px] bg-white border border-gray-200">
-                  <p className="font-display font-extrabold text-xl mb-2 text-gray-700">Kursus Tidak Ditemukan</p>
+                  <p className="font-display font-extrabold text-xl mb-2 text-gray-700">No Courses Found</p>
                   <p className="text-sm text-gray-500">Coba ubah filter atau cari dengan kata kunci lain</p>
                 </div>
               </div>

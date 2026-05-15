@@ -110,6 +110,7 @@ function questionBankRouter({ requireAuth, requireRole }) {
         title: z.string().min(1).optional(),
         name: z.string().min(1).optional(),
         description: z.string().optional().default(''),
+        category: z.string().optional().default(''),
         tags: z.array(z.string()).optional().default([]),
       });
 
@@ -120,6 +121,7 @@ function questionBankRouter({ requireAuth, requireRole }) {
       const collection = await QuestionBankCollection.create({
         title,
         description: data.description,
+        category: data.category || '',
         tags: data.tags,
         createdBy: req.user.sub,
         questions: [],

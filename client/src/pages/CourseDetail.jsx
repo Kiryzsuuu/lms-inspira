@@ -639,7 +639,7 @@ export default function CourseDetail() {
             <div>
               {/* Breadcrumb */}
               <div className="flex items-center gap-2 text-sm text-gray-500 mb-4">
-                <Link to="/courses" className="hover:text-[#0C628D] transition-colors">Kursus</Link>
+                <Link to="/courses" className="hover:text-[#0C628D] transition-colors">Courses</Link>
                 <span>/</span>
                 <span className="text-gray-700 truncate">{course.title}</span>
               </div>
@@ -735,65 +735,6 @@ export default function CourseDetail() {
                 ))}
               </div>
 
-              {/* Curriculum — full accordion, visible directly */}
-              {lessons.length > 0 && (
-                <div className="mt-6 pt-6" style={{ borderTop: '1px solid #F3F4F6' }}>
-                  <div className="flex items-center justify-between mb-4">
-                    <span className="text-sm font-semibold text-gray-900">
-                      {modules.length > 0
-                        ? `${modules.length} Modul · ${lessons.length} Materi`
-                        : `${lessons.length} Materi`}
-                    </span>
-                    {modules.length > 0 && (
-                      <button
-                        onClick={() => setAllModulesOpen((v) => !v)}
-                        className="text-xs font-semibold"
-                        style={{ color: '#0C628D' }}
-                      >
-                        {allModulesOpen ? 'Tutup semua' : 'Buka semua'}
-                      </button>
-                    )}
-                  </div>
-                  {modules.length > 0 ? (
-                    <div className="space-y-2">
-                      {moduleGroups.map(({ module: mod, lessons: mLessons, offset }) => (
-                        <ModuleAccordion
-                          key={mod._id}
-                          module={mod}
-                          lessons={mLessons}
-                          selectedLesson={null}
-                          onSelectLesson={isEnrolled ? handleSelectLesson : () => {}}
-                          isPaywalled={isPaywalled}
-                          isStudent={isStudent}
-                          lessonProgress={isEnrolled ? lessonProgress : {}}
-                          canOpenLessonByIndex={isEnrolled ? canOpenLessonByIndex : () => false}
-                          lessonIndexOffset={offset}
-                          forceOpen={allModulesOpen ? true : undefined}
-                        />
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="bg-white rounded-[14px] border border-gray-200 overflow-hidden">
-                      {lessons.map((l, i) => (
-                        <div
-                          key={l._id}
-                          className="flex items-center gap-3 px-4 py-3 text-sm text-gray-700"
-                          style={{ borderTop: i > 0 ? '1px solid #F3F4F6' : 'none' }}
-                        >
-                          <div
-                            className="w-5 h-5 rounded-full flex items-center justify-center text-[0.68rem] font-bold shrink-0"
-                            style={{ background: '#F3F4F6', color: '#6B7280' }}
-                          >
-                            {i + 1}
-                          </div>
-                          <span className="flex-1 truncate">{l.title}</span>
-                          <MateriTypeIcon lesson={l} />
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
             </div>
 
             {/* RIGHT column — sticky enrollment card */}
@@ -1082,7 +1023,7 @@ export default function CourseDetail() {
 
                   {isPaywalled && (
                     <div className="bg-amber-50 border border-amber-200 rounded-[12px] px-4 py-4 text-sm text-amber-800">
-                      Kursus berbayar — silakan checkout untuk mengakses materi.
+                      Paid course — please checkout to access all lessons.
                     </div>
                   )}
                 </div>
@@ -1091,20 +1032,9 @@ export default function CourseDetail() {
               {/* Kurikulum tab */}
               {activeTab === 'kurikulum' && (
                 <div>
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="text-sm text-gray-500">
-                      {modules.length > 0 && <span>{modules.length} modul · </span>}
-                      <span>{lessons.length} materi</span>
-                    </div>
-                    {modules.length > 0 && (
-                      <button
-                        onClick={() => setAllModulesOpen((v) => !v)}
-                        className="text-sm font-semibold transition-colors hover:underline"
-                        style={{ color: '#0C628D' }}
-                      >
-                        {allModulesOpen ? 'Tutup semua modul' : 'Buka semua modul'}
-                      </button>
-                    )}
+                  <div className="mb-4 text-sm text-gray-500">
+                    {modules.length > 0 && <span>{modules.length} modules · </span>}
+                    <span>{lessons.length} lessons</span>
                   </div>
                   {modules.length > 0 ? (
                     <div className="space-y-2">
@@ -1241,7 +1171,7 @@ export default function CourseDetail() {
                     >
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                     </svg>
-                    Edit Detail Kursus
+                    Edit Course Details
                   </button>
 
                   {editPanelOpen && (
@@ -1340,7 +1270,7 @@ export default function CourseDetail() {
 
                       {/* Untuk Siapa */}
                       <div>
-                        <label className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1.5 block">Kursus Ini Untuk Siapa</label>
+                        <label className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1.5 block">Who Is This Course For</label>
                         <div className="space-y-1.5 mb-2">
                           {(editForm.targetAudience || []).map((item, i) => (
                             <div key={i} className="flex items-center gap-2">
@@ -1386,7 +1316,7 @@ export default function CourseDetail() {
               {/* Untuk Siapa */}
               {(course.targetAudience || []).length > 0 && (
                 <div className="bg-white rounded-[16px] p-5" style={{ border: '1px solid #E5E7EB' }}>
-                  <h3 className="font-display font-bold text-base text-gray-900 mb-3">Kursus Ini Untuk Siapa</h3>
+                  <h3 className="font-display font-bold text-base text-gray-900 mb-3">Who Is This Course For</h3>
                   <div className="space-y-2">
                     {course.targetAudience.map((item, i) => (
                       <div key={i} className="flex items-start gap-2.5 text-sm text-gray-700">

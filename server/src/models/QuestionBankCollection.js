@@ -4,6 +4,7 @@ const questionBankCollectionSchema = new mongoose.Schema(
   {
     title: { type: String, required: true, index: true },
     description: String,
+    category: { type: String, default: '', trim: true, index: true },
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
     questions: [{ type: mongoose.Schema.Types.ObjectId, ref: 'BankQuestion' }],
     numQuestions: { type: Number, default: 0 },

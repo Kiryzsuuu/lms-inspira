@@ -4,7 +4,7 @@ const NAV_COLS = [
   {
     title: 'Produk',
     links: [
-      { to: '/courses', label: 'Kursus Online' },
+      { to: '/courses', label: 'Online Courses' },
       { to: '/', label: 'Sertifikasi' },
       { to: '/', label: 'Program Korporat' },
     ],

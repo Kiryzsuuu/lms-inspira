@@ -308,7 +308,7 @@ export default function Home() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-0">
             {[
               ...(S.stats ? S.stats.map((s, i) => i === 0 ? { ...s, num: published.length > 0 ? `${published.length}+` : s.num } : s) : [
-                { num: published.length > 0 ? `${published.length}+` : '500+', label: 'Kursus Premium' },
+                { num: published.length > 0 ? `${published.length}+` : '500+', label: 'Premium Courses' },
                 { num: '50K+', label: 'Pelajar Aktif' },
                 { num: '120+', label: 'Instruktur Expert' },
                 { num: '98%', label: 'Tingkat Kepuasan' },
@@ -421,17 +421,17 @@ export default function Home() {
         <div className="w-full max-w-[1200px] mx-auto px-6">
           <div className="flex items-end justify-between mb-8 flex-wrap gap-4">
             <div>
-              <div className="section-eyebrow">Kursus Terlaris</div>
+              <div className="section-eyebrow">Top Courses</div>
               <h2 className="font-display text-[clamp(1.75rem,3vw,2.6rem)] font-extrabold tracking-[-0.03em]" style={{ color: '#0A0E1A' }}>
                 Dipilih {published.length > 0 ? `${published.length}+` : '50.000+'} Pelajar
               </h2>
-              <p className="mt-2 text-[1rem]" style={{ color: '#6B7280' }}>Kursus dengan rating tertinggi yang terbukti menghasilkan karir nyata.</p>
+              <p className="mt-2 text-[1rem]" style={{ color: '#6B7280' }}>Top-rated courses proven to build real careers.</p>
             </div>
             <Link to="/courses" className="text-[0.88rem] font-semibold transition-colors" style={{ color: '#0C628D' }}
               onMouseEnter={(e) => { e.currentTarget.style.color = '#0A527A'; }}
               onMouseLeave={(e) => { e.currentTarget.style.color = '#0C628D'; }}
             >
-              Lihat semua kursus
+              See all courses
             </Link>
           </div>
 
@@ -504,8 +504,8 @@ export default function Home() {
             </div>
           ) : (
             <div className="text-center py-16 rounded-[20px] bg-gray-50" style={{ border: '1px solid #E5E7EB' }}>
-              <p className="font-display font-bold text-lg mb-2" style={{ color: '#111827' }}>Belum Ada Kursus</p>
-              <p className="text-sm" style={{ color: '#6B7280' }}>Kursus baru akan segera tersedia.</p>
+              <p className="font-display font-bold text-lg mb-2" style={{ color: '#111827' }}>No Courses Yet</p>
+              <p className="text-sm" style={{ color: '#6B7280' }}>New courses will be available soon.</p>
             </div>
           )}
 
@@ -517,7 +517,7 @@ export default function Home() {
                 onMouseEnter={(e) => { e.currentTarget.style.boxShadow = '0 4px 6px rgba(0,0,0,.07)'; }}
                 onMouseLeave={(e) => { e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,.08)'; }}
               >
-                Lihat Semua {published.length > 0 ? published.length + '+' : '500+'} Kursus
+                See All {published.length > 0 ? published.length + '+' : '500+'} Courses
               </button>
             </Link>
           </div>
