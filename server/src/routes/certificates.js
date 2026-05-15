@@ -48,7 +48,7 @@ function certificatesRouter({ requireAuth, requireRole }) {
     requireAuth,
     requireRole('student'),
     asyncHandler(async (req, res) => {
-      const course = await Course.findById(req.params.courseId).populate('createdBy', 'fullName name');
+      const course = await Course.findById(req.params.courseId).populate('ownerId', 'fullName name');
       if (!course) throw new HttpError(404, 'Course not found');
 
       const user = await User.findById(req.user.sub);
@@ -77,7 +77,7 @@ function certificatesRouter({ requireAuth, requireRole }) {
           metadata: {
             userName: user.fullName || user.name,
             courseName: course.title,
-            instructorName: course.createdBy?.fullName || course.createdBy?.name || 'LMS Inspira',
+            instructorName: course.ownerId?.fullName || course.ownerId?.name || 'LMS Inspira',
           },
         });
       }
