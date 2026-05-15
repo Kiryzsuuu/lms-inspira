@@ -5,16 +5,11 @@ import { ConfirmDialog } from './ConfirmDialog';
 
 function LogoMark() {
   return (
-    <div
-      className="flex items-center justify-center flex-shrink-0 px-3 py-1.5 rounded-[10px]"
-      style={{ background: '#0A0E1A' }}
-    >
-      <img
-        src="/logo-putih.png"
-        alt="Inspira Innovation"
-        className="h-[28px] w-auto object-contain"
-      />
-    </div>
+    <img
+      src="/logo-color.png"
+      alt="Inspira Innovation"
+      className="h-[36px] w-auto object-contain flex-shrink-0"
+    />
   );
 }
 
@@ -161,6 +156,7 @@ export function Navbar() {
           {role === 'admin' && (
             <MobileMenuGroup label="Administrasi">
               <MobileMenuItem onSelect={() => { closeMobile(); nav('/dashboard/users'); }}>Kelola Pengguna</MobileMenuItem>
+              <MobileMenuItem onSelect={() => { closeMobile(); nav('/dashboard/categories'); }}>Kelola Kategori</MobileMenuItem>
               <MobileMenuItem onSelect={() => { closeMobile(); nav('/dashboard/accounting'); }}>Pembukuan</MobileMenuItem>
               <MobileMenuItem onSelect={() => { closeMobile(); nav('/dashboard/coupons'); }}>Kelola Kupon</MobileMenuItem>
             </MobileMenuGroup>
@@ -230,6 +226,7 @@ export function Navbar() {
                 {role === 'admin' && (
                   <NavDropdown label="Administrasi" isOpen={dropdownOpen === 'admin'} onHover={(o) => setDropdownOpen(o ? 'admin' : null)}>
                     <DropLink to="/dashboard/users">Kelola Pengguna</DropLink>
+                    <DropLink to="/dashboard/categories">Kelola Kategori</DropLink>
                     <DropLink to="/dashboard/accounting">Pembukuan</DropLink>
                     <DropLink to="/dashboard/coupons">Kelola Kupon</DropLink>
                   </NavDropdown>

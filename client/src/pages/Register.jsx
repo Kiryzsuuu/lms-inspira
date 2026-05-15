@@ -79,9 +79,7 @@ export default function Register() {
       <div className="w-full max-w-[600px]">
         {/* Logo */}
         <div className="flex justify-center mb-8">
-          <div className="px-4 py-2 rounded-[12px]" style={{ background: '#0A0E1A' }}>
-            <img src="/logo-putih.png" alt="Inspira Innovation" className="h-[32px] w-auto object-contain" />
-          </div>
+          <img src="/logo-color.png" alt="Inspira Innovation" className="h-[40px] w-auto object-contain" />
         </div>
 
         {/* Card */}

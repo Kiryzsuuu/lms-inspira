@@ -27,6 +27,7 @@ import CourseTemplateManager from './pages/dashboard/CourseTemplateManager';
 import AssignmentSubmit from './pages/AssignmentSubmit';
 import CertificateView from './pages/CertificateView';
 import CourseStats from './pages/dashboard/CourseStats';
+import CategoryManager from './pages/dashboard/CategoryManager';
 import AboutUs from './pages/AboutUs';
 import { InfoPage } from './pages/Info';
 import { RequireAuth } from './components/RequireAuth';
@@ -166,6 +167,14 @@ export default function App() {
           element={
             <RequireAuth roles={['student']}>
               <CertificateView />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/dashboard/categories"
+          element={
+            <RequireAuth roles={['admin']}>
+              <CategoryManager />
             </RequireAuth>
           }
         />

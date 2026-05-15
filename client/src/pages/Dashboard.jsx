@@ -201,6 +201,11 @@ export default function Dashboard() {
                   href="/dashboard/users"
                 />
                 <QuickActionCard
+                  label="Kelola Kategori"
+                  description="Tambah dan atur kategori dengan gambar sampul di halaman utama"
+                  href="/dashboard/categories"
+                />
+                <QuickActionCard
                   label="Royalti & Referral"
                   description="Lacak royalti pengajar dan statistik referral"
                   href="/dashboard/royalties"

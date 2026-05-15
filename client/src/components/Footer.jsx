@@ -42,7 +42,7 @@ export function Footer() {
               <img
                 src="/logo-putih.png"
                 alt="Inspira Innovation"
-                className="h-[32px] w-auto object-contain"
+                className="h-[30px] w-auto object-contain"
               />
             </div>
             <p className="text-[0.85rem] leading-[1.65] max-w-[260px] mb-6" style={{ color: 'rgba(255,255,255,.35)' }}>

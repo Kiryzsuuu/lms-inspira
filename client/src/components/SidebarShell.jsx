@@ -48,9 +48,7 @@ export function SidebarShell({
             <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
               <div className="space-y-2">
                 <div className="mb-2">
-                  <div className="inline-flex px-2.5 py-1 rounded-[8px]" style={{ background: '#0A0E1A' }}>
-                    <img src="/logo-putih.png" alt="Inspira Innovation" className="h-[20px] w-auto object-contain" />
-                  </div>
+                  <img src="/logo-color.png" alt="Inspira Innovation" className="h-[24px] w-auto object-contain" />
                 </div>
                 <div>
                   <h1 className="font-display text-3xl font-extrabold tracking-tight text-gray-900">{title}</h1>

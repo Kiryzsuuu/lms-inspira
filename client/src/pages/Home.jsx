@@ -31,16 +31,15 @@ const TICKER_ITEMS = [
   'Cloud & DevOps', 'Video & Konten',
 ];
 
-const CATEGORIES = [
-  { name: 'Programming & Web Development', count: '142 kursus', featured: true, accent: '#0C628D', bg: '#F0F8FD', iconBg: '#E0F0FA' },
-  { name: 'Data Science', count: '86 kursus', accent: '#0FADA8', bg: '#fff', iconBg: '#E0F5F5' },
-  { name: 'AI & Machine Learning', count: '48 kursus', accent: '#6C5CE7', bg: '#fff', iconBg: '#EEE9FF' },
-  { name: 'UI/UX Design', count: '63 kursus', accent: '#F3921B', bg: '#fff', iconBg: '#FEF3E2' },
-  { name: 'Cybersecurity', count: '34 kursus', accent: '#E84393', bg: '#fff', iconBg: '#FFE5F3' },
-  { name: 'Mobile Dev', count: '55 kursus', accent: '#84CC16', bg: '#fff', iconBg: '#F0FDE4' },
-  { name: 'Digital Marketing', count: '71 kursus', accent: '#0C628D', bg: '#fff', iconBg: '#E0F0FA' },
-  { name: 'Cloud & DevOps', count: '41 kursus', accent: '#F59E0B', bg: '#fff', iconBg: '#FEF9E7' },
-  { name: 'Bisnis & Manajemen', count: '90 kursus', accent: '#0FADA8', bg: '#fff', iconBg: '#E0F5F5' },
+const FALLBACK_CATEGORIES = [
+  { name: 'Programming & Web Dev', subtitle: '', accent: '#0C628D', iconBg: '#E0F0FA' },
+  { name: 'Data Science', subtitle: '', accent: '#0FADA8', iconBg: '#E0F5F5' },
+  { name: 'AI & Machine Learning', subtitle: '', accent: '#6C5CE7', iconBg: '#EEE9FF' },
+  { name: 'UI/UX Design', subtitle: '', accent: '#F3921B', iconBg: '#FEF3E2' },
+  { name: 'Cybersecurity', subtitle: '', accent: '#E84393', iconBg: '#FFE5F3' },
+  { name: 'Mobile Dev', subtitle: '', accent: '#84CC16', iconBg: '#F0FDE4' },
+  { name: 'Digital Marketing', subtitle: '', accent: '#0C628D', iconBg: '#E0F0FA' },
+  { name: 'Cloud & DevOps', subtitle: '', accent: '#F59E0B', iconBg: '#FEF9E7' },
 ];
 
 const WHY_ITEMS = [
@@ -73,6 +72,7 @@ export default function Home() {
   const { api, isAuthed } = useAuth();
   const nav = useNavigate();
   const [courses, setCourses] = useState([]);
+  const [categories, setCategories] = useState(FALLBACK_CATEGORIES);
   const [email, setEmail] = useState('');
   const progressRef = useRef(null);
 
@@ -80,6 +80,10 @@ export default function Home() {
 
   useEffect(() => {
     api.get('/courses').then((r) => setCourses(r.data.courses || [])).catch(() => {});
+    api.get('/categories').then((r) => {
+      const cats = r.data.categories || [];
+      if (cats.length > 0) setCategories(cats);
+    }).catch(() => {});
     const t = setTimeout(() => {
       if (progressRef.current) progressRef.current.style.width = '35%';
     }, 800);
@@ -361,15 +365,13 @@ export default function Home() {
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {CATEGORIES.map((cat, i) => (
+            {categories.map((cat, i) => (
               <Link
-                key={cat.name}
+                key={cat._id || cat.name}
                 to="/courses"
-                className={`flex flex-col relative overflow-hidden rounded-[20px] p-7 cursor-pointer transition-all duration-[250ms] reveal ${cat.featured ? 'md:col-span-2 md:flex-row md:items-center md:gap-6' : ''}`}
+                className="flex flex-col relative overflow-hidden rounded-[20px] cursor-pointer transition-all duration-[250ms] reveal bg-white"
                 style={{
-                  background: cat.bg,
                   border: '1px solid #E5E7EB',
-                  '--card-accent': cat.accent,
                   transitionDelay: `${(i % 4) * 0.08}s`,
                 }}
                 onMouseEnter={(e) => {
@@ -377,39 +379,44 @@ export default function Home() {
                   e.currentTarget.style.borderColor = '#D1D5DB';
                   e.currentTarget.style.transform = 'translateY(-3px)';
                   e.currentTarget.querySelector('.cat-accent-bar').style.transform = 'scaleX(1)';
-                  e.currentTarget.querySelector('.cat-arrow-text').style.color = cat.accent;
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.boxShadow = 'none';
                   e.currentTarget.style.borderColor = '#E5E7EB';
                   e.currentTarget.style.transform = 'none';
                   e.currentTarget.querySelector('.cat-accent-bar').style.transform = 'scaleX(0)';
-                  e.currentTarget.querySelector('.cat-arrow-text').style.color = '#9CA3AF';
                 }}
               >
+                {/* Cover image — top half */}
+                <div
+                  className="w-full h-[130px] flex-shrink-0 overflow-hidden"
+                  style={{ background: cat.coverImageUrl ? undefined : cat.iconBg || '#E0F0FA' }}
+                >
+                  {cat.coverImageUrl && (
+                    <img
+                      src={cat.coverImageUrl}
+                      alt={cat.name}
+                      className="w-full h-full object-cover"
+                    />
+                  )}
+                </div>
+
+                {/* Body */}
+                <div className="p-5 flex flex-col flex-1 relative">
+                  <div className="font-display font-bold text-[0.95rem] mb-1 text-gray-900">{cat.name}</div>
+                  {cat.subtitle && (
+                    <div className="text-[0.76rem] font-medium" style={{ color: '#9CA3AF' }}>{cat.subtitle}</div>
+                  )}
+                  <div className="mt-3 text-[0.82rem] font-semibold" style={{ color: cat.accent || '#0C628D' }}>
+                    Jelajahi
+                  </div>
+                </div>
+
                 {/* Accent bottom bar */}
                 <div
                   className="cat-accent-bar absolute bottom-0 left-0 right-0 h-[3px] transition-transform duration-300 origin-left"
-                  style={{ background: cat.accent, transform: 'scaleX(0)' }}
+                  style={{ background: cat.accent || '#0C628D', transform: 'scaleX(0)' }}
                 />
-                <div
-                  className={`w-[52px] h-[52px] rounded-[16px] flex items-center justify-center flex-shrink-0 ${cat.featured ? '' : 'mb-4'}`}
-                  style={{ background: cat.iconBg, fontSize: cat.featured ? '1.9rem' : '1.5rem', width: cat.featured ? 64 : 52, height: cat.featured ? 64 : 52 }}
-                />
-                <div className={cat.featured ? 'flex-1' : ''}>
-                  <div className="font-display font-bold text-[0.97rem] mb-1" style={{ color: '#111827' }}>{cat.name}</div>
-                  <div className="text-[0.78rem] font-medium" style={{ color: '#9CA3AF' }}>{cat.count}</div>
-                  {!cat.featured && (
-                    <div className="cat-arrow-text flex items-center gap-1 text-[0.82rem] font-semibold mt-auto pt-4 transition-colors" style={{ color: '#9CA3AF' }}>
-                      Jelajahi <span>→</span>
-                    </div>
-                  )}
-                </div>
-                {cat.featured && (
-                  <div className="cat-arrow-text flex items-center gap-1 text-[0.82rem] font-semibold transition-colors mt-0 self-end" style={{ color: '#9CA3AF' }}>
-                    Jelajahi <span>→</span>
-                  </div>
-                )}
               </Link>
             ))}
           </div>
