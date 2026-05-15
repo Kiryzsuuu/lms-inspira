@@ -31,16 +31,6 @@ const TICKER_ITEMS = [
   'Cloud & DevOps', 'Video & Konten',
 ];
 
-const FALLBACK_CATEGORIES = [
-  { name: 'Programming & Web Dev', subtitle: '', accent: '#0C628D', iconBg: '#E0F0FA' },
-  { name: 'Data Science', subtitle: '', accent: '#0FADA8', iconBg: '#E0F5F5' },
-  { name: 'AI & Machine Learning', subtitle: '', accent: '#6C5CE7', iconBg: '#EEE9FF' },
-  { name: 'UI/UX Design', subtitle: '', accent: '#F3921B', iconBg: '#FEF3E2' },
-  { name: 'Cybersecurity', subtitle: '', accent: '#E84393', iconBg: '#FFE5F3' },
-  { name: 'Mobile Dev', subtitle: '', accent: '#84CC16', iconBg: '#F0FDE4' },
-  { name: 'Digital Marketing', subtitle: '', accent: '#0C628D', iconBg: '#E0F0FA' },
-  { name: 'Cloud & DevOps', subtitle: '', accent: '#F59E0B', iconBg: '#FEF9E7' },
-];
 
 const WHY_ITEMS = [
   { title: 'Kurikulum dari Industri', desc: 'Dirancang bersama praktisi dari perusahaan terkemuka. Bukan teori — langsung dari kebutuhan kerja nyata.', bg: '#E0F0FA' },
@@ -72,7 +62,7 @@ export default function Home() {
   const { api, isAuthed } = useAuth();
   const nav = useNavigate();
   const [courses, setCourses] = useState([]);
-  const [categories, setCategories] = useState(FALLBACK_CATEGORIES);
+  const [categories, setCategories] = useState([]);
   const [email, setEmail] = useState('');
   const progressRef = useRef(null);
 
@@ -80,10 +70,7 @@ export default function Home() {
 
   useEffect(() => {
     api.get('/courses').then((r) => setCourses(r.data.courses || [])).catch(() => {});
-    api.get('/categories').then((r) => {
-      const cats = r.data.categories || [];
-      if (cats.length > 0) setCategories(cats);
-    }).catch(() => {});
+    api.get('/categories').then((r) => setCategories(r.data.categories || [])).catch(() => {});
     const t = setTimeout(() => {
       if (progressRef.current) progressRef.current.style.width = '35%';
     }, 800);
@@ -351,8 +338,8 @@ export default function Home() {
         </div>
       </div>
 
-      {/* ===== CATEGORIES ===== */}
-      <section className="py-24" style={{ background: '#F7F8FA' }}>
+      {/* ===== CATEGORIES — hanya tampil jika ada data dari DB ===== */}
+      {categories.length > 0 && <section className="py-24" style={{ background: '#F7F8FA' }}>
         <div className="w-full max-w-[1200px] mx-auto px-6">
           <div className="mb-12">
             <div className="section-eyebrow">Kategori</div>
@@ -421,7 +408,7 @@ export default function Home() {
             ))}
           </div>
         </div>
-      </section>
+      </section>}
 
       {/* ===== FEATURED COURSES ===== */}
       <section className="py-24" style={{ background: '#fff' }}>
