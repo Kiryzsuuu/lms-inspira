@@ -73,11 +73,13 @@ async function main() {
   // Public static: uploaded images
   app.use('/uploads', express.static(UPLOAD_DIR));
 
-  // Root (helpful in dev when user opens backend URL)
-  app.get('/', (req, res) => {
-    if (allowedOrigins[0]) return res.redirect(allowedOrigins[0]);
-    return res.json({ ok: true, message: 'API server running. Visit the client app for UI.' });
-  });
+  // Root redirect only in dev (in production the SPA static files handle this)
+  if (process.env.NODE_ENV !== 'production') {
+    app.get('/', (req, res) => {
+      if (allowedOrigins[0]) return res.redirect(allowedOrigins[0]);
+      return res.json({ ok: true, message: 'API server running. Visit the client app for UI.' });
+    });
+  }
 
   // Public/Auth
   app.use('/api/auth', authRouter({ jwtSecret: env.JWT_SECRET }));
