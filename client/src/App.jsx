@@ -30,6 +30,7 @@ import CourseStats from './pages/dashboard/CourseStats';
 import CategoryManager from './pages/dashboard/CategoryManager';
 import TestimonialManager from './pages/dashboard/TestimonialManager';
 import ActivityLog from './pages/dashboard/ActivityLog';
+import SiteSettingsManager from './pages/dashboard/SiteSettingsManager';
 import AboutUs from './pages/AboutUs';
 import { InfoPage } from './pages/Info';
 import { RequireAuth } from './components/RequireAuth';
@@ -209,6 +210,15 @@ export default function App() {
           element={
             <RequireAuth roles={['student']}>
               <AssignmentSubmit />
+            </RequireAuth>
+          }
+        />
+
+        <Route
+          path="/dashboard/site-settings"
+          element={
+            <RequireAuth roles={['admin']}>
+              <SiteSettingsManager />
             </RequireAuth>
           }
         />

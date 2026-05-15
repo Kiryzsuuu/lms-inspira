@@ -245,6 +245,11 @@ export default function Dashboard() {
                   description="Audit trail semua perubahan konten oleh semua pengguna"
                   href="/dashboard/activity-log"
                 />
+                <QuickActionCard
+                  label="Pengaturan Situs"
+                  description="Edit konten halaman utama: statistik, badge, sertifikat, mitra, kutipan"
+                  href="/dashboard/site-settings"
+                />
               </div>
             </div>
           )}

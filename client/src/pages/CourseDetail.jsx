@@ -910,6 +910,57 @@ export default function CourseDetail() {
                   </div>
                 ))}
               </div>
+
+              {/* Curriculum preview in hero */}
+              {lessons.length > 0 && (
+                <div className="mt-6 pt-6" style={{ borderTop: '1px solid #F3F4F6' }}>
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-sm font-semibold text-gray-900">
+                      {modules.length > 0 ? `${modules.length} Modul Kursus` : `${lessons.length} Materi Kursus`}
+                    </span>
+                    <button
+                      onClick={() => {
+                        setActiveTab('kurikulum');
+                        document.getElementById('course-tabs')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                      }}
+                      className="text-xs font-semibold"
+                      style={{ color: '#0C628D' }}
+                    >
+                      Lihat semua
+                    </button>
+                  </div>
+                  {modules.length > 0 ? (
+                    <div className="space-y-2">
+                      {moduleGroups.slice(0, 4).map(({ module: mod, lessons: mLessons }) => (
+                        <div key={mod._id} className="flex items-center justify-between text-sm py-1">
+                          <span className="text-gray-700 truncate flex-1 min-w-0">{mod.title}</span>
+                          <span className="text-gray-400 text-xs ml-3 shrink-0">{mLessons.length} materi</span>
+                        </div>
+                      ))}
+                      {moduleGroups.length > 4 && (
+                        <div className="text-xs text-gray-400 pt-1">+{moduleGroups.length - 4} modul lainnya</div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {lessons.slice(0, 5).map((l, i) => (
+                        <div key={l._id} className="flex items-center gap-2.5 text-sm">
+                          <div
+                            className="w-5 h-5 rounded-full flex items-center justify-center text-[0.6rem] font-bold shrink-0"
+                            style={{ background: '#F3F4F6', color: '#6B7280' }}
+                          >
+                            {i + 1}
+                          </div>
+                          <span className="text-gray-700 truncate">{l.title}</span>
+                        </div>
+                      ))}
+                      {lessons.length > 5 && (
+                        <div className="text-xs text-gray-400 pt-1">+{lessons.length - 5} materi lainnya</div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* RIGHT column — sticky enrollment card */}
@@ -1050,8 +1101,8 @@ export default function CourseDetail() {
                 </div>
               </div>
 
-              {/* Edit Media Panel — teachers/admins only */}
-              {!isStudent && (
+              {/* Edit Media Preview — hidden in preview mode */}
+              {!isStudent && !isPreview && (
                 <div className="bg-white rounded-[16px] border border-gray-200 p-5">
                   <div className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-3">Edit Media Preview</div>
                   <div className="space-y-3">
@@ -1113,7 +1164,7 @@ export default function CourseDetail() {
             {/* MAIN: tabs */}
             <div>
               {/* Tab bar */}
-              <div className="flex border-b border-gray-200 mb-8">
+              <div id="course-tabs" className="flex border-b border-gray-200 mb-8">
                 {[
                   { key: 'ikhtisar',   label: 'Ikhtisar'   },
                   { key: 'kurikulum',  label: 'Kurikulum'  },
@@ -1344,7 +1395,7 @@ export default function CourseDetail() {
               )}
 
               {/* Teacher/admin edit detail section */}
-              {!isStudent && (
+              {!isStudent && !isPreview && (
                 <div className="mt-10">
                   <button
                     onClick={() => setEditPanelOpen((v) => !v)}

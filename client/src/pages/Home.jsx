@@ -60,6 +60,7 @@ export default function Home() {
   const [courses, setCourses] = useState([]);
   const [categories, setCategories] = useState([]);
   const [testimonials, setTestimonials] = useState([]);
+  const [settings, setSettings] = useState(null);
   const [email, setEmail] = useState('');
   const progressRef = useRef(null);
 
@@ -69,11 +70,14 @@ export default function Home() {
     api.get('/courses').then((r) => setCourses(r.data.courses || [])).catch(() => {});
     api.get('/categories').then((r) => setCategories(r.data.categories || [])).catch(() => {});
     api.get('/testimonials').then((r) => setTestimonials(r.data.testimonials || [])).catch(() => {});
+    api.get('/settings/homePage').then((r) => setSettings(r.data.value || null)).catch(() => {});
     const t = setTimeout(() => {
       if (progressRef.current) progressRef.current.style.width = '35%';
     }, 800);
     return () => clearTimeout(t);
   }, [api]);
+
+  const S = settings || {};
 
   const published = courses.filter((c) => c.isPublished !== false);
   const featured = published.slice(0, 6);
@@ -188,8 +192,8 @@ export default function Home() {
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0FADA8" strokeWidth="2.5" strokeLinecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12" /></svg>
                 </div>
                 <div>
-                  <div className="text-[0.7rem] font-medium" style={{ color: '#9CA3AF' }}>Sertifikat Diterima</div>
-                  <div className="text-[0.85rem] font-bold" style={{ color: '#111827' }}>Gojek · Tokopedia</div>
+                  <div className="text-[0.7rem] font-medium" style={{ color: '#9CA3AF' }}>{S.heroBadge1Title || 'Sertifikat Diterima'}</div>
+                  <div className="text-[0.85rem] font-bold" style={{ color: '#111827' }}>{S.heroBadge1Sub || 'Gojek · Tokopedia'}</div>
                 </div>
               </div>
 
@@ -201,8 +205,8 @@ export default function Home() {
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" strokeWidth="2.5" strokeLinecap="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" /></svg>
                 </div>
                 <div>
-                  <div className="text-[0.7rem] font-medium" style={{ color: '#9CA3AF' }}>Baru bergabung</div>
-                  <div className="text-[0.85rem] font-bold" style={{ color: '#111827' }}>Budi S. · 2 menit lalu</div>
+                  <div className="text-[0.7rem] font-medium" style={{ color: '#9CA3AF' }}>{S.heroBadge2Title || 'Baru bergabung'}</div>
+                  <div className="text-[0.85rem] font-bold" style={{ color: '#111827' }}>{S.heroBadge2Sub || 'Budi S. · 2 menit lalu'}</div>
                 </div>
               </div>
 
@@ -300,10 +304,12 @@ export default function Home() {
         <div className="w-full max-w-[1200px] mx-auto px-6">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-0">
             {[
-              { num: `${published.length > 0 ? `${published.length}+` : '500+'}`, label: 'Kursus Premium' },
-              { num: '50K+', label: 'Pelajar Aktif' },
-              { num: '120+', label: 'Instruktur Expert' },
-              { num: '98%', label: 'Tingkat Kepuasan' },
+              ...(S.stats ? S.stats.map((s, i) => i === 0 ? { ...s, num: published.length > 0 ? `${published.length}+` : s.num } : s) : [
+                { num: published.length > 0 ? `${published.length}+` : '500+', label: 'Kursus Premium' },
+                { num: '50K+', label: 'Pelajar Aktif' },
+                { num: '120+', label: 'Instruktur Expert' },
+                { num: '98%', label: 'Tingkat Kepuasan' },
+              ]),
             ].map((s, i) => (
               <div
                 key={s.label}
@@ -326,7 +332,7 @@ export default function Home() {
       {/* ===== TICKER ===== */}
       <div className="overflow-hidden py-[0.9rem]" style={{ background: '#0A0E1A' }} aria-hidden="true">
         <div className="flex gap-10 animate-[ticker-scroll_30s_linear_infinite] w-max">
-          {[...TICKER_ITEMS, ...TICKER_ITEMS].map((item, i) => (
+          {(categories.length > 0 ? [...categories.map(c => c.name), ...categories.map(c => c.name)] : [...TICKER_ITEMS, ...TICKER_ITEMS]).map((item, i) => (
             <span key={i} className="flex items-center gap-[0.65rem] text-[0.82rem] font-medium whitespace-nowrap" style={{ color: 'rgba(255,255,255,.55)' }}>
               {item}
               <span className="w-[4px] h-[4px] rounded-full flex-shrink-0" style={{ background: 'rgba(255,255,255,.2)' }} />
@@ -528,9 +534,9 @@ export default function Home() {
                 </div>
                 <div className="rounded-[16px] p-6 text-center" style={{ background: 'linear-gradient(135deg, #fff9f0, #fff)', border: '1px solid rgba(255,255,255,.1)' }}>
                   <div className="font-display font-extrabold text-[0.85rem] mb-3 tracking-[-0.03em]" style={{ color: '#0C628D' }}>InspiraLearn</div>
-                  <div className="font-display font-extrabold text-[1.15rem] mb-1" style={{ color: '#111827' }}>Arya Ramadhan</div>
+                  <div className="font-display font-extrabold text-[1.15rem] mb-1" style={{ color: '#111827' }}>{S.certSampleName || 'Arya Ramadhan'}</div>
                   <div className="text-[0.78rem] mb-4" style={{ color: '#6B7280' }}>Telah menyelesaikan dengan baik kursus</div>
-                  <div className="text-[0.95rem] font-bold mb-4" style={{ color: '#0C628D' }}>Python untuk Data Science & ML</div>
+                  <div className="text-[0.95rem] font-bold mb-4" style={{ color: '#0C628D' }}>{S.certSampleCourse || 'Python untuk Data Science & ML'}</div>
                   <div
                     className="w-[60px] h-[60px] rounded-full mx-auto mb-3 flex items-center justify-center text-[1.5rem]"
                     style={{ background: 'linear-gradient(135deg, #0C628D, #0FADA8)', boxShadow: '0 4px 12px rgba(12,98,141,.3)' }}
@@ -540,9 +546,9 @@ export default function Home() {
                   <div className="text-[0.65rem] tracking-[.05em]" style={{ color: '#9CA3AF' }}>ID: IL-2025-DS-0042 · Dapat diverifikasi online</div>
                 </div>
                 <div className="mt-5">
-                  <div className="text-[0.7rem] mb-2" style={{ color: 'rgba(255,255,255,.35)' }}>Diakui oleh 300+ perusahaan termasuk</div>
+                  <div className="text-[0.7rem] mb-2" style={{ color: 'rgba(255,255,255,.35)' }}>{S.partnerCountText || 'Diakui oleh 300+ perusahaan termasuk'}</div>
                   <div className="flex gap-2 flex-wrap">
-                    {['Tokopedia', 'Gojek', 'Traveloka', 'BCA Digital'].map((name) => (
+                    {(S.partners || ['Tokopedia', 'Gojek', 'Traveloka', 'BCA Digital']).map((name) => (
                       <span key={name} className="text-[0.72rem] font-semibold px-2.5 py-1 rounded-[10px]" style={{ background: 'rgba(255,255,255,.07)', border: '1px solid rgba(255,255,255,.1)', color: 'rgba(255,255,255,.6)' }}>
                         {name}
                       </span>
@@ -591,19 +597,19 @@ export default function Home() {
                 className="font-display font-extrabold leading-none mb-1 tracking-[-0.05em]"
                 style={{ fontSize: '5rem', background: 'linear-gradient(135deg, #F3921B, #D97C0D)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}
               >
-                50K+
+                {S.testimonialStat || '50K+'}
               </div>
-              <div className="text-[0.88rem] font-medium mb-8" style={{ color: '#6B7280' }}>Pelajar bergabung</div>
+              <div className="text-[0.88rem] font-medium mb-8" style={{ color: '#6B7280' }}>{S.testimonialStatLabel || 'Pelajar bergabung'}</div>
               <blockquote
                 className="text-[1rem] leading-[1.7] italic p-5 rounded-[16px] mb-6"
                 style={{ color: '#374151', background: '#fff', border: '1px solid #E5E7EB', borderLeft: '3px solid #F3921B' }}
               >
-                "Lulusan InspiraLearn 3× lebih cepat mendapat pekerjaan dibanding rata-rata fresh graduate Indonesia."
+                "{S.testimonialQuote || 'Lulusan InspiraLearn 3× lebih cepat mendapat pekerjaan dibanding rata-rata fresh graduate Indonesia.'}"
               </blockquote>
               <div className="flex items-center gap-3">
                 <span className="text-[1rem] tracking-[2px]" style={{ color: '#F59E0B' }}>★★★★★</span>
-                <span className="font-display font-extrabold text-[1.4rem] tracking-[-0.04em]" style={{ color: '#111827' }}>4.9</span>
-                <span className="text-[0.82rem]" style={{ color: '#9CA3AF' }}>dari 28.000+ ulasan</span>
+                <span className="font-display font-extrabold text-[1.4rem] tracking-[-0.04em]" style={{ color: '#111827' }}>{S.ratingNum || '4.9'}</span>
+                <span className="text-[0.82rem]" style={{ color: '#9CA3AF' }}>{S.ratingLabel || 'dari 28.000+ ulasan'}</span>
               </div>
             </div>
 
