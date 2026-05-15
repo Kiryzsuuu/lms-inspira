@@ -423,12 +423,11 @@ export default function Home() {
               </h2>
               <p className="mt-2 text-[1rem]" style={{ color: '#6B7280' }}>Kursus dengan rating tertinggi yang terbukti menghasilkan karir nyata.</p>
             </div>
-            <Link to="/courses" className="flex items-center gap-1.5 text-[0.88rem] font-semibold transition-colors" style={{ color: '#0C628D' }}
+            <Link to="/courses" className="text-[0.88rem] font-semibold transition-colors" style={{ color: '#0C628D' }}
               onMouseEnter={(e) => { e.currentTarget.style.color = '#0A527A'; }}
               onMouseLeave={(e) => { e.currentTarget.style.color = '#0C628D'; }}
             >
               Lihat semua kursus
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2.5 7H11.5M11.5 7L7.5 3M11.5 7L7.5 11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg>
             </Link>
           </div>
 
@@ -515,7 +514,6 @@ export default function Home() {
                 onMouseLeave={(e) => { e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,.08)'; }}
               >
                 Lihat Semua {published.length > 0 ? published.length + '+' : '500+'} Kursus
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8H13M13 8L9 4M13 8L9 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
               </button>
             </Link>
           </div>
@@ -667,8 +665,8 @@ export default function Home() {
         </div>
       </div>
 
-      {/* ===== CTA ===== */}
-      <section
+      {/* ===== CTA — only for guests ===== */}
+      {!isAuthed && <section
         className="py-24 relative overflow-hidden"
         style={{ background: 'linear-gradient(135deg, #0A0E1A 0%, #1a1f3c 50%, #111827 100%)' }}
       >
@@ -743,7 +741,7 @@ export default function Home() {
             </div>
           </div>
         </div>
-      </section>
+      </section>}
 
     </div>
   );
