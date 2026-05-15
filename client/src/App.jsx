@@ -22,6 +22,8 @@ import Accounting from './pages/dashboard/Accounting';
 import QuestionBankManager from './pages/dashboard/QuestionBankManager';
 import StudentProgressMonitor from './pages/dashboard/StudentProgressMonitor';
 import CouponManager from './pages/dashboard/CouponManager';
+import RoyaltyManager from './pages/dashboard/RoyaltyManager';
+import CourseTemplateManager from './pages/dashboard/CourseTemplateManager';
 import AssignmentSubmit from './pages/AssignmentSubmit';
 import CertificateView from './pages/CertificateView';
 import CourseStats from './pages/dashboard/CourseStats';
@@ -124,6 +126,22 @@ export default function App() {
           element={
             <RequireAuth roles={['admin']}>
               <CouponManager />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/dashboard/royalties"
+          element={
+            <RequireAuth roles={['admin', 'teacher']}>
+              <RoyaltyManager />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/dashboard/course-templates"
+          element={
+            <RequireAuth roles={['admin']}>
+              <CourseTemplateManager />
             </RequireAuth>
           }
         />

@@ -25,6 +25,7 @@ export default function Register() {
     referralSource: '',
     reason: '',
     educationLevel: '',
+    referralCode: '',
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -183,6 +184,18 @@ export default function Register() {
                   </option>
                 ))}
               </select>
+            </div>
+
+            {/* Kode Referral (opsional) */}
+            <div>
+              <Label>Kode Referral <span className="text-slate-400 font-normal">(opsional)</span></Label>
+              <Input
+                value={formData.referralCode}
+                onChange={(e) => handleChange('referralCode', e.target.value.toUpperCase())}
+                placeholder="Masukkan kode dari pengajar (jika ada)"
+                maxLength={16}
+              />
+              <p className="mt-1 text-xs text-slate-500">Dapatkan potongan 5% untuk pembelian course pertama Anda.</p>
             </div>
 
             <Button disabled={loading} type="submit" className="w-full bg-[#d76810] text-white hover:bg-[#c55a0a]">

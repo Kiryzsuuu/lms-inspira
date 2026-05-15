@@ -16,7 +16,9 @@ export default function CourseManager() {
   const selected = useMemo(() => courses.find((c) => c._id === selectedId) || null, [courses, selectedId]);
   const [activeTab, setActiveTab] = useState('settings');
 
-  const [courseForm, setCourseForm] = useState({ title: '', description: '', coverImageUrl: '', priceIdr: 0, isPublished: false });
+  const [courseForm, setCourseForm] = useState({ title: '', description: '', coverImageUrl: '', priceIdr: 0, isPublished: false, tags: [], templateId: '' });
+  const [tagInput, setTagInput] = useState('');
+  const [templates, setTemplates] = useState([]);
   const [coverUploading, setCoverUploading] = useState(false);
   const [coverUploadingForSelected, setCoverUploadingForSelected] = useState(false);
   const [selectedCoverDraft, setSelectedCoverDraft] = useState('');
@@ -156,6 +158,7 @@ export default function CourseManager() {
 
   useEffect(() => {
     loadCourses();
+    api.get('/course-templates').then((r) => setTemplates(r.data.templates || [])).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -186,6 +189,8 @@ export default function CourseManager() {
       coverImageUrl: selected.coverImageUrl || '',
       priceIdr: selected.priceIdr || 0,
       isPublished: selected.isPublished || false,
+      tags: selected.tags || [],
+      templateId: selected.templateId || '',
     });
   }, [selected]);
 
@@ -274,6 +279,7 @@ export default function CourseManager() {
         coverImageUrl: patch.coverImageUrl ?? selected.coverImageUrl,
         priceIdr: patch.priceIdr ?? selected.priceIdr,
         isPublished: patch.isPublished ?? selected.isPublished,
+        tags: patch.tags ?? selected.tags ?? [],
       };
       await api.put(`/courses/${selected._id}`, payload);
       await loadCourses();
@@ -802,13 +808,57 @@ export default function CourseManager() {
                         <Input
                           type="number"
                           min="0"
-                          step="10000"
                           value={courseForm.priceIdr}
-                          onChange={(e) => setCourseForm((f) => ({ ...f, priceIdr: parseInt(e.target.value) || 0 }))}
+                          onChange={(e) => setCourseForm((f) => ({ ...f, priceIdr: Number(e.target.value) || 0 }))}
                           placeholder="0 untuk gratis"
                         />
                       </div>
                     </div>
+                    <div>
+                      <Label>Tags / Keahlian</Label>
+                      <div className="mt-1 flex gap-2">
+                        <Input
+                          value={tagInput}
+                          onChange={(e) => setTagInput(e.target.value)}
+                          onKeyDown={(e) => {
+                            if ((e.key === 'Enter' || e.key === ',') && tagInput.trim()) {
+                              e.preventDefault();
+                              const t = tagInput.trim().toLowerCase();
+                              if (!courseForm.tags.includes(t)) setCourseForm((f) => ({ ...f, tags: [...f.tags, t] }));
+                              setTagInput('');
+                            }
+                          }}
+                          placeholder="Ketik tag lalu Enter (mis: javascript, desain grafis)"
+                        />
+                      </div>
+                      {courseForm.tags.length > 0 && (
+                        <div className="mt-2 flex flex-wrap gap-1">
+                          {courseForm.tags.map((t) => (
+                            <span key={t} className="inline-flex items-center gap-1 rounded-full bg-orange-100 px-2 py-0.5 text-xs font-medium text-orange-800">
+                              {t}
+                              <button type="button" onClick={() => setCourseForm((f) => ({ ...f, tags: f.tags.filter((x) => x !== t) }))} className="hover:text-orange-600">&times;</button>
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    {templates.length > 0 && (
+                      <div>
+                        <Label>Template Outline <span className="text-slate-400 font-normal">(opsional)</span></Label>
+                        <div className="mt-1">
+                          <select
+                            value={courseForm.templateId}
+                            onChange={(e) => setCourseForm((f) => ({ ...f, templateId: e.target.value }))}
+                            className="w-full border border-slate-200 bg-white px-3 py-2 text-sm rounded focus:outline-none focus:ring-2 focus:ring-orange-400"
+                          >
+                            <option value="">Tanpa template</option>
+                            {templates.map((t) => (
+                              <option key={t._id} value={t._id}>{t.name}</option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+                    )}
                     <div className="flex items-center gap-2">
                       <input
                         id="coursePublished"
@@ -925,12 +975,39 @@ export default function CourseManager() {
                           <Input
                             type="number"
                             min="0"
-                            step="10000"
                             value={courseForm.priceIdr}
-                            onChange={(e) => setCourseForm((f) => ({ ...f, priceIdr: parseInt(e.target.value) || 0 }))}
+                            onChange={(e) => setCourseForm((f) => ({ ...f, priceIdr: Number(e.target.value) || 0 }))}
                             placeholder="0 untuk gratis"
                           />
                         </div>
+                      </div>
+                      <div>
+                        <Label>Tags / Keahlian</Label>
+                        <div className="mt-1 flex gap-2">
+                          <Input
+                            value={tagInput}
+                            onChange={(e) => setTagInput(e.target.value)}
+                            onKeyDown={(e) => {
+                              if ((e.key === 'Enter' || e.key === ',') && tagInput.trim()) {
+                                e.preventDefault();
+                                const t = tagInput.trim().toLowerCase();
+                                if (!courseForm.tags.includes(t)) setCourseForm((f) => ({ ...f, tags: [...f.tags, t] }));
+                                setTagInput('');
+                              }
+                            }}
+                            placeholder="Ketik tag lalu Enter"
+                          />
+                        </div>
+                        {courseForm.tags.length > 0 && (
+                          <div className="mt-2 flex flex-wrap gap-1">
+                            {courseForm.tags.map((t) => (
+                              <span key={t} className="inline-flex items-center gap-1 rounded-full bg-orange-100 px-2 py-0.5 text-xs font-medium text-orange-800">
+                                {t}
+                                <button type="button" onClick={() => setCourseForm((f) => ({ ...f, tags: f.tags.filter((x) => x !== t) }))} className="hover:text-orange-600">&times;</button>
+                              </span>
+                            ))}
+                          </div>
+                        )}
                       </div>
                       <div className="flex items-center gap-2">
                         <input

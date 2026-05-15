@@ -88,12 +88,21 @@ function authRouter({ jwtSecret }) {
         referralSource: z.string().optional(),
         reason: z.string().optional(),
         educationLevel: z.string().optional(),
+        referralCode: z.string().optional(), // kode referral dari teacher
       });
-      const { name, fullName, email, password, whatsappNumber, institution, referralSource, reason, educationLevel } = schema.parse(req.body);
+      const { name, fullName, email, password, whatsappNumber, institution, referralSource, reason, educationLevel, referralCode } = schema.parse(req.body);
 
       const normalizedEmail = String(email).toLowerCase();
       const existing = await User.findOne({ email: normalizedEmail });
       if (existing) throw new HttpError(409, 'Email already registered');
+
+      // Validasi referral code jika disertakan
+      let referredBy;
+      if (referralCode) {
+        const teacher = await User.findOne({ referralCode: referralCode.toUpperCase().trim() });
+        if (!teacher) throw new HttpError(400, 'Kode referral tidak valid');
+        referredBy = referralCode.toUpperCase().trim();
+      }
 
       const passwordHash = await bcrypt.hash(password, 10);
       await User.create({
@@ -108,6 +117,7 @@ function authRouter({ jwtSecret }) {
         referralSource,
         reason,
         educationLevel,
+        referredBy,
       });
 
       const otpResult = await createAndSendOtp(env, { email: normalizedEmail, type: 'register' });

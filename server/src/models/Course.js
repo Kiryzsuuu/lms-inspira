@@ -8,6 +8,8 @@ const courseSchema = new mongoose.Schema(
     priceIdr: { type: Number, default: 0, min: 0 },
     ownerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
     isPublished: { type: Boolean, default: false, index: true },
+    tags: [{ type: String, trim: true }], // keahlian/topik yang dicakup course ini
+    templateId: { type: mongoose.Schema.Types.ObjectId, ref: 'CourseTemplate' }, // template outline yang dipakai
   },
   { timestamps: true }
 );

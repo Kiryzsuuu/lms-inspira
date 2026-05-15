@@ -157,25 +157,26 @@ export default function Dashboard() {
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <QuickActionCard
-                  
                   label="Kelola Kursus"
                   description="Buat, edit, dan kelola semua kursus Anda"
                   href="/dashboard/courses"
                 />
                 <QuickActionCard
-                  
                   label="Bank Soal"
                   description="Kelola koleksi soal dan pertanyaan kuis"
                   href="/dashboard/question-bank"
                 />
                 <QuickActionCard
-                  
                   label="Monitor Siswa"
                   description="Pantau progress dan hasil belajar siswa"
                   href="/dashboard/student-progress"
                 />
                 <QuickActionCard
-                  
+                  label="Royalti Saya"
+                  description="Lihat catatan royalti dari penjualan course Anda"
+                  href="/dashboard/royalties"
+                />
+                <QuickActionCard
                   label="Hero Carousel"
                   description="Kelola slide hero di halaman utama"
                   href="/dashboard/heroes"
@@ -192,19 +193,31 @@ export default function Dashboard() {
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <QuickActionCard
-                  
                   label="Kelola Pengguna"
-                  description="Kelola akun pengguna dan peran mereka"
+                  description="Atur role, royalti, keahlian, dan kode referral setiap akun"
                   href="/dashboard/users"
                 />
                 <QuickActionCard
-
+                  label="Royalti & Referral"
+                  description="Lacak royalti pengajar dan statistik referral"
+                  href="/dashboard/royalties"
+                />
+                <QuickActionCard
+                  label="Template Outline Course"
+                  description="Buat dan kelola template struktur course untuk pengajar"
+                  href="/dashboard/course-templates"
+                />
+                <QuickActionCard
                   label="Pembukuan"
                   description="Lihat laporan keuangan dan transaksi"
                   href="/dashboard/accounting"
                 />
                 <QuickActionCard
-
+                  label="Coupon"
+                  description="Buat dan kelola kode diskon untuk peserta"
+                  href="/dashboard/coupons"
+                />
+                <QuickActionCard
                   label="Kelola Tentang Kami"
                   description="Kelola info platform dan tim pengajar"
                   href="/dashboard/about"

@@ -6,6 +6,7 @@ const { Course } = require('../models/Course');
 const { Order } = require('../models/Order');
 const { User } = require('../models/User');
 const { Coupon } = require('../models/Coupon');
+const { RoyaltyRecord } = require('../models/RoyaltyRecord');
 const { asyncHandler } = require('../utils/asyncHandler');
 const { HttpError } = require('../utils/errors');
 const { getEnv } = require('../utils/env');
@@ -91,10 +92,17 @@ function paymentsRouter({ requireAuth, requireRole, midtrans }) {
       const orderCode = makeOrderCode();
       const amountIdr = payable.reduce((sum, c) => sum + (c.priceIdr || 0), 0);
 
+      // Referral discount: 5% untuk pembelian pertama jika user didaftarkan dengan referral code
+      let referralDiscountAmount = 0;
+      const hasReferral = user.referredBy && !user.isFirstPurchaseDone;
+      if (hasReferral) {
+        referralDiscountAmount = Math.round(amountIdr * 0.05);
+      }
+
       // Validate and apply coupon
       let couponData = null;
-      let discountAmount = 0;
-      let finalAmountIdr = amountIdr;
+      let discountAmount = referralDiscountAmount;
+      let finalAmountIdr = Math.max(0, amountIdr - referralDiscountAmount);
 
       if (couponCode) {
         const coupon = await Coupon.findOne({ code: couponCode.toUpperCase().trim() });
@@ -123,19 +131,21 @@ function paymentsRouter({ requireAuth, requireRole, midtrans }) {
           if (!isApplicable) throw new HttpError(400, 'Coupon tidak berlaku untuk course yang dipilih');
         }
 
+        let couponDiscount = 0;
         if (coupon.discountType === 'percentage') {
-          discountAmount = Math.round((amountIdr * coupon.discountValue) / 100);
+          couponDiscount = Math.round((amountIdr * coupon.discountValue) / 100);
         } else if (coupon.discountType === 'fixed') {
-          discountAmount = coupon.discountValue;
+          couponDiscount = coupon.discountValue;
         } else if (coupon.discountType === 'free') {
-          discountAmount = amountIdr;
+          couponDiscount = amountIdr;
         }
 
+        discountAmount = referralDiscountAmount + couponDiscount;
         finalAmountIdr = Math.max(0, amountIdr - discountAmount);
         couponData = {
           couponId: coupon._id,
           code: coupon.code,
-          discountAmount,
+          discountAmount: couponDiscount,
           finalAmountIdr,
         };
       }
@@ -152,6 +162,7 @@ function paymentsRouter({ requireAuth, requireRole, midtrans }) {
         status: 'pending',
         items,
         amountIdr,
+        referralDiscount: hasReferral ? referralDiscountAmount : undefined,
         coupon: couponData || undefined,
         midtrans: {
           orderId: orderCode,
@@ -213,6 +224,7 @@ function paymentsRouter({ requireAuth, requireRole, midtrans }) {
         orderId: String(order._id),
         orderCode,
         amountIdr,
+        referralDiscountAmount,
         discountAmount,
         finalAmountIdr,
         snapToken: transaction.token,
@@ -304,6 +316,37 @@ function paymentsRouter({ requireAuth, requireRole, midtrans }) {
             { $addToSet: { purchasedCourseIds: { $each: courseIds } } }
           );
 
+          // Mark first purchase done (untuk disable diskon referral berikutnya)
+          const buyer = await User.findById(order.userId).select('referredBy isFirstPurchaseDone royaltyRatio').lean();
+          if (buyer?.referredBy && !buyer?.isFirstPurchaseDone) {
+            await User.updateOne({ _id: order.userId }, { $set: { isFirstPurchaseDone: true } });
+          }
+
+          // Buat RoyaltyRecord untuk setiap course yang terjual
+          const { Course } = require('../models/Course');
+          const royaltyDocs = [];
+          for (const item of order.items) {
+            const course = await Course.findById(item.courseId).select('ownerId').lean();
+            if (!course?.ownerId) continue;
+            const owner = await User.findById(course.ownerId).select('royaltyRatio').lean();
+            const ratio = owner?.royaltyRatio || 0;
+            if (ratio <= 0) continue;
+            royaltyDocs.push({
+              teacherId: course.ownerId,
+              studentId: order.userId,
+              orderId: order._id,
+              courseId: item.courseId,
+              courseTitle: item.title,
+              grossAmountIdr: item.priceIdr || 0,
+              royaltyRatio: ratio,
+              royaltyAmountIdr: Math.round((item.priceIdr || 0) * ratio),
+              status: 'pending',
+            });
+          }
+          if (royaltyDocs.length) {
+            await RoyaltyRecord.insertMany(royaltyDocs);
+          }
+
           // Send purchase confirmation email
           const env = getEnv();
           const user = await User.findById(order.userId).lean();
@@ -318,7 +361,6 @@ function paymentsRouter({ requireAuth, requireRole, midtrans }) {
             }
           } catch (emailErr) {
             console.error('Failed to send purchase confirmation:', emailErr);
-            // Don't fail webhook if email fails
           }
         }
 

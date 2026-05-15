@@ -235,6 +235,14 @@ function coursesRouter({ requireAuth, requireRole }) {
     })
   );
 
+  async function syncTeacherSkills(ownerId, tags) {
+    if (!tags || !tags.length) return;
+    await User.updateOne(
+      { _id: ownerId },
+      { $addToSet: { skills: { $each: tags } } }
+    );
+  }
+
   router.post(
     '/',
     requireAuth,
@@ -244,12 +252,15 @@ function coursesRouter({ requireAuth, requireRole }) {
         title: z.string().min(2),
         description: z.string().optional().default(''),
         coverImageUrl: z.string().optional().default(''),
-        priceIdr: z.coerce.number().int().min(0).optional().default(0),
+        priceIdr: z.coerce.number().min(0).optional().default(0),
         isPublished: z.coerce.boolean().optional().default(false),
+        tags: z.array(z.string()).optional().default([]),
+        templateId: z.string().optional(),
       });
       const data = schema.parse(req.body);
       const ownerId = req.user.role === 'admin' && req.body.ownerId ? req.body.ownerId : req.user.sub;
       const course = await Course.create({ ...data, ownerId });
+      await syncTeacherSkills(ownerId, data.tags);
       res.status(201).json({ course });
     })
   );
@@ -259,17 +270,20 @@ function coursesRouter({ requireAuth, requireRole }) {
     requireAuth,
     requireRole('admin', 'teacher'),
     asyncHandler(async (req, res) => {
-      await assertCanEditCourse(req.params.id, req.user);
+      const course = await assertCanEditCourse(req.params.id, req.user);
       const schema = z.object({
         title: z.string().min(2),
         description: z.string().optional().default(''),
         coverImageUrl: z.string().optional().default(''),
-        priceIdr: z.coerce.number().int().min(0).optional().default(0),
+        priceIdr: z.coerce.number().min(0).optional().default(0),
         isPublished: z.coerce.boolean().optional().default(false),
+        tags: z.array(z.string()).optional().default([]),
+        templateId: z.string().optional().nullable(),
       });
       const data = schema.parse(req.body);
-      const course = await Course.findByIdAndUpdate(req.params.id, data, { new: true });
-      res.json({ course });
+      const updated = await Course.findByIdAndUpdate(req.params.id, data, { new: true });
+      await syncTeacherSkills(course.ownerId, data.tags);
+      res.json({ course: updated });
     })
   );
 
