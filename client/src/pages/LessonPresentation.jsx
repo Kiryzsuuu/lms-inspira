@@ -78,6 +78,9 @@ export default function LessonPresentation() {
   const [note, setNote] = useState('');
   const [lockError, setLockError] = useState('');
   const [markingDone, setMarkingDone] = useState(false);
+  const [comments, setComments] = useState([]);
+  const [commentText, setCommentText] = useState('');
+  const [commentPosting, setCommentPosting] = useState(false);
 
   useEffect(() => {
     api.get(`/courses/${id}`)
@@ -116,7 +119,16 @@ export default function LessonPresentation() {
     setLockError('');
     setView('materi');
     setNote(localStorage.getItem(`note-${lessonId}`) || '');
+    setComments([]);
+    setCommentText('');
   }, [lessonId]);
+
+  useEffect(() => {
+    if (activeTab !== 'diskusi' || !lessonId) return;
+    api.get(`/discussions/lesson/${lessonId}`)
+      .then(r => setComments(r.data.comments || []))
+      .catch(() => setComments([]));
+  }, [activeTab, lessonId, api]);
 
   useEffect(() => {
     const active = lessons.find(l => String(l._id) === String(lessonId));
@@ -175,6 +187,25 @@ export default function LessonPresentation() {
 
   function toggleMod(modId) {
     setOpenMods(prev => { const n = new Set(prev); n.has(modId) ? n.delete(modId) : n.add(modId); return n; });
+  }
+
+  async function postComment() {
+    if (!commentText.trim() || commentPosting) return;
+    setCommentPosting(true);
+    try {
+      const r = await api.post(`/discussions/lesson/${lessonId}`, { content: commentText.trim() });
+      setComments(prev => [r.data.comment, ...prev]);
+      setCommentText('');
+    } catch { /* silent */ } finally {
+      setCommentPosting(false);
+    }
+  }
+
+  async function deleteComment(commentId) {
+    try {
+      await api.delete(`/discussions/${commentId}`);
+      setComments(prev => prev.filter(c => String(c._id) !== String(commentId)));
+    } catch { /* silent */ }
   }
 
   const activeModule = useMemo(() => {
@@ -344,8 +375,8 @@ export default function LessonPresentation() {
             <div style={{ background: `linear-gradient(135deg,${C.tealXs},${C.blueXs})`, border: `1px solid ${C.tealS}`, borderRadius: 10, padding: '0.8rem 1rem', textAlign: 'center' }}>
               {cert.eligible ? (
                 <>
-                  <div style={{ fontSize: '0.77rem', fontWeight: 700, color: C.teal, marginBottom: '0.2rem' }}>Eligible Sertifikat!</div>
-                  <div style={{ fontSize: '0.68rem', color: C.n600, marginBottom: '0.55rem' }}>Selesaikan semua materi untuk mengunduh</div>
+                  <div style={{ fontSize: '0.77rem', fontWeight: 700, color: C.teal, marginBottom: '0.2rem' }}>Course Selesai!</div>
+                  <div style={{ fontSize: '0.68rem', color: C.n600, marginBottom: '0.55rem' }}>Sertifikat siap untuk diunduh</div>
                   <Link to={`/certificate/${id}`} style={{ display: 'block', padding: '0.46rem', background: `linear-gradient(135deg,${C.teal},#0a7a76)`, color: '#fff', borderRadius: 7, fontFamily: 'inherit', fontSize: '0.76rem', fontWeight: 700, textDecoration: 'none', textAlign: 'center' }}>Unduh Sertifikat</Link>
                 </>
               ) : (
@@ -402,9 +433,9 @@ export default function LessonPresentation() {
                       const ml = lessons.filter(l => String(l.moduleId) === String(viewingModule._id));
                       return (
                         <>
-                          <span style={{ fontSize: '0.79rem', color: C.n600 }}>📚 <strong style={{ color: C.n800 }}>{ml.length}</strong> materi</span>
-                          <span style={{ fontSize: '0.79rem', color: C.n600 }}>✅ <strong style={{ color: C.n800 }}>{ml.filter(l => isDone(l._id)).length}</strong> selesai</span>
-                          <span style={{ fontSize: '0.79rem', color: C.n600 }}>📹 <strong style={{ color: C.n800 }}>{ml.filter(l => l.videoEmbedUrl).length}</strong> video</span>
+                          <span style={{ fontSize: '0.79rem', color: C.n600 }}><strong style={{ color: C.n800 }}>{ml.length}</strong> materi</span>
+                          <span style={{ fontSize: '0.79rem', color: C.n600 }}><strong style={{ color: C.teal }}>{ml.filter(l => isDone(l._id)).length}</strong> selesai</span>
+                          <span style={{ fontSize: '0.79rem', color: C.n600 }}><strong style={{ color: C.n800 }}>{ml.filter(l => l.videoEmbedUrl).length}</strong> video</span>
                         </>
                       );
                     })()}
@@ -446,7 +477,7 @@ export default function LessonPresentation() {
                 )}
                 {isPaywalled && (
                   <div style={{ padding: '1rem', background: '#fff1f2', border: '1px solid #fecdd3', borderRadius: 9, color: '#9f1239', fontSize: '0.86rem' }}>
-                    🔒 Kursus berbayar. Beli kursus untuk akses semua materi.
+                    Kursus berbayar. Beli kursus untuk akses semua materi.
                   </div>
                 )}
                 {isActiveCourse && !isPaywalled && (
@@ -543,10 +574,67 @@ export default function LessonPresentation() {
                     )}
                     {/* Diskusi */}
                     {activeTab === 'diskusi' && (
-                      <div style={{ padding: '2rem', textAlign: 'center', background: C.n100, borderRadius: 12, border: `1px solid ${C.n300}` }}>
-                        <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>💬</div>
-                        <div style={{ fontSize: '0.87rem', fontWeight: 600, color: C.n700, marginBottom: '0.35rem' }}>Fitur Diskusi</div>
-                        <div style={{ fontSize: '0.79rem', color: C.n500 }}>Fitur diskusi akan segera hadir.</div>
+                      <div>
+                        <div style={{ marginBottom: '1.25rem' }}>
+                          <textarea
+                            value={commentText}
+                            onChange={e => setCommentText(e.target.value)}
+                            onKeyDown={e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) postComment(); }}
+                            placeholder="Tulis pertanyaan atau komentar... (Ctrl+Enter untuk kirim)"
+                            rows={3}
+                            style={{ width: '100%', border: `1.5px solid ${C.n300}`, borderRadius: 9, padding: '0.75rem', fontFamily: 'inherit', fontSize: '0.84rem', color: C.n800, resize: 'vertical', outline: 'none', background: C.white, lineHeight: 1.6 }}
+                          />
+                          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '0.5rem' }}>
+                            <button
+                              onClick={postComment}
+                              disabled={!commentText.trim() || commentPosting}
+                              style={{ padding: '0.5rem 1.2rem', borderRadius: 8, background: C.blue, color: '#fff', border: 'none', fontFamily: 'inherit', fontSize: '0.82rem', fontWeight: 600, cursor: !commentText.trim() || commentPosting ? 'not-allowed' : 'pointer', opacity: !commentText.trim() || commentPosting ? 0.55 : 1 }}
+                            >
+                              {commentPosting ? 'Mengirim...' : 'Kirim'}
+                            </button>
+                          </div>
+                        </div>
+                        {comments.length === 0 ? (
+                          <div style={{ textAlign: 'center', padding: '2rem', color: C.n500, fontSize: '0.84rem', background: C.n100, borderRadius: 10, border: `1px solid ${C.n300}` }}>
+                            Belum ada diskusi. Jadilah yang pertama bertanya!
+                          </div>
+                        ) : (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                            {comments.map(c => {
+                              const isOwn = String(c.userId?._id) === String(user?.id || user?._id);
+                              const isAdmin = role === 'admin';
+                              return (
+                                <div key={c._id} style={{ padding: '0.82rem', background: C.n100, borderRadius: 10, border: `1px solid ${C.n300}` }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.4rem' }}>
+                                    {c.userId?.avatarUrl ? (
+                                      <img src={c.userId.avatarUrl} alt="" style={{ width: 28, height: 28, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+                                    ) : (
+                                      <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'linear-gradient(135deg,#0C628D,#2E86B5)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem', fontWeight: 700, color: '#fff', flexShrink: 0 }}>
+                                        {(c.userId?.fullName || c.userId?.name || 'U').charAt(0).toUpperCase()}
+                                      </div>
+                                    )}
+                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                      <div style={{ fontSize: '0.78rem', fontWeight: 600, color: C.n800 }}>{c.userId?.fullName || c.userId?.name || 'User'}</div>
+                                      <div style={{ fontSize: '0.67rem', color: C.n400 }}>
+                                        {new Date(c.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                      </div>
+                                    </div>
+                                    {(isOwn || isAdmin) && (
+                                      <button
+                                        onClick={() => deleteComment(c._id)}
+                                        style={{ fontSize: '0.7rem', color: C.n400, background: 'none', border: 'none', cursor: 'pointer', padding: '0.2rem 0.4rem', borderRadius: 5 }}
+                                        title="Hapus"
+                                      >
+                                        Hapus
+                                      </button>
+                                    )}
+                                  </div>
+                                  <div style={{ fontSize: '0.84rem', color: C.n700, lineHeight: 1.65, whiteSpace: 'pre-wrap' }}>{c.content}</div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
                       </div>
                     )}
                     {lockError && (
@@ -582,22 +670,31 @@ export default function LessonPresentation() {
                 </button>
               )}
             </div>
-            <button disabled={nextDisabled}
-              onClick={async () => {
-                if (view === 'module-overview') {
-                  const first = lessons.find(l => String(l.moduleId) === String(viewModId));
-                  if (first) { setView('materi'); nav(`/courses/${id}/lessons/${first._id}`); }
-                  return;
-                }
-                if (!nextLessonId) return;
-                setLockError('');
-                const ok = await markComplete(activeLesson?._id);
-                if (!ok) return;
-                nav(`/courses/${id}/lessons/${nextLessonId}`);
-              }}
-              style={{ display: 'flex', alignItems: 'center', gap: '0.42rem', fontSize: '0.82rem', fontWeight: 600, padding: '0.55rem 1.05rem', borderRadius: 8, background: nextDisabled ? C.n300 : C.blue, color: '#fff', border: 'none', cursor: nextDisabled ? 'not-allowed' : 'pointer', opacity: nextDisabled ? 0.5 : 1, boxShadow: !nextDisabled ? `0 2px 6px rgba(12,98,141,.25)` : 'none', flexShrink: 0 }}>
-              Berikutnya
-            </button>
+            {nextDisabled && cert.eligible ? (
+              <Link
+                to={`/certificate/${id}`}
+                style={{ display: 'flex', alignItems: 'center', gap: '0.42rem', fontSize: '0.82rem', fontWeight: 700, padding: '0.55rem 1.2rem', borderRadius: 8, background: `linear-gradient(135deg,${C.teal},#0a7a76)`, color: '#fff', textDecoration: 'none', boxShadow: '0 2px 8px rgba(11,168,148,.35)', flexShrink: 0 }}
+              >
+                Unduh Sertifikat
+              </Link>
+            ) : (
+              <button disabled={nextDisabled}
+                onClick={async () => {
+                  if (view === 'module-overview') {
+                    const first = lessons.find(l => String(l.moduleId) === String(viewModId));
+                    if (first) { setView('materi'); nav(`/courses/${id}/lessons/${first._id}`); }
+                    return;
+                  }
+                  if (!nextLessonId) return;
+                  setLockError('');
+                  const ok = await markComplete(activeLesson?._id);
+                  if (!ok) return;
+                  nav(`/courses/${id}/lessons/${nextLessonId}`);
+                }}
+                style={{ display: 'flex', alignItems: 'center', gap: '0.42rem', fontSize: '0.82rem', fontWeight: 600, padding: '0.55rem 1.05rem', borderRadius: 8, background: nextDisabled ? C.n300 : C.blue, color: '#fff', border: 'none', cursor: nextDisabled ? 'not-allowed' : 'pointer', opacity: nextDisabled ? 0.5 : 1, boxShadow: !nextDisabled ? `0 2px 6px rgba(12,98,141,.25)` : 'none', flexShrink: 0 }}>
+                Berikutnya
+              </button>
+            )}
           </div>
         </main>
       </div>
