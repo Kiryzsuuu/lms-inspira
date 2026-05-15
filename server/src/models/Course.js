@@ -10,6 +10,9 @@ const courseSchema = new mongoose.Schema(
     ownerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
     isPublished: { type: Boolean, default: false, index: true },
     tags: [{ type: String, trim: true }], // keahlian/topik yang dicakup course ini
+    whatYouLearn:  [{ type: String, trim: true }],
+    requirements:  [{ type: String, trim: true }],
+    targetAudience:[{ type: String, trim: true }],
     templateId: { type: mongoose.Schema.Types.ObjectId, ref: 'CourseTemplate' }, // template outline yang dipakai
   },
   { timestamps: true }

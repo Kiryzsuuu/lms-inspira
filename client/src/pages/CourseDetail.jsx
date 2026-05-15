@@ -77,15 +77,16 @@ function MateriTypeIcon({ lesson }) {
   return <span className="text-slate-400">≡</span>;
 }
 
-function ModuleAccordion({ module, lessons, selectedLesson, onSelectLesson, isPaywalled, isStudent, lessonProgress, canOpenLessonByIndex, lessonIndexOffset }) {
-  const [open, setOpen] = useState(true);
+function ModuleAccordion({ module, lessons, selectedLesson, onSelectLesson, isPaywalled, isStudent, lessonProgress, canOpenLessonByIndex, lessonIndexOffset, forceOpen }) {
+  const [localOpen, setLocalOpen] = useState(true);
+  const open = forceOpen !== undefined ? forceOpen : localOpen;
   const completedCount = lessons.filter((l) => lessonProgress[String(l._id)]?.isCompleted).length;
 
   return (
     <div className="overflow-hidden" style={{ border: '1px solid #E5E7EB', borderRadius: 14 }}>
       <button
         type="button"
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => { if (forceOpen === undefined) setLocalOpen((v) => !v); }}
         className="w-full flex items-center justify-between gap-3 px-4 py-3 text-left transition-colors"
         style={{ background: '#F7F8FA' }}
         onMouseEnter={(e) => { e.currentTarget.style.background = '#F0F8FD'; }}
@@ -184,10 +185,16 @@ export default function CourseDetail() {
   // New state for default view
   const [activeTab, setActiveTab] = useState('ikhtisar');
   const [testimonials, setTestimonials] = useState([]);
-  const [editForm, setEditForm] = useState({ previewVideoUrl: '', coverImageUrl: '', title: '', priceIdr: 0, tags: [] });
+  const [editForm, setEditForm] = useState({ previewVideoUrl: '', coverImageUrl: '', title: '', priceIdr: 0, tags: [], whatYouLearn: [], requirements: [], targetAudience: [] });
   const [editPanelOpen, setEditPanelOpen] = useState(false);
   const [tagInput, setTagInput] = useState('');
   const [mediaLoading, setMediaLoading] = useState(false);
+  const [expandDesc, setExpandDesc] = useState(false);
+  const [allModulesOpen, setAllModulesOpen] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
+  const [wylInput, setWylInput] = useState('');
+  const [reqInput, setReqInput] = useState('');
+  const [audInput, setAudInput] = useState('');
 
   const isPreview = searchParams.get('preview') === '1';
 
@@ -262,6 +269,9 @@ export default function CourseDetail() {
       title: course.title || '',
       priceIdr: course.priceIdr || 0,
       tags: course.tags || [],
+      whatYouLearn:   course.whatYouLearn   || [],
+      requirements:   course.requirements   || [],
+      targetAudience: course.targetAudience || [],
     });
   }, [course]);
 
@@ -415,6 +425,13 @@ export default function CourseDetail() {
     }
   }
 
+  function copyLink() {
+    navigator.clipboard.writeText(window.location.href).then(() => {
+      setLinkCopied(true);
+      setTimeout(() => setLinkCopied(false), 2000);
+    });
+  }
+
   async function addToCart() {
     setLockError('');
     try {
@@ -493,7 +510,11 @@ export default function CourseDetail() {
         priceIdr: course.priceIdr || 0,
         isPublished: course.isPublished || false,
         tags: course.tags || [],
+        whatYouLearn:   course.whatYouLearn   || [],
+        requirements:   course.requirements   || [],
+        targetAudience: course.targetAudience || [],
       });
+      api.get(`/courses/${id}`).then(r => setCourse(r.data.course)).catch(() => {});
       const endpoint = isPreview && (role === 'teacher' || role === 'admin')
         ? `/courses/${id}/preview`
         : `/courses/${id}`;
@@ -520,6 +541,9 @@ export default function CourseDetail() {
         priceIdr: editForm.priceIdr,
         isPublished: course.isPublished || false,
         tags: editForm.tags,
+        whatYouLearn:   editForm.whatYouLearn   || [],
+        requirements:   editForm.requirements   || [],
+        targetAudience: editForm.targetAudience || [],
       });
       const endpoint = isPreview && (role === 'teacher' || role === 'admin')
         ? `/courses/${id}/preview`
@@ -760,6 +784,8 @@ export default function CourseDetail() {
   const instructorInitials = instructorName
     ? instructorName.split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase()
     : 'IN';
+  const instructorSkills      = course.ownerId?.skills      || [];
+  const instructorInstitution = course.ownerId?.institution || '';
   const descriptionPlain = toPlainTextFromHtml(course.description).slice(0, 240);
 
   return (
@@ -821,6 +847,24 @@ export default function CourseDetail() {
                 </p>
               )}
 
+              {/* Rating row */}
+              {testimonials.length > 0 && (
+                <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
+                  <div className="flex items-center gap-0.5">
+                    {[1,2,3,4,5].map(s => (
+                      <span key={s} style={{ color: '#F3921B', fontSize: '0.9rem', lineHeight: 1 }}>&#9733;</span>
+                    ))}
+                  </div>
+                  <span className="font-bold" style={{ color: '#F3921B' }}>5.0</span>
+                  <span className="text-gray-400">·</span>
+                  <span className="text-gray-500">({testimonials.length} ulasan)</span>
+                  <span className="text-gray-400">·</span>
+                  <span className="text-gray-500">
+                    Diperbarui {new Date(course.updatedAt).toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })}
+                  </span>
+                </div>
+              )}
+
               {/* Stats row */}
               <div className="mt-4 flex items-center gap-4 text-sm text-gray-500">
                 <span>{lessons.length} materi</span>
@@ -829,17 +873,26 @@ export default function CourseDetail() {
 
               {/* Instructor block */}
               {instructorName && (
-                <div className="mt-5 flex items-center gap-3">
-                  <div
-                    className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold text-white shrink-0"
-                    style={{ background: 'linear-gradient(135deg, #0C628D, #0FADA8)' }}
-                  >
+                <div className="mt-5 flex items-start gap-3 flex-wrap">
+                  <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-white shrink-0"
+                    style={{ background: 'linear-gradient(135deg,#0C628D,#0FADA8)', fontSize: '0.9rem' }}>
                     {instructorInitials}
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <div className="text-xs text-gray-500">Instruktur</div>
                     <div className="text-sm font-semibold text-gray-900">{instructorName}</div>
+                    {instructorInstitution && (
+                      <div className="text-xs text-gray-500 mt-0.5">{instructorInstitution}</div>
+                    )}
                   </div>
+                  {instructorSkills.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 items-center">
+                      {instructorSkills.slice(0, 3).map((sk) => (
+                        <span key={sk} className="text-xs px-2.5 py-0.5 rounded-full"
+                          style={{ background: '#F3F4F6', color: '#374151' }}>{sk}</span>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -963,6 +1016,37 @@ export default function CourseDetail() {
                       </div>
                     </div>
                   </div>
+
+                  {/* Guarantee */}
+                  <div className="mt-3 flex items-center justify-center gap-1.5">
+                    <div className="w-3.5 h-3.5 rounded-full flex items-center justify-center shrink-0"
+                      style={{ background: '#0FADA8' }}>
+                      <span className="text-white font-bold" style={{ fontSize: '0.55rem', lineHeight: 1 }}>&#10003;</span>
+                    </div>
+                    <span className="text-xs text-gray-500">Garansi uang kembali 30 hari · Tanpa syarat</span>
+                  </div>
+
+                  {/* Share buttons */}
+                  <div className="mt-4 pt-4" style={{ borderTop: '1px solid #F3F4F6' }}>
+                    <div className="text-xs text-center text-gray-500 mb-2">Bagikan kursus:</div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={copyLink}
+                        className="flex-1 text-xs font-semibold py-2 px-3 rounded-[8px] transition-colors"
+                        style={{ border: '1px solid #E5E7EB', background: linkCopied ? '#F0FDF4' : 'white', color: linkCopied ? '#16A34A' : '#374151' }}
+                      >
+                        {linkCopied ? 'Tersalin!' : 'Salin Link'}
+                      </button>
+                      <a
+                        href={`https://wa.me/?text=${encodeURIComponent(typeof window !== 'undefined' ? window.location.href : '')}`}
+                        target="_blank" rel="noreferrer"
+                        className="flex-1 text-xs font-semibold py-2 px-3 rounded-[8px] text-center transition-colors"
+                        style={{ border: '1px solid #E5E7EB', background: 'white', color: '#374151' }}
+                      >
+                        WhatsApp
+                      </a>
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -1025,229 +1109,415 @@ export default function CourseDetail() {
       {/* ── TABS SECTION ── */}
       <div className="py-10" style={{ background: '#F7F8FA' }}>
         <Container>
-          {/* Tab bar */}
-          <div className="flex border-b border-gray-200 mb-8">
-            {[
-              { key: 'ikhtisar', label: 'Ikhtisar' },
-              { key: 'kurikulum', label: 'Kurikulum' },
-              { key: 'ulasan', label: 'Ulasan' },
-            ].map((tab) => (
-              <button
-                key={tab.key}
-                onClick={() => setActiveTab(tab.key)}
-                className="px-5 py-3 font-semibold text-sm transition-colors"
-                style={{
-                  borderBottom: activeTab === tab.key ? '2px solid #0C628D' : '2px solid transparent',
-                  color: activeTab === tab.key ? '#0C628D' : '#6B7280',
-                  marginBottom: '-1px',
-                }}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
-
-          {/* Ikhtisar tab */}
-          {activeTab === 'ikhtisar' && (
-            <div className="max-w-3xl">
-              {course.description ? (
-                <div
-                  className="prose max-w-none text-gray-700 leading-relaxed"
-                  dangerouslySetInnerHTML={{ __html: cleanHtml(course.description) }}
-                />
-              ) : (
-                <p className="text-gray-500 text-sm">Belum ada deskripsi.</p>
-              )}
-              {isPaywalled && (
-                <div className="mt-6 bg-amber-50 border border-amber-200 rounded-[12px] px-4 py-4 text-sm text-amber-800">
-                  Kursus berbayar — silakan checkout untuk mengakses materi.
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Kurikulum tab */}
-          {activeTab === 'kurikulum' && (
-            <div className="max-w-3xl">
-              <div className="text-sm text-gray-500 mb-4">
-                {modules.length > 0 && <span>{modules.length} modul · </span>}
-                <span>{lessons.length} materi</span>
+          <div className="grid lg:grid-cols-[1fr_280px] gap-8 items-start">
+            {/* MAIN: tabs */}
+            <div>
+              {/* Tab bar */}
+              <div className="flex border-b border-gray-200 mb-8">
+                {[
+                  { key: 'ikhtisar',   label: 'Ikhtisar'   },
+                  { key: 'kurikulum',  label: 'Kurikulum'  },
+                  { key: 'instruktur', label: 'Instruktur' },
+                  { key: 'ulasan',     label: 'Ulasan'     },
+                ].map((tab) => (
+                  <button
+                    key={tab.key}
+                    onClick={() => setActiveTab(tab.key)}
+                    className="px-5 py-3 font-semibold text-sm transition-colors"
+                    style={{
+                      borderBottom: activeTab === tab.key ? '2px solid #0C628D' : '2px solid transparent',
+                      color: activeTab === tab.key ? '#0C628D' : '#6B7280',
+                      marginBottom: '-1px',
+                    }}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
               </div>
-              {modules.length > 0 ? (
-                <div className="space-y-2">
-                  {moduleGroups.map(({ module, lessons: mLessons, offset }) => (
-                    <ModuleAccordion
-                      key={module._id}
-                      module={module}
-                      lessons={mLessons}
-                      selectedLesson={null}
-                      onSelectLesson={() => {}}
-                      isPaywalled={isPaywalled}
-                      isStudent={isStudent}
-                      lessonProgress={{}}
-                      canOpenLessonByIndex={() => false}
-                      lessonIndexOffset={offset}
-                    />
-                  ))}
-                </div>
-              ) : (
-                <div className="bg-white rounded-[14px] border border-gray-200 overflow-hidden">
-                  {lessons.map((l, i) => (
-                    <div
-                      key={l._id}
-                      className="flex items-center gap-3 px-4 py-3 text-sm text-gray-700"
-                      style={{ borderTop: i > 0 ? '1px solid #F3F4F6' : 'none' }}
-                    >
-                      <div
-                        className="w-5 h-5 rounded-full flex items-center justify-center text-[0.68rem] font-bold shrink-0"
-                        style={{ background: '#F3F4F6', color: '#6B7280' }}
-                      >
-                        {i + 1}
+
+              {/* Ikhtisar tab */}
+              {activeTab === 'ikhtisar' && (
+                <div className="space-y-8">
+                  {/* Yang Akan Kamu Pelajari */}
+                  {(course.whatYouLearn || []).length > 0 && (
+                    <div className="rounded-[16px] p-6" style={{ border: '1px solid #E5E7EB', background: '#fff' }}>
+                      <h2 className="font-display font-bold text-lg text-gray-900 mb-4">Yang Akan Kamu Pelajari</h2>
+                      <div className="grid sm:grid-cols-2 gap-2.5">
+                        {course.whatYouLearn.map((item, i) => (
+                          <div key={i} className="flex items-start gap-2.5">
+                            <div className="w-4 h-4 rounded-full flex items-center justify-center shrink-0 mt-0.5"
+                              style={{ background: '#0FADA8' }}>
+                              <span className="text-white font-bold" style={{ fontSize: '0.55rem', lineHeight: 1 }}>&#10003;</span>
+                            </div>
+                            <span className="text-sm text-gray-700">{item}</span>
+                          </div>
+                        ))}
                       </div>
-                      <span className="flex-1 truncate">{l.title}</span>
-                      <MateriTypeIcon lesson={l} />
                     </div>
-                  ))}
-                  {lessons.length === 0 && (
-                    <div className="px-4 py-6 text-sm text-gray-400 text-center">Belum ada materi.</div>
+                  )}
+
+                  {/* Prasyarat */}
+                  {(course.requirements || []).length > 0 && (
+                    <div>
+                      <h2 className="font-display font-bold text-lg text-gray-900 mb-3">Prasyarat</h2>
+                      <div className="space-y-2">
+                        {course.requirements.map((item, i) => (
+                          <div key={i} className="flex items-start gap-2.5">
+                            <div className="w-1.5 h-1.5 rounded-full shrink-0 mt-2" style={{ background: '#6B7280' }} />
+                            <span className="text-sm text-gray-700">{item}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Deskripsi with expand toggle */}
+                  <div>
+                    <h2 className="font-display font-bold text-lg text-gray-900 mb-3">Deskripsi</h2>
+                    {course.description ? (
+                      <>
+                        <div
+                          className="prose max-w-none text-gray-700 leading-relaxed"
+                          style={{ overflow: 'hidden', maxHeight: expandDesc ? 'none' : '9rem' }}
+                          dangerouslySetInnerHTML={{ __html: cleanHtml(course.description) }}
+                        />
+                        {toPlainTextFromHtml(course.description || '').length > 300 && (
+                          <button
+                            onClick={() => setExpandDesc((v) => !v)}
+                            className="mt-2 text-sm font-semibold"
+                            style={{ color: '#0C628D' }}
+                          >
+                            {expandDesc ? 'Tampilkan lebih sedikit' : 'Baca selengkapnya'}
+                          </button>
+                        )}
+                      </>
+                    ) : (
+                      <p className="text-gray-500 text-sm">Belum ada deskripsi.</p>
+                    )}
+                  </div>
+
+                  {isPaywalled && (
+                    <div className="bg-amber-50 border border-amber-200 rounded-[12px] px-4 py-4 text-sm text-amber-800">
+                      Kursus berbayar — silakan checkout untuk mengakses materi.
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Kurikulum tab */}
+              {activeTab === 'kurikulum' && (
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="text-sm text-gray-500">
+                      {modules.length > 0 && <span>{modules.length} modul · </span>}
+                      <span>{lessons.length} materi</span>
+                    </div>
+                    {modules.length > 0 && (
+                      <button
+                        onClick={() => setAllModulesOpen((v) => !v)}
+                        className="text-sm font-semibold transition-colors hover:underline"
+                        style={{ color: '#0C628D' }}
+                      >
+                        {allModulesOpen ? 'Tutup semua modul' : 'Buka semua modul'}
+                      </button>
+                    )}
+                  </div>
+                  {modules.length > 0 ? (
+                    <div className="space-y-2">
+                      {moduleGroups.map(({ module, lessons: mLessons, offset }) => (
+                        <ModuleAccordion
+                          key={module._id}
+                          module={module}
+                          lessons={mLessons}
+                          selectedLesson={null}
+                          onSelectLesson={() => {}}
+                          isPaywalled={isPaywalled}
+                          isStudent={isStudent}
+                          lessonProgress={{}}
+                          canOpenLessonByIndex={() => false}
+                          lessonIndexOffset={offset}
+                          forceOpen={allModulesOpen ? true : undefined}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="bg-white rounded-[14px] border border-gray-200 overflow-hidden">
+                      {lessons.map((l, i) => (
+                        <div
+                          key={l._id}
+                          className="flex items-center gap-3 px-4 py-3 text-sm text-gray-700"
+                          style={{ borderTop: i > 0 ? '1px solid #F3F4F6' : 'none' }}
+                        >
+                          <div
+                            className="w-5 h-5 rounded-full flex items-center justify-center text-[0.68rem] font-bold shrink-0"
+                            style={{ background: '#F3F4F6', color: '#6B7280' }}
+                          >
+                            {i + 1}
+                          </div>
+                          <span className="flex-1 truncate">{l.title}</span>
+                          <MateriTypeIcon lesson={l} />
+                        </div>
+                      ))}
+                      {lessons.length === 0 && (
+                        <div className="px-4 py-6 text-sm text-gray-400 text-center">Belum ada materi.</div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Instruktur tab */}
+              {activeTab === 'instruktur' && (
+                <div>
+                  <div className="bg-white rounded-[16px] p-6" style={{ border: '1px solid #E5E7EB' }}>
+                    <div className="flex items-start gap-4">
+                      <div className="w-16 h-16 rounded-full flex items-center justify-center text-xl font-bold text-white shrink-0"
+                        style={{ background: 'linear-gradient(135deg,#0C628D,#0FADA8)' }}>
+                        {instructorInitials}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="font-display font-bold text-xl text-gray-900">{instructorName || 'Instruktur'}</div>
+                        {instructorInstitution && (
+                          <div className="text-gray-500 mt-0.5 text-sm">{instructorInstitution}</div>
+                        )}
+                        {instructorSkills.length > 0 && (
+                          <div className="flex flex-wrap gap-2 mt-3">
+                            {instructorSkills.map((sk) => (
+                              <span key={sk} className="text-xs font-semibold px-2.5 py-1 rounded-full"
+                                style={{ background: '#EBF6FC', color: '#0C628D' }}>{sk}</span>
+                            ))}
+                          </div>
+                        )}
+                        <div className="flex flex-wrap gap-6 mt-4">
+                          {[
+                            { value: testimonials.length, label: 'Ulasan' },
+                            { value: lessons.length,      label: 'Materi' },
+                            { value: modules.length,      label: 'Modul'  },
+                          ].map((stat) => (
+                            <div key={stat.label} className="text-center">
+                              <div className="font-display font-bold text-xl" style={{ color: '#0C628D' }}>{stat.value}</div>
+                              <div className="text-xs text-gray-500 mt-0.5">{stat.label}</div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Ulasan tab */}
+              {activeTab === 'ulasan' && (
+                <div>
+                  {testimonials.length === 0 ? (
+                    <p className="text-sm text-gray-500">Belum ada ulasan.</p>
+                  ) : (
+                    <div className="space-y-4">
+                      {testimonials.map((t) => {
+                        const nameInitial = (t.name || 'U').charAt(0).toUpperCase();
+                        return (
+                          <div key={t._id} className="bg-white rounded-[14px] border border-gray-200 p-5">
+                            <div className="flex items-start gap-3">
+                              <div
+                                className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold text-white shrink-0"
+                                style={{ background: 'linear-gradient(135deg, #0C628D, #0FADA8)' }}
+                              >
+                                {nameInitial}
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <div className="flex items-baseline gap-2 flex-wrap">
+                                  <span className="font-semibold text-sm text-gray-900">{t.name}</span>
+                                  {t.role && <span className="text-xs text-gray-500">{t.role}</span>}
+                                </div>
+                                <p className="mt-1 text-sm text-gray-700 leading-relaxed">{t.text || t.content || t.message || ''}</p>
+                                {t.createdAt && (
+                                  <div className="mt-1.5 text-xs text-gray-400">{timeAgo(t.createdAt)}</div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Teacher/admin edit detail section */}
+              {!isStudent && (
+                <div className="mt-10">
+                  <button
+                    onClick={() => setEditPanelOpen((v) => !v)}
+                    className="flex items-center gap-2 text-sm font-semibold text-gray-600 hover:text-gray-900 transition-colors"
+                  >
+                    <svg
+                      className="h-4 w-4 transition-transform"
+                      style={{ transform: editPanelOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
+                      fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                    Edit Detail Kursus
+                  </button>
+
+                  {editPanelOpen && (
+                    <div className="mt-4 bg-white rounded-[16px] border border-gray-200 p-6 space-y-5">
+                      {/* Title */}
+                      <div>
+                        <label className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1.5 block">Judul</label>
+                        <Input
+                          value={editForm.title}
+                          onChange={(e) => setEditForm((f) => ({ ...f, title: e.target.value }))}
+                        />
+                      </div>
+
+                      {/* Tags */}
+                      <div>
+                        <label className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1.5 block">Tag</label>
+                        <div className="flex flex-wrap gap-2 mb-2">
+                          {editForm.tags.map((tag, i) => (
+                            <span key={i} className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full" style={{ background: '#EBF6FC', color: '#0C628D' }}>
+                              {tag}
+                              <button
+                                type="button"
+                                onClick={() => setEditForm((f) => ({ ...f, tags: f.tags.filter((_, ti) => ti !== i) }))}
+                                className="hover:text-red-500 transition-colors font-bold leading-none"
+                              >
+                                x
+                              </button>
+                            </span>
+                          ))}
+                        </div>
+                        <Input
+                          placeholder="Ketik tag, tekan Enter atau koma untuk menambah"
+                          value={tagInput}
+                          onChange={(e) => setTagInput(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ',') {
+                              e.preventDefault();
+                              const val = tagInput.replace(',', '').trim();
+                              if (val && !editForm.tags.includes(val)) {
+                                setEditForm((f) => ({ ...f, tags: [...f.tags, val] }));
+                              }
+                              setTagInput('');
+                            }
+                          }}
+                        />
+                      </div>
+
+                      {/* Price */}
+                      <div>
+                        <label className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1.5 block">Harga (IDR)</label>
+                        <Input
+                          type="number"
+                          min="0"
+                          value={editForm.priceIdr}
+                          onChange={(e) => setEditForm((f) => ({ ...f, priceIdr: Number(e.target.value) }))}
+                        />
+                      </div>
+
+                      {/* Yang Akan Kamu Pelajari */}
+                      <div>
+                        <label className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1.5 block">Yang Akan Kamu Pelajari</label>
+                        <div className="space-y-1.5 mb-2">
+                          {(editForm.whatYouLearn || []).map((item, i) => (
+                            <div key={i} className="flex items-center gap-2">
+                              <span className="flex-1 text-sm text-gray-700 bg-gray-50 rounded-[8px] px-3 py-1.5 border border-gray-200">{item}</span>
+                              <button type="button" onClick={() => setEditForm((f) => ({ ...f, whatYouLearn: f.whatYouLearn.filter((_, idx) => idx !== i) }))}
+                                className="text-rose-500 hover:text-rose-700 text-xs font-bold px-2">x</button>
+                            </div>
+                          ))}
+                        </div>
+                        <div className="flex gap-2">
+                          <Input placeholder="Tambah poin belajar..." value={wylInput} onChange={(e) => setWylInput(e.target.value)}
+                            onKeyDown={(e) => { if (e.key === 'Enter' && wylInput.trim()) { e.preventDefault(); setEditForm((f) => ({ ...f, whatYouLearn: [...(f.whatYouLearn || []), wylInput.trim()] })); setWylInput(''); }}} />
+                          <Button type="button" variant="outline" size="sm" onClick={() => { if (wylInput.trim()) { setEditForm((f) => ({ ...f, whatYouLearn: [...(f.whatYouLearn || []), wylInput.trim()] })); setWylInput(''); }}}>Tambah</Button>
+                        </div>
+                      </div>
+
+                      {/* Prasyarat */}
+                      <div>
+                        <label className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1.5 block">Prasyarat</label>
+                        <div className="space-y-1.5 mb-2">
+                          {(editForm.requirements || []).map((item, i) => (
+                            <div key={i} className="flex items-center gap-2">
+                              <span className="flex-1 text-sm text-gray-700 bg-gray-50 rounded-[8px] px-3 py-1.5 border border-gray-200">{item}</span>
+                              <button type="button" onClick={() => setEditForm((f) => ({ ...f, requirements: f.requirements.filter((_, idx) => idx !== i) }))}
+                                className="text-rose-500 hover:text-rose-700 text-xs font-bold px-2">x</button>
+                            </div>
+                          ))}
+                        </div>
+                        <div className="flex gap-2">
+                          <Input placeholder="Tambah prasyarat..." value={reqInput} onChange={(e) => setReqInput(e.target.value)}
+                            onKeyDown={(e) => { if (e.key === 'Enter' && reqInput.trim()) { e.preventDefault(); setEditForm((f) => ({ ...f, requirements: [...(f.requirements || []), reqInput.trim()] })); setReqInput(''); }}} />
+                          <Button type="button" variant="outline" size="sm" onClick={() => { if (reqInput.trim()) { setEditForm((f) => ({ ...f, requirements: [...(f.requirements || []), reqInput.trim()] })); setReqInput(''); }}}>Tambah</Button>
+                        </div>
+                      </div>
+
+                      {/* Untuk Siapa */}
+                      <div>
+                        <label className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1.5 block">Kursus Ini Untuk Siapa</label>
+                        <div className="space-y-1.5 mb-2">
+                          {(editForm.targetAudience || []).map((item, i) => (
+                            <div key={i} className="flex items-center gap-2">
+                              <span className="flex-1 text-sm text-gray-700 bg-gray-50 rounded-[8px] px-3 py-1.5 border border-gray-200">{item}</span>
+                              <button type="button" onClick={() => setEditForm((f) => ({ ...f, targetAudience: f.targetAudience.filter((_, idx) => idx !== i) }))}
+                                className="text-rose-500 hover:text-rose-700 text-xs font-bold px-2">x</button>
+                            </div>
+                          ))}
+                        </div>
+                        <div className="flex gap-2">
+                          <Input placeholder="Tambah target audiens..." value={audInput} onChange={(e) => setAudInput(e.target.value)}
+                            onKeyDown={(e) => { if (e.key === 'Enter' && audInput.trim()) { e.preventDefault(); setEditForm((f) => ({ ...f, targetAudience: [...(f.targetAudience || []), audInput.trim()] })); setAudInput(''); }}} />
+                          <Button type="button" variant="outline" size="sm" onClick={() => { if (audInput.trim()) { setEditForm((f) => ({ ...f, targetAudience: [...(f.targetAudience || []), audInput.trim()] })); setAudInput(''); }}}>Tambah</Button>
+                        </div>
+                      </div>
+
+                      {/* Actions */}
+                      <div className="flex flex-wrap items-center gap-3 pt-1">
+                        <Button onClick={saveDetails}>Simpan Perubahan</Button>
+                        <button
+                          type="button"
+                          onClick={() => window.open(`/courses/${id}?preview=1`, '_blank')}
+                          className="text-sm font-semibold text-[#0C628D] hover:underline"
+                        >
+                          Preview sebagai Siswa
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => window.open('/dashboard/courses', '_blank')}
+                          className="text-sm font-semibold text-[#0C628D] hover:underline"
+                        >
+                          Buka CourseManager
+                        </button>
+                      </div>
+                    </div>
                   )}
                 </div>
               )}
             </div>
-          )}
 
-          {/* Ulasan tab */}
-          {activeTab === 'ulasan' && (
-            <div className="max-w-3xl">
-              {testimonials.length === 0 ? (
-                <p className="text-sm text-gray-500">Belum ada ulasan.</p>
-              ) : (
-                <div className="space-y-4">
-                  {testimonials.map((t) => {
-                    const nameInitial = (t.name || 'U').charAt(0).toUpperCase();
-                    return (
-                      <div key={t._id} className="bg-white rounded-[14px] border border-gray-200 p-5">
-                        <div className="flex items-start gap-3">
-                          <div
-                            className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold text-white shrink-0"
-                            style={{ background: 'linear-gradient(135deg, #0C628D, #0FADA8)' }}
-                          >
-                            {nameInitial}
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-baseline gap-2 flex-wrap">
-                              <span className="font-semibold text-sm text-gray-900">{t.name}</span>
-                              {t.role && <span className="text-xs text-gray-500">{t.role}</span>}
-                            </div>
-                            <p className="mt-1 text-sm text-gray-700 leading-relaxed">{t.text || t.content || t.message || ''}</p>
-                            {t.createdAt && (
-                              <div className="mt-1.5 text-xs text-gray-400">{timeAgo(t.createdAt)}</div>
-                            )}
-                          </div>
+            {/* ASIDE: right column */}
+            <aside className="hidden lg:block space-y-4">
+              {/* Untuk Siapa */}
+              {(course.targetAudience || []).length > 0 && (
+                <div className="bg-white rounded-[16px] p-5" style={{ border: '1px solid #E5E7EB' }}>
+                  <h3 className="font-display font-bold text-base text-gray-900 mb-3">Kursus Ini Untuk Siapa</h3>
+                  <div className="space-y-2">
+                    {course.targetAudience.map((item, i) => (
+                      <div key={i} className="flex items-start gap-2.5 text-sm text-gray-700">
+                        <div className="w-4 h-4 rounded-full flex items-center justify-center shrink-0 mt-0.5"
+                          style={{ background: '#EBF6FC' }}>
+                          <span className="font-bold" style={{ color: '#0C628D', fontSize: '0.55rem', lineHeight: 1 }}>&#10003;</span>
                         </div>
+                        {item}
                       </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Teacher/admin edit detail section */}
-          {!isStudent && (
-            <div className="mt-10 max-w-3xl">
-              <button
-                onClick={() => setEditPanelOpen((v) => !v)}
-                className="flex items-center gap-2 text-sm font-semibold text-gray-600 hover:text-gray-900 transition-colors"
-              >
-                <svg
-                  className="h-4 w-4 transition-transform"
-                  style={{ transform: editPanelOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
-                  fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-                Edit Detail Kursus
-              </button>
-
-              {editPanelOpen && (
-                <div className="mt-4 bg-white rounded-[16px] border border-gray-200 p-6 space-y-4">
-                  {/* Title */}
-                  <div>
-                    <label className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1.5 block">Judul</label>
-                    <Input
-                      value={editForm.title}
-                      onChange={(e) => setEditForm((f) => ({ ...f, title: e.target.value }))}
-                    />
-                  </div>
-
-                  {/* Tags */}
-                  <div>
-                    <label className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1.5 block">Tag</label>
-                    <div className="flex flex-wrap gap-2 mb-2">
-                      {editForm.tags.map((tag, i) => (
-                        <span key={i} className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full" style={{ background: '#EBF6FC', color: '#0C628D' }}>
-                          {tag}
-                          <button
-                            type="button"
-                            onClick={() => setEditForm((f) => ({ ...f, tags: f.tags.filter((_, ti) => ti !== i) }))}
-                            className="hover:text-red-500 transition-colors font-bold leading-none"
-                          >
-                            x
-                          </button>
-                        </span>
-                      ))}
-                    </div>
-                    <Input
-                      placeholder="Ketik tag, tekan Enter atau koma untuk menambah"
-                      value={tagInput}
-                      onChange={(e) => setTagInput(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ',') {
-                          e.preventDefault();
-                          const val = tagInput.replace(',', '').trim();
-                          if (val && !editForm.tags.includes(val)) {
-                            setEditForm((f) => ({ ...f, tags: [...f.tags, val] }));
-                          }
-                          setTagInput('');
-                        }
-                      }}
-                    />
-                  </div>
-
-                  {/* Price */}
-                  <div>
-                    <label className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1.5 block">Harga (IDR)</label>
-                    <Input
-                      type="number"
-                      min="0"
-                      value={editForm.priceIdr}
-                      onChange={(e) => setEditForm((f) => ({ ...f, priceIdr: Number(e.target.value) }))}
-                    />
-                  </div>
-
-                  {/* Actions */}
-                  <div className="flex flex-wrap items-center gap-3 pt-1">
-                    <Button onClick={saveDetails}>Simpan Perubahan</Button>
-                    <button
-                      type="button"
-                      onClick={() => window.open(`/courses/${id}?preview=1`, '_blank')}
-                      className="text-sm font-semibold text-[#0C628D] hover:underline"
-                    >
-                      Preview sebagai Siswa
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => window.open('/dashboard/courses', '_blank')}
-                      className="text-sm font-semibold text-[#0C628D] hover:underline"
-                    >
-                      Buka CourseManager
-                    </button>
+                    ))}
                   </div>
                 </div>
               )}
-            </div>
-          )}
+            </aside>
+          </div>
         </Container>
       </div>
     </div>

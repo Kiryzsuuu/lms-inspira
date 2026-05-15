@@ -69,7 +69,7 @@ function coursesRouter({ requireAuth, requireRole }) {
   router.get(
     '/:id',
     asyncHandler(async (req, res) => {
-      const course = await Course.findById(req.params.id).populate('ownerId', 'name');
+      const course = await Course.findById(req.params.id).populate('ownerId', 'name skills institution');
       if (!course) throw new HttpError(404, 'Course not found');
       if (!course.isPublished) throw new HttpError(404, 'Course not found');
 
@@ -90,7 +90,7 @@ function coursesRouter({ requireAuth, requireRole }) {
     requireRole('admin', 'teacher'),
     asyncHandler(async (req, res) => {
       await assertCanEditCourse(req.params.id, req.user);
-      const course = await Course.findById(req.params.id).populate('ownerId', 'name');
+      const course = await Course.findById(req.params.id).populate('ownerId', 'name skills institution');
 
       const [modules, lessons, quizzes] = await Promise.all([
         Module.find({ courseId: course._id }).sort({ order: 1, createdAt: 1 }),
@@ -304,6 +304,9 @@ function coursesRouter({ requireAuth, requireRole }) {
         priceIdr: z.coerce.number().min(0).optional().default(0),
         isPublished: z.coerce.boolean().optional().default(false),
         tags: z.array(z.string()).optional().default([]),
+        whatYouLearn:   z.array(z.string()).optional().default([]),
+        requirements:   z.array(z.string()).optional().default([]),
+        targetAudience: z.array(z.string()).optional().default([]),
         templateId: z.string().optional().nullable(),
       });
       const data = schema.parse(req.body);
