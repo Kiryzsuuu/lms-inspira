@@ -735,6 +735,56 @@ export default function CourseDetail() {
                 ))}
               </div>
 
+              {/* Curriculum accordion */}
+              {lessons.length > 0 && (
+                <div className="mt-6 pt-6" style={{ borderTop: '1px solid #F3F4F6' }}>
+                  <div className="mb-4">
+                    <span className="text-sm font-semibold text-gray-900">
+                      {modules.length > 0
+                        ? `${modules.length} Modules · ${lessons.length} Lessons`
+                        : `${lessons.length} Lessons`}
+                    </span>
+                  </div>
+                  {modules.length > 0 ? (
+                    <div className="space-y-2">
+                      {moduleGroups.map(({ module: mod, lessons: mLessons, offset }) => (
+                        <ModuleAccordion
+                          key={mod._id}
+                          module={mod}
+                          lessons={mLessons}
+                          selectedLesson={null}
+                          onSelectLesson={isEnrolled ? handleSelectLesson : () => {}}
+                          isPaywalled={isPaywalled}
+                          isStudent={isStudent}
+                          lessonProgress={isEnrolled ? lessonProgress : {}}
+                          canOpenLessonByIndex={isEnrolled ? canOpenLessonByIndex : () => false}
+                          lessonIndexOffset={offset}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="bg-white rounded-[14px] border border-gray-200 overflow-hidden">
+                      {lessons.map((l, i) => (
+                        <div
+                          key={l._id}
+                          className="flex items-center gap-3 px-4 py-3 text-sm text-gray-700"
+                          style={{ borderTop: i > 0 ? '1px solid #F3F4F6' : 'none' }}
+                        >
+                          <div
+                            className="w-5 h-5 rounded-full flex items-center justify-center text-[0.68rem] font-bold shrink-0"
+                            style={{ background: '#F3F4F6', color: '#6B7280' }}
+                          >
+                            {i + 1}
+                          </div>
+                          <span className="flex-1 truncate">{l.title}</span>
+                          <MateriTypeIcon lesson={l} />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
             </div>
 
             {/* RIGHT column — sticky enrollment card */}
