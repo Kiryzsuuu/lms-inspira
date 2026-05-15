@@ -981,231 +981,48 @@ export default function CourseDetail() {
         </Container>
       </div>
 
-      {/* ── TABS SECTION ── */}
+      {/* ── REVIEWS & EDIT SECTION ── */}
       <div className="py-10" style={{ background: '#F7F8FA' }}>
         <Container>
           <div className="grid lg:grid-cols-[1fr_280px] gap-8 items-start">
-            {/* MAIN: tabs */}
+            {/* MAIN */}
             <div>
-              {/* Tab bar */}
-              <div id="course-tabs" className="flex border-b border-gray-200 mb-8">
-                {[
-                  { key: 'ikhtisar',   label: 'Ikhtisar'   },
-                  { key: 'kurikulum',  label: 'Kurikulum'  },
-                  { key: 'instruktur', label: 'Instruktur' },
-                  { key: 'ulasan',     label: 'Ulasan'     },
-                ].map((tab) => (
-                  <button
-                    key={tab.key}
-                    onClick={() => setActiveTab(tab.key)}
-                    className="px-5 py-3 font-semibold text-sm transition-colors"
-                    style={{
-                      borderBottom: activeTab === tab.key ? '2px solid #0C628D' : '2px solid transparent',
-                      color: activeTab === tab.key ? '#0C628D' : '#6B7280',
-                      marginBottom: '-1px',
-                    }}
-                  >
-                    {tab.label}
-                  </button>
-                ))}
+
+              {/* Reviews */}
+              <div>
+                {testimonials.length > 0 && (
+                  <h2 className="font-display font-bold text-lg text-gray-900 mb-4">Reviews</h2>
+                )}
+                {testimonials.length === 0 ? null : (
+                  <div className="space-y-4">
+                    {testimonials.map((t) => {
+                      const nameInitial = (t.name || 'U').charAt(0).toUpperCase();
+                      return (
+                        <div key={t._id} className="bg-white rounded-[14px] border border-gray-200 p-5">
+                          <div className="flex items-start gap-3">
+                            <div
+                              className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold text-white shrink-0"
+                              style={{ background: 'linear-gradient(135deg, #0C628D, #0FADA8)' }}
+                            >
+                              {nameInitial}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-baseline gap-2 flex-wrap">
+                                <span className="font-semibold text-sm text-gray-900">{t.name}</span>
+                                {t.role && <span className="text-xs text-gray-500">{t.role}</span>}
+                              </div>
+                              <p className="mt-1 text-sm text-gray-700 leading-relaxed">{t.text || t.content || t.message || ''}</p>
+                              {t.createdAt && (
+                                <div className="mt-1.5 text-xs text-gray-400">{timeAgo(t.createdAt)}</div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
-
-              {/* Ikhtisar tab */}
-              {activeTab === 'ikhtisar' && (
-                <div className="space-y-8">
-                  {/* Yang Akan Kamu Pelajari */}
-                  {(course.whatYouLearn || []).length > 0 && (
-                    <div className="rounded-[16px] p-6" style={{ border: '1px solid #E5E7EB', background: '#fff' }}>
-                      <h2 className="font-display font-bold text-lg text-gray-900 mb-4">Yang Akan Kamu Pelajari</h2>
-                      <div className="grid sm:grid-cols-2 gap-2.5">
-                        {course.whatYouLearn.map((item, i) => (
-                          <div key={i} className="flex items-start gap-2.5">
-                            <div className="w-4 h-4 rounded-full flex items-center justify-center shrink-0 mt-0.5"
-                              style={{ background: '#0FADA8' }}>
-                              <span className="text-white font-bold" style={{ fontSize: '0.55rem', lineHeight: 1 }}>&#10003;</span>
-                            </div>
-                            <span className="text-sm text-gray-700">{item}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Prasyarat */}
-                  {(course.requirements || []).length > 0 && (
-                    <div>
-                      <h2 className="font-display font-bold text-lg text-gray-900 mb-3">Prasyarat</h2>
-                      <div className="space-y-2">
-                        {course.requirements.map((item, i) => (
-                          <div key={i} className="flex items-start gap-2.5">
-                            <div className="w-1.5 h-1.5 rounded-full shrink-0 mt-2" style={{ background: '#6B7280' }} />
-                            <span className="text-sm text-gray-700">{item}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Deskripsi with expand toggle */}
-                  <div>
-                    <h2 className="font-display font-bold text-lg text-gray-900 mb-3">Deskripsi</h2>
-                    {course.description ? (
-                      <>
-                        <div
-                          className="prose max-w-none text-gray-700 leading-relaxed"
-                          style={{ overflow: 'hidden', maxHeight: expandDesc ? 'none' : '9rem' }}
-                          dangerouslySetInnerHTML={{ __html: cleanHtml(course.description) }}
-                        />
-                        {toPlainTextFromHtml(course.description || '').length > 300 && (
-                          <button
-                            onClick={() => setExpandDesc((v) => !v)}
-                            className="mt-2 text-sm font-semibold"
-                            style={{ color: '#0C628D' }}
-                          >
-                            {expandDesc ? 'Tampilkan lebih sedikit' : 'Baca selengkapnya'}
-                          </button>
-                        )}
-                      </>
-                    ) : (
-                      <p className="text-gray-500 text-sm">Belum ada deskripsi.</p>
-                    )}
-                  </div>
-
-                  {isPaywalled && (
-                    <div className="bg-amber-50 border border-amber-200 rounded-[12px] px-4 py-4 text-sm text-amber-800">
-                      Paid course — please checkout to access all lessons.
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Kurikulum tab */}
-              {activeTab === 'kurikulum' && (
-                <div>
-                  <div className="mb-4 text-sm text-gray-500">
-                    {modules.length > 0 && <span>{modules.length} modules · </span>}
-                    <span>{lessons.length} lessons</span>
-                  </div>
-                  {modules.length > 0 ? (
-                    <div className="space-y-2">
-                      {moduleGroups.map(({ module, lessons: mLessons, offset }) => (
-                        <ModuleAccordion
-                          key={module._id}
-                          module={module}
-                          lessons={mLessons}
-                          selectedLesson={null}
-                          onSelectLesson={isEnrolled ? handleSelectLesson : () => {}}
-                          isPaywalled={isPaywalled}
-                          isStudent={isStudent}
-                          lessonProgress={isEnrolled ? lessonProgress : {}}
-                          canOpenLessonByIndex={isEnrolled ? canOpenLessonByIndex : () => false}
-                          lessonIndexOffset={offset}
-                          forceOpen={allModulesOpen ? true : undefined}
-                        />
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="bg-white rounded-[14px] border border-gray-200 overflow-hidden">
-                      {lessons.map((l, i) => (
-                        <div
-                          key={l._id}
-                          className="flex items-center gap-3 px-4 py-3 text-sm text-gray-700"
-                          style={{ borderTop: i > 0 ? '1px solid #F3F4F6' : 'none' }}
-                        >
-                          <div
-                            className="w-5 h-5 rounded-full flex items-center justify-center text-[0.68rem] font-bold shrink-0"
-                            style={{ background: '#F3F4F6', color: '#6B7280' }}
-                          >
-                            {i + 1}
-                          </div>
-                          <span className="flex-1 truncate">{l.title}</span>
-                          <MateriTypeIcon lesson={l} />
-                        </div>
-                      ))}
-                      {lessons.length === 0 && (
-                        <div className="px-4 py-6 text-sm text-gray-400 text-center">Belum ada materi.</div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Instruktur tab */}
-              {activeTab === 'instruktur' && (
-                <div>
-                  <div className="bg-white rounded-[16px] p-6" style={{ border: '1px solid #E5E7EB' }}>
-                    <div className="flex items-start gap-4">
-                      <div className="w-16 h-16 rounded-full flex items-center justify-center text-xl font-bold text-white shrink-0"
-                        style={{ background: 'linear-gradient(135deg,#0C628D,#0FADA8)' }}>
-                        {instructorInitials}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="font-display font-bold text-xl text-gray-900">{instructorName || 'Instruktur'}</div>
-                        {instructorInstitution && (
-                          <div className="text-gray-500 mt-0.5 text-sm">{instructorInstitution}</div>
-                        )}
-                        {instructorSkills.length > 0 && (
-                          <div className="flex flex-wrap gap-2 mt-3">
-                            {instructorSkills.map((sk) => (
-                              <span key={sk} className="text-xs font-semibold px-2.5 py-1 rounded-full"
-                                style={{ background: '#EBF6FC', color: '#0C628D' }}>{sk}</span>
-                            ))}
-                          </div>
-                        )}
-                        <div className="flex flex-wrap gap-6 mt-4">
-                          {[
-                            { value: testimonials.length, label: 'Ulasan' },
-                            { value: lessons.length,      label: 'Materi' },
-                            { value: modules.length,      label: 'Modul'  },
-                          ].map((stat) => (
-                            <div key={stat.label} className="text-center">
-                              <div className="font-display font-bold text-xl" style={{ color: '#0C628D' }}>{stat.value}</div>
-                              <div className="text-xs text-gray-500 mt-0.5">{stat.label}</div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Ulasan tab */}
-              {activeTab === 'ulasan' && (
-                <div>
-                  {testimonials.length === 0 ? (
-                    <p className="text-sm text-gray-500">Belum ada ulasan.</p>
-                  ) : (
-                    <div className="space-y-4">
-                      {testimonials.map((t) => {
-                        const nameInitial = (t.name || 'U').charAt(0).toUpperCase();
-                        return (
-                          <div key={t._id} className="bg-white rounded-[14px] border border-gray-200 p-5">
-                            <div className="flex items-start gap-3">
-                              <div
-                                className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold text-white shrink-0"
-                                style={{ background: 'linear-gradient(135deg, #0C628D, #0FADA8)' }}
-                              >
-                                {nameInitial}
-                              </div>
-                              <div className="min-w-0 flex-1">
-                                <div className="flex items-baseline gap-2 flex-wrap">
-                                  <span className="font-semibold text-sm text-gray-900">{t.name}</span>
-                                  {t.role && <span className="text-xs text-gray-500">{t.role}</span>}
-                                </div>
-                                <p className="mt-1 text-sm text-gray-700 leading-relaxed">{t.text || t.content || t.message || ''}</p>
-                                {t.createdAt && (
-                                  <div className="mt-1.5 text-xs text-gray-400">{timeAgo(t.createdAt)}</div>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              )}
 
               {/* Teacher/admin edit detail section */}
               {!isStudent && !isPreview && (
