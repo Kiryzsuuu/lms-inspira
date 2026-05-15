@@ -42,12 +42,6 @@ const WHY_ITEMS = [
   { title: 'Akses Seumur Hidup', desc: 'Beli sekali, punya selamanya. Saat materi diupdate, kamu dapat akses ke versi baru tanpa bayar lagi.', bg: '#F0FDE4' },
 ];
 
-const TESTIMONIALS = [
-  { text: '"Dari fresh grad bingung mau ngapain, sekarang jadi junior developer di startup fintech. Kursus React-nya langsung applicable ke kerjaan!"', name: 'Arya Ramadhan, 23', role: 'Junior Developer · Akseleran', grad: 'linear-gradient(135deg,#0C628D,#2E86B5)' },
-  { text: '"Cybersecurity course-nya super solid. Instrukturnya beneran praktisi. Saya lulus CEH 3 bulan setelah kursus ini."', name: 'Dewi Maharani, 26', role: 'IT Security Analyst · BRI', grad: 'linear-gradient(135deg,#E84393,#a0005a)' },
-  { text: '"Gaji naik hampir 2× dalam 8 bulan setelah selesaikan kursus Data Science. Project capstone-nya langsung jadi bahan interview."', name: 'Farida Nuraini, 25', role: 'Data Analyst · Traveloka', grad: 'linear-gradient(135deg,#0FADA8,#0a7a76)' },
-  { text: '"Paling suka live Q&A-nya — instruktur beneran jawab pertanyaan teknis mendalam, bukan copy-paste dari Stack Overflow."', name: 'Rizky Handoko, 28', role: 'Product Manager · Halodoc', grad: 'linear-gradient(135deg,#6C5CE7,#a084f5)' },
-];
 
 const PARTNERS = ['Tokopedia', 'Gojek', 'Traveloka', 'Bukalapak', 'Telkom', 'BCA Digital', 'Shopee', 'Halodoc', 'Akseleran', 'Blibli'];
 
@@ -65,14 +59,16 @@ export default function Home() {
   const nav = useNavigate();
   const [courses, setCourses] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [testimonials, setTestimonials] = useState([]);
   const [email, setEmail] = useState('');
   const progressRef = useRef(null);
 
-  useReveal([courses, categories]);
+  useReveal([courses, categories, testimonials]);
 
   useEffect(() => {
     api.get('/courses').then((r) => setCourses(r.data.courses || [])).catch(() => {});
     api.get('/categories').then((r) => setCategories(r.data.categories || [])).catch(() => {});
+    api.get('/testimonials').then((r) => setTestimonials(r.data.testimonials || [])).catch(() => {});
     const t = setTimeout(() => {
       if (progressRef.current) progressRef.current.style.width = '35%';
     }, 800);
@@ -612,32 +608,38 @@ export default function Home() {
             </div>
 
             {/* Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {TESTIMONIALS.map((t, i) => (
-                <div
-                  key={t.name}
-                  className={`bg-white rounded-[20px] p-6 transition-all duration-200 reveal reveal-delay-${i}`}
-                  style={{ border: '1px solid #E5E7EB' }}
-                  onMouseEnter={(e) => { e.currentTarget.style.boxShadow = '0 10px 15px rgba(0,0,0,.08)'; e.currentTarget.style.borderColor = '#D1D5DB'; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.borderColor = '#E5E7EB'; }}
-                >
-                  <div className="text-[0.85rem] mb-3 tracking-[2px]" style={{ color: '#F59E0B' }}>★★★★★</div>
-                  <p className="text-[0.87rem] leading-[1.7] mb-4 italic" style={{ color: '#4B5563' }}>{t.text}</p>
-                  <div className="flex items-center gap-2.5">
-                    <div
-                      className="w-9 h-9 rounded-full flex items-center justify-center text-[0.72rem] font-bold text-white flex-shrink-0"
-                      style={{ background: t.grad }}
-                    >
-                      {t.name.split(' ').map((w) => w[0]).join('').slice(0, 2)}
-                    </div>
-                    <div>
-                      <div className="text-[0.85rem] font-bold" style={{ color: '#111827' }}>{t.name}</div>
-                      <div className="text-[0.72rem]" style={{ color: '#9CA3AF' }}>{t.role}</div>
+            {testimonials.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {testimonials.slice(0, 4).map((t, i) => (
+                  <div
+                    key={t._id}
+                    className={`bg-white rounded-[20px] p-6 transition-all duration-200 reveal reveal-delay-${i}`}
+                    style={{ border: '1px solid #E5E7EB' }}
+                    onMouseEnter={(e) => { e.currentTarget.style.boxShadow = '0 10px 15px rgba(0,0,0,.08)'; e.currentTarget.style.borderColor = '#D1D5DB'; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.borderColor = '#E5E7EB'; }}
+                  >
+                    <div className="text-[0.85rem] mb-3 tracking-[2px]" style={{ color: '#F59E0B' }}>★★★★★</div>
+                    <p className="text-[0.87rem] leading-[1.7] mb-4 italic" style={{ color: '#4B5563' }}>"{t.text}"</p>
+                    <div className="flex items-center gap-2.5">
+                      <div
+                        className="w-9 h-9 rounded-full flex items-center justify-center text-[0.72rem] font-bold text-white flex-shrink-0"
+                        style={{ background: t.grad || 'linear-gradient(135deg,#0C628D,#2E86B5)' }}
+                      >
+                        {t.name.split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase()}
+                      </div>
+                      <div>
+                        <div className="text-[0.85rem] font-bold" style={{ color: '#111827' }}>{t.name}</div>
+                        {t.role && <div className="text-[0.72rem]" style={{ color: '#9CA3AF' }}>{t.role}</div>}
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <div className="flex items-center justify-center h-full min-h-[200px] rounded-[20px]" style={{ border: '1px dashed #E5E7EB' }}>
+                <p className="text-sm text-center" style={{ color: '#9CA3AF' }}>Belum ada testimoni. Jadilah yang pertama berbagi pengalaman!</p>
+              </div>
+            )}
           </div>
         </div>
       </section>

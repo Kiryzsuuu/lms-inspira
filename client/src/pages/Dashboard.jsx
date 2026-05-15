@@ -230,6 +230,11 @@ export default function Dashboard() {
                   description="Kelola info platform dan tim pengajar"
                   href="/dashboard/about"
                 />
+                <QuickActionCard
+                  label="Testimoni"
+                  description="Setujui atau tolak testimoni dari siswa"
+                  href="/dashboard/testimonials"
+                />
               </div>
             </div>
           )}

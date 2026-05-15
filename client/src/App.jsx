@@ -28,6 +28,7 @@ import AssignmentSubmit from './pages/AssignmentSubmit';
 import CertificateView from './pages/CertificateView';
 import CourseStats from './pages/dashboard/CourseStats';
 import CategoryManager from './pages/dashboard/CategoryManager';
+import TestimonialManager from './pages/dashboard/TestimonialManager';
 import AboutUs from './pages/AboutUs';
 import { InfoPage } from './pages/Info';
 import { RequireAuth } from './components/RequireAuth';
@@ -175,6 +176,14 @@ export default function App() {
           element={
             <RequireAuth roles={['admin']}>
               <CategoryManager />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/dashboard/testimonials"
+          element={
+            <RequireAuth roles={['admin']}>
+              <TestimonialManager />
             </RequireAuth>
           }
         />

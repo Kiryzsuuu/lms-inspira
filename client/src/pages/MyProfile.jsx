@@ -27,7 +27,7 @@ const REFERRAL_SOURCES = ['Media Sosial', 'Rekomendasi', 'Search Engine', 'Teman
 export default function MyProfile() {
   const { api, user: authUser, logout } = useAuth();
   const nav = useNavigate();
-  const [activeTab, setActiveTab] = useState('profile'); // profile, courses, certificates
+  const [activeTab, setActiveTab] = useState('profile'); // profile, courses, certificates, testimonial
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -51,6 +51,15 @@ export default function MyProfile() {
 
   // Course history
   const [courses, setCourses] = useState([]);
+
+  // Testimonial
+  const [myTestimonial, setMyTestimonial] = useState(null);
+  const [testimonialLoaded, setTestimonialLoaded] = useState(false);
+  const [testimonialText, setTestimonialText] = useState('');
+  const [testimonialRole, setTestimonialRole] = useState('');
+  const [testimonialError, setTestimonialError] = useState('');
+  const [testimonialSuccess, setTestimonialSuccess] = useState('');
+  const [testimonialLoading, setTestimonialLoading] = useState(false);
 
   // Logout confirmation
   const [logoutOpen, setLogoutOpen] = useState(false);
@@ -78,6 +87,55 @@ export default function MyProfile() {
     }
   }
 
+  async function loadMyTestimonial() {
+    try {
+      const res = await api.get('/testimonials/my');
+      const list = res.data.testimonials || [];
+      const active = list.find((t) => t.status !== 'rejected') || list[0] || null;
+      setMyTestimonial(active);
+      if (active && active.status === 'pending') {
+        setTestimonialText(active.text);
+        setTestimonialRole(active.role || '');
+      }
+    } catch {
+      setMyTestimonial(null);
+    } finally {
+      setTestimonialLoaded(true);
+    }
+  }
+
+  async function submitTestimonial(e) {
+    e.preventDefault();
+    setTestimonialError('');
+    setTestimonialSuccess('');
+    setTestimonialLoading(true);
+    try {
+      const res = await api.post('/testimonials', { text: testimonialText, role: testimonialRole });
+      setMyTestimonial(res.data.testimonial);
+      setTestimonialSuccess('Testimoni berhasil dikirim! Akan tampil setelah disetujui admin.');
+    } catch (err) {
+      setTestimonialError(err?.response?.data?.error?.message || 'Gagal mengirim testimoni');
+    } finally {
+      setTestimonialLoading(false);
+    }
+  }
+
+  async function withdrawTestimonial() {
+    setTestimonialError('');
+    setTestimonialLoading(true);
+    try {
+      await api.delete('/testimonials/my');
+      setMyTestimonial(null);
+      setTestimonialText('');
+      setTestimonialRole('');
+      setTestimonialSuccess('Testimoni berhasil dihapus. Kamu bisa mengirim ulang.');
+    } catch (err) {
+      setTestimonialError(err?.response?.data?.error?.message || 'Gagal menghapus');
+    } finally {
+      setTestimonialLoading(false);
+    }
+  }
+
   useEffect(() => {
     async function init() {
       setLoading(true);
@@ -86,6 +144,7 @@ export default function MyProfile() {
       setLoading(false);
     }
     init();
+    loadMyTestimonial();
   }, []);
 
   async function saveProfile() {
@@ -229,6 +288,19 @@ export default function MyProfile() {
         }`}
       >
         Sertifikat
+      </button>
+      <button
+        onClick={() => {
+          setActiveTab('testimonial');
+          closeDrawer();
+        }}
+        className={`w-full rounded-2xl px-4 py-3 text-left text-sm font-semibold transition ${
+          activeTab === 'testimonial'
+            ? 'bg-orange-100 text-orange-900 shadow-sm'
+            : 'text-slate-700 hover:bg-white hover:shadow-sm'
+        }`}
+      >
+        Testimoni
       </button>
     </div>
   );
@@ -600,6 +672,92 @@ export default function MyProfile() {
                   <p className="text-sm text-slate-600">Belum ada course yang diselesaikan.</p>
                 )}
               </div>
+            </div>
+          )}
+
+          {/* Testimonial Tab */}
+          {activeTab === 'testimonial' && (
+            <div className="max-w-xl space-y-4">
+              <h3 className="font-bold text-slate-900 text-lg">Bagikan Pengalaman Belajarmu</h3>
+              <p className="text-sm text-slate-500">Testimonimu akan tampil di halaman utama setelah disetujui admin.</p>
+
+              {testimonialError && (
+                <div className="rounded-[10px] p-3 text-sm bg-rose-50 border border-rose-200 text-rose-700">{testimonialError}</div>
+              )}
+              {testimonialSuccess && (
+                <div className="rounded-[10px] p-3 text-sm bg-emerald-50 border border-emerald-200 text-emerald-700">{testimonialSuccess}</div>
+              )}
+
+              {/* Status badge */}
+              {myTestimonial && (
+                <div className="rounded-[14px] p-4 border" style={{
+                  background: myTestimonial.status === 'approved' ? '#E0F5F5' : myTestimonial.status === 'rejected' ? '#FFF1F2' : '#FEF9E7',
+                  borderColor: myTestimonial.status === 'approved' ? '#0FADA8' : myTestimonial.status === 'rejected' ? '#FDA4AF' : '#FDE68A',
+                }}>
+                  <div className="flex items-center justify-between gap-3 mb-2">
+                    <span className="text-xs font-bold uppercase tracking-wide" style={{
+                      color: myTestimonial.status === 'approved' ? '#0a7a76' : myTestimonial.status === 'rejected' ? '#be123c' : '#92400e',
+                    }}>
+                      {myTestimonial.status === 'approved' ? '✓ Disetujui & tampil di homepage' : myTestimonial.status === 'rejected' ? '✗ Ditolak' : '⏳ Menunggu persetujuan admin'}
+                    </span>
+                    {myTestimonial.status !== 'approved' && (
+                      <button
+                        type="button"
+                        onClick={withdrawTestimonial}
+                        disabled={testimonialLoading}
+                        className="text-xs font-semibold text-rose-600 hover:underline"
+                      >
+                        Tarik
+                      </button>
+                    )}
+                  </div>
+                  <p className="text-sm italic text-slate-700">"{myTestimonial.text}"</p>
+                  {myTestimonial.role && <p className="text-xs text-slate-500 mt-1">{myTestimonial.role}</p>}
+                  {myTestimonial.status === 'rejected' && (
+                    <p className="text-xs text-rose-600 mt-2">Kamu dapat mengirim ulang setelah menarik testimoni ini.</p>
+                  )}
+                </div>
+              )}
+
+              {/* Form — only show if no pending/approved testimonial */}
+              {testimonialLoaded && !myTestimonial && (
+                <form onSubmit={submitTestimonial} className="space-y-4">
+                  <div>
+                    <Label className="block mb-1">Ceritakan pengalamanmu belajar di sini *</Label>
+                    <textarea
+                      value={testimonialText}
+                      onChange={(e) => setTestimonialText(e.target.value)}
+                      placeholder='Contoh: "Gaji naik 2× setelah selesaikan kursus Data Science..."'
+                      rows={4}
+                      maxLength={500}
+                      required
+                      className="w-full border border-gray-200 rounded-[10px] px-4 py-3 text-sm focus:outline-none focus:ring-2 resize-none"
+                      style={{ focusRingColor: '#0C628D' }}
+                    />
+                    <div className="text-right text-xs text-gray-400 mt-1">{testimonialText.length}/500</div>
+                  </div>
+                  <div>
+                    <Label className="block mb-1">Profesi / Instansi (opsional)</Label>
+                    <Input
+                      value={testimonialRole}
+                      onChange={(e) => setTestimonialRole(e.target.value)}
+                      placeholder='Contoh: Data Analyst · Traveloka'
+                      maxLength={100}
+                    />
+                    <p className="text-xs text-gray-400 mt-1">Ini yang akan tampil di bawah namamu</p>
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={testimonialLoading || !testimonialText.trim()}
+                    className="font-semibold text-sm text-white px-6 py-2.5 rounded-[10px] transition-all disabled:opacity-50"
+                    style={{ background: '#0C628D' }}
+                    onMouseEnter={(e) => { if (!testimonialLoading) e.currentTarget.style.background = '#0A527A'; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = '#0C628D'; }}
+                  >
+                    {testimonialLoading ? 'Mengirim...' : 'Kirim Testimoni'}
+                  </button>
+                </form>
+              )}
             </div>
           )}
 
