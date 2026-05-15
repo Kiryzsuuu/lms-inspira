@@ -13,16 +13,18 @@ function stripHtml(html) {
   return div.textContent || div.innerText || '';
 }
 
-/* ── Reveal on scroll ── */
-function useReveal() {
+/* ── Reveal on scroll — re-observes after async data loads ── */
+function useReveal(deps = []) {
   useEffect(() => {
     const obs = new IntersectionObserver(
       (entries) => entries.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('in-view'); obs.unobserve(e.target); } }),
       { threshold: 0.06, rootMargin: '0px 0px -40px 0px' }
     );
-    document.querySelectorAll('.reveal').forEach((el) => obs.observe(el));
+    // Only observe elements not yet animated
+    document.querySelectorAll('.reveal:not(.in-view)').forEach((el) => obs.observe(el));
     return () => obs.disconnect();
-  }, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, deps);
 }
 
 const TICKER_ITEMS = [
@@ -66,7 +68,7 @@ export default function Home() {
   const [email, setEmail] = useState('');
   const progressRef = useRef(null);
 
-  useReveal();
+  useReveal([courses, categories]);
 
   useEffect(() => {
     api.get('/courses').then((r) => setCourses(r.data.courses || [])).catch(() => {});
