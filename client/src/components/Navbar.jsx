@@ -25,11 +25,13 @@ function NavDropdown({ label, isOpen, onHover, children }) {
         </svg>
       </button>
       {isOpen && (
-        <div
-          className="absolute top-full left-0 mt-1 w-52 bg-white rounded-[16px] z-50 py-1.5 overflow-hidden"
-          style={{ border: '1px solid #E5E7EB', boxShadow: '0 10px 15px rgba(0,0,0,.08), 0 4px 6px rgba(0,0,0,.05)' }}
-        >
-          {children}
+        <div className="absolute top-full left-0 w-52 z-50 pt-1">
+          <div
+            className="bg-white rounded-[16px] py-1.5 overflow-hidden"
+            style={{ border: '1px solid #E5E7EB', boxShadow: '0 10px 15px rgba(0,0,0,.08), 0 4px 6px rgba(0,0,0,.05)' }}
+          >
+            {children}
+          </div>
         </div>
       )}
     </div>
