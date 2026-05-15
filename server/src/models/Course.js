@@ -13,6 +13,7 @@ const courseSchema = new mongoose.Schema(
     whatYouLearn:  [{ type: String, trim: true }],
     requirements:  [{ type: String, trim: true }],
     targetAudience:[{ type: String, trim: true }],
+    categoryId: { type: mongoose.Schema.Types.ObjectId, ref: 'Category', default: null, index: true },
     templateId: { type: mongoose.Schema.Types.ObjectId, ref: 'CourseTemplate' }, // template outline yang dipakai
   },
   { timestamps: true }

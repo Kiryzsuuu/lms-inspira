@@ -38,7 +38,8 @@ export default function CourseManager() {
   const selected = useMemo(() => courses.find((c) => c._id === selectedId) || null, [courses, selectedId]);
   const [activeTab, setActiveTab] = useState('settings');
 
-  const [courseForm, setCourseForm] = useState({ title: '', description: '', coverImageUrl: '', priceIdr: 0, isPublished: false, tags: [], templateId: '' });
+  const [courseForm, setCourseForm] = useState({ title: '', description: '', coverImageUrl: '', priceIdr: 0, isPublished: false, tags: [], categoryId: '', templateId: '' });
+  const [categories, setCategories] = useState([]);
   const [tagInput, setTagInput] = useState('');
   const [templates, setTemplates] = useState([]);
   const [coverUploading, setCoverUploading] = useState(false);
@@ -189,6 +190,7 @@ export default function CourseManager() {
   useEffect(() => {
     loadCourses();
     api.get('/course-templates').then((r) => setTemplates(r.data.templates || [])).catch(() => {});
+    api.get('/categories').then((r) => setCategories(r.data.categories || [])).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -212,7 +214,7 @@ export default function CourseManager() {
   useEffect(() => {
     // Populate course form when a course is selected
     if (!selected) {
-      setCourseForm({ title: '', description: '', coverImageUrl: '', priceIdr: 0, isPublished: false, tags: [], templateId: '' });
+      setCourseForm({ title: '', description: '', coverImageUrl: '', priceIdr: 0, isPublished: false, tags: [], categoryId: '', templateId: '' });
       return;
     }
     setCourseForm({
@@ -222,6 +224,7 @@ export default function CourseManager() {
       priceIdr: selected.priceIdr || 0,
       isPublished: selected.isPublished || false,
       tags: selected.tags || [],
+      categoryId: selected.categoryId?._id || selected.categoryId || '',
       templateId: selected.templateId || '',
     });
   }, [selected]);
@@ -336,7 +339,7 @@ export default function CourseManager() {
       const res = await api.post('/courses', courseForm);
       await loadCourses();
       setSelectedId(res.data.course._id);
-      setCourseForm({ title: '', description: '', coverImageUrl: '', priceIdr: 0, isPublished: false, tags: [], templateId: '' });
+      setCourseForm({ title: '', description: '', coverImageUrl: '', priceIdr: 0, isPublished: false, tags: [], categoryId: '', templateId: '' });
     } catch (e) {
       setError(e?.response?.data?.error?.message || 'Gagal membuat course');
     }
@@ -1085,6 +1088,23 @@ export default function CourseManager() {
                           </div>
                         )}
                       </div>
+                      {categories.length > 0 && (
+                        <div>
+                          <Label>Kategori</Label>
+                          <div className="mt-1">
+                            <select
+                              className="w-full rounded-[10px] border border-gray-200 px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-300"
+                              value={courseForm.categoryId}
+                              onChange={(e) => setCourseForm((f) => ({ ...f, categoryId: e.target.value }))}
+                            >
+                              <option value="">-- Tanpa Kategori --</option>
+                              {categories.map((cat) => (
+                                <option key={cat._id} value={cat._id}>{cat.name}</option>
+                              ))}
+                            </select>
+                          </div>
+                        </div>
+                      )}
                       <div className="flex items-center gap-2">
                         <input
                           id="coursePublished"

@@ -29,7 +29,7 @@ function coursesRouter({ requireAuth, requireRole }) {
     requireRole('admin', 'teacher'),
     asyncHandler(async (req, res) => {
       const filter = req.user.role === 'admin' ? {} : { ownerId: req.user.sub };
-      const courses = await Course.find(filter).sort({ createdAt: -1 });
+      const courses = await Course.find(filter).sort({ createdAt: -1 }).populate('categoryId', 'name slug');
       res.json({ courses });
     })
   );
@@ -38,7 +38,7 @@ function coursesRouter({ requireAuth, requireRole }) {
   router.get(
     '/',
     asyncHandler(async (req, res) => {
-      const courses = await Course.find({ isPublished: true }).sort({ createdAt: -1 });
+      const courses = await Course.find({ isPublished: true }).sort({ createdAt: -1 }).populate('categoryId', 'name slug');
       res.json({ courses });
     })
   );
@@ -254,7 +254,7 @@ function coursesRouter({ requireAuth, requireRole }) {
     requireRole('admin', 'teacher'),
     asyncHandler(async (req, res) => {
       const filter = req.user.role === 'admin' ? {} : { ownerId: req.user.sub };
-      const courses = await Course.find(filter).sort({ createdAt: -1 });
+      const courses = await Course.find(filter).sort({ createdAt: -1 }).populate('categoryId', 'name slug');
       res.json({ courses });
     })
   );
@@ -307,6 +307,7 @@ function coursesRouter({ requireAuth, requireRole }) {
         whatYouLearn:   z.array(z.string()).optional().default([]),
         requirements:   z.array(z.string()).optional().default([]),
         targetAudience: z.array(z.string()).optional().default([]),
+        categoryId: z.string().optional().nullable(),
         templateId: z.string().optional().nullable(),
       });
       const data = schema.parse(req.body);
