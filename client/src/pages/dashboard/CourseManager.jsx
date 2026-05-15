@@ -266,7 +266,8 @@ export default function CourseManager() {
     if (!selected) return;
     setError('');
     try {
-      await api.put(`/courses/${selected._id}`, { ...selected, ...patch });
+      const allowed = { title: selected.title, description: selected.description, coverImageUrl: selected.coverImageUrl, priceIdr: selected.priceIdr, isPublished: selected.isPublished };
+      await api.put(`/courses/${selected._id}`, { ...allowed, ...patch });
       await loadCourses();
       await loadCourseDetails(selected._id);
     } catch (e) {
@@ -894,10 +895,19 @@ export default function CourseManager() {
                       <div>
                         <Label>Deskripsi</Label>
                         <div className="mt-1">
-                          <Textarea
-                            value={courseForm.description}
-                            onChange={(e) => setCourseForm((f) => ({ ...f, description: e.target.value }))}
-                            rows={3}
+                          <RichTextEditor
+                            label=""
+                            valueHtml={courseForm.description || ''}
+                            onChangeHtml={(html) => setCourseForm((f) => ({ ...f, description: html }))}
+                            editorClassName="min-h-[100px]"
+                            onUploadImage={async (file) => {
+                              const fd = new FormData();
+                              fd.append('file', file);
+                              const res = await api.post('/uploads/image', fd, {
+                                headers: { 'Content-Type': 'multipart/form-data' },
+                              });
+                              return res.data.url;
+                            }}
                           />
                         </div>
                       </div>
