@@ -2,6 +2,10 @@ const express = require('express');
 const { Certificate } = require('../models/Certificate');
 const { Course } = require('../models/Course');
 const { User } = require('../models/User');
+const { Lesson } = require('../models/Lesson');
+const { LessonProgress } = require('../models/LessonProgress');
+const { Quiz } = require('../models/Quiz');
+const { Attempt } = require('../models/Attempt');
 const { asyncHandler } = require('../utils/asyncHandler');
 const { HttpError } = require('../utils/errors');
 
@@ -54,12 +58,33 @@ function certificatesRouter({ requireAuth, requireRole }) {
       const user = await User.findById(req.user.sub);
       if (!user) throw new HttpError(401, 'Unauthorized');
 
-      // Check if course is completed
-      const isCompleted = (user.completedCourseIds || []).some(
-        (id) => String(id) === String(course._id)
-      );
-      if (!isCompleted) {
-        throw new HttpError(409, 'Course belum diselesaikan');
+      // Check eligibility via lesson progress (same logic as /progress/course/:id/certificate)
+      const lessons = await Lesson.find({ courseId: course._id, isPublished: true }).select('_id');
+      if (lessons.length === 0) throw new HttpError(409, 'Course belum memiliki materi');
+
+      const completedCount = await LessonProgress.countDocuments({
+        userId: user._id,
+        courseId: course._id,
+        lessonId: { $in: lessons.map((l) => l._id) },
+        isCompleted: true,
+      });
+
+      const lessonsEligible = completedCount >= lessons.length;
+
+      // Check quiz eligibility
+      const quizzes = await Quiz.find({ courseId: course._id, isPublished: true }).select('_id');
+      let quizzesEligible = true;
+      if (quizzes.length > 0) {
+        const submittedCount = await Attempt.distinct('quizId', {
+          userId: user._id,
+          quizId: { $in: quizzes.map((q) => q._id) },
+          submittedAt: { $exists: true },
+        });
+        quizzesEligible = submittedCount.length >= quizzes.length;
+      }
+
+      if (!lessonsEligible || !quizzesEligible) {
+        throw new HttpError(409, 'Selesaikan semua materi dan quiz terlebih dahulu');
       }
 
       // Check if certificate already exists
