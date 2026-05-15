@@ -911,52 +911,61 @@ export default function CourseDetail() {
                 ))}
               </div>
 
-              {/* Curriculum preview in hero */}
+              {/* Curriculum — full accordion, visible directly */}
               {lessons.length > 0 && (
                 <div className="mt-6 pt-6" style={{ borderTop: '1px solid #F3F4F6' }}>
-                  <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center justify-between mb-4">
                     <span className="text-sm font-semibold text-gray-900">
-                      {modules.length > 0 ? `${modules.length} Modul Kursus` : `${lessons.length} Materi Kursus`}
+                      {modules.length > 0
+                        ? `${modules.length} Modul · ${lessons.length} Materi`
+                        : `${lessons.length} Materi`}
                     </span>
-                    <button
-                      onClick={() => {
-                        setActiveTab('kurikulum');
-                        document.getElementById('course-tabs')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                      }}
-                      className="text-xs font-semibold"
-                      style={{ color: '#0C628D' }}
-                    >
-                      Lihat semua
-                    </button>
+                    {modules.length > 0 && (
+                      <button
+                        onClick={() => setAllModulesOpen((v) => !v)}
+                        className="text-xs font-semibold"
+                        style={{ color: '#0C628D' }}
+                      >
+                        {allModulesOpen ? 'Tutup semua' : 'Buka semua'}
+                      </button>
+                    )}
                   </div>
                   {modules.length > 0 ? (
                     <div className="space-y-2">
-                      {moduleGroups.slice(0, 4).map(({ module: mod, lessons: mLessons }) => (
-                        <div key={mod._id} className="flex items-center justify-between text-sm py-1">
-                          <span className="text-gray-700 truncate flex-1 min-w-0">{mod.title}</span>
-                          <span className="text-gray-400 text-xs ml-3 shrink-0">{mLessons.length} materi</span>
-                        </div>
+                      {moduleGroups.map(({ module: mod, lessons: mLessons, offset }) => (
+                        <ModuleAccordion
+                          key={mod._id}
+                          module={mod}
+                          lessons={mLessons}
+                          selectedLesson={null}
+                          onSelectLesson={() => {}}
+                          isPaywalled={isPaywalled}
+                          isStudent={isStudent}
+                          lessonProgress={{}}
+                          canOpenLessonByIndex={() => false}
+                          lessonIndexOffset={offset}
+                          forceOpen={allModulesOpen ? true : undefined}
+                        />
                       ))}
-                      {moduleGroups.length > 4 && (
-                        <div className="text-xs text-gray-400 pt-1">+{moduleGroups.length - 4} modul lainnya</div>
-                      )}
                     </div>
                   ) : (
-                    <div className="space-y-2">
-                      {lessons.slice(0, 5).map((l, i) => (
-                        <div key={l._id} className="flex items-center gap-2.5 text-sm">
+                    <div className="bg-white rounded-[14px] border border-gray-200 overflow-hidden">
+                      {lessons.map((l, i) => (
+                        <div
+                          key={l._id}
+                          className="flex items-center gap-3 px-4 py-3 text-sm text-gray-700"
+                          style={{ borderTop: i > 0 ? '1px solid #F3F4F6' : 'none' }}
+                        >
                           <div
-                            className="w-5 h-5 rounded-full flex items-center justify-center text-[0.6rem] font-bold shrink-0"
+                            className="w-5 h-5 rounded-full flex items-center justify-center text-[0.68rem] font-bold shrink-0"
                             style={{ background: '#F3F4F6', color: '#6B7280' }}
                           >
                             {i + 1}
                           </div>
-                          <span className="text-gray-700 truncate">{l.title}</span>
+                          <span className="flex-1 truncate">{l.title}</span>
+                          <MateriTypeIcon lesson={l} />
                         </div>
                       ))}
-                      {lessons.length > 5 && (
-                        <div className="text-xs text-gray-400 pt-1">+{lessons.length - 5} materi lainnya</div>
-                      )}
                     </div>
                   )}
                 </div>
