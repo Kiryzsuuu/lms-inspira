@@ -148,7 +148,6 @@ export default function Home() {
                     onMouseLeave={(e) => { e.currentTarget.style.background = '#0C628D'; e.currentTarget.style.boxShadow = '0 1px 2px rgba(12,98,141,.3),inset 0 1px 0 rgba(255,255,255,.08)'; }}
                   >
                     Mulai Belajar Gratis
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8H13M13 8L9 4M13 8L9 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
                   </button>
                 </Link>
                 <Link to="/courses">
