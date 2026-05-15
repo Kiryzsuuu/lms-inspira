@@ -762,11 +762,11 @@ export default function CourseDetail() {
                           module={mod}
                           lessons={mLessons}
                           selectedLesson={null}
-                          onSelectLesson={() => {}}
+                          onSelectLesson={isEnrolled ? handleSelectLesson : () => {}}
                           isPaywalled={isPaywalled}
                           isStudent={isStudent}
-                          lessonProgress={{}}
-                          canOpenLessonByIndex={() => false}
+                          lessonProgress={isEnrolled ? lessonProgress : {}}
+                          canOpenLessonByIndex={isEnrolled ? canOpenLessonByIndex : () => false}
                           lessonIndexOffset={offset}
                           forceOpen={allModulesOpen ? true : undefined}
                         />
@@ -1114,11 +1114,11 @@ export default function CourseDetail() {
                           module={module}
                           lessons={mLessons}
                           selectedLesson={null}
-                          onSelectLesson={() => {}}
+                          onSelectLesson={isEnrolled ? handleSelectLesson : () => {}}
                           isPaywalled={isPaywalled}
                           isStudent={isStudent}
-                          lessonProgress={{}}
-                          canOpenLessonByIndex={() => false}
+                          lessonProgress={isEnrolled ? lessonProgress : {}}
+                          canOpenLessonByIndex={isEnrolled ? canOpenLessonByIndex : () => false}
                           lessonIndexOffset={offset}
                           forceOpen={allModulesOpen ? true : undefined}
                         />
