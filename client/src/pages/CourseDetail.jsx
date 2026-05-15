@@ -786,7 +786,7 @@ export default function CourseDetail() {
     : 'IN';
   const instructorSkills      = course.ownerId?.skills      || [];
   const instructorInstitution = course.ownerId?.institution || '';
-  const descriptionPlain = toPlainTextFromHtml(course.description).slice(0, 240);
+  const descriptionPlain = toPlainTextFromHtml(course.description);
 
   return (
     <div style={{ background: '#F7F8FA' }} className="min-h-screen">
@@ -840,10 +840,10 @@ export default function CourseDetail() {
                 {course.title}
               </h1>
 
-              {/* Description snippet */}
+              {/* Description */}
               {descriptionPlain && (
                 <p className="mt-4 text-base text-gray-600 leading-relaxed">
-                  {descriptionPlain}{descriptionPlain.length >= 240 ? '…' : ''}
+                  {descriptionPlain}
                 </p>
               )}
 
