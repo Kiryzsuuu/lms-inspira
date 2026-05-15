@@ -9,6 +9,7 @@ const { LessonProgress } = require('../models/LessonProgress');
 const { User } = require('../models/User');
 const { asyncHandler } = require('../utils/asyncHandler');
 const { HttpError } = require('../utils/errors');
+const { audit, diffFields } = require('../utils/audit');
 
 async function assertCanEditCourse(courseId, user) {
   const course = await Course.findById(courseId);
@@ -283,6 +284,7 @@ function coursesRouter({ requireAuth, requireRole }) {
       const ownerId = req.user.role === 'admin' && req.body.ownerId ? req.body.ownerId : req.user.sub;
       const course = await Course.create({ ...data, ownerId });
       await syncTeacherSkills(ownerId, data.tags);
+      audit({ actor: req.user, action: 'create', resource: 'course', resourceId: course._id, resourceName: course.title, req });
       res.status(201).json({ course });
     })
   );
@@ -303,8 +305,12 @@ function coursesRouter({ requireAuth, requireRole }) {
         templateId: z.string().optional().nullable(),
       });
       const data = schema.parse(req.body);
+      const before = course.toObject();
       const updated = await Course.findByIdAndUpdate(req.params.id, data, { new: true });
       await syncTeacherSkills(course.ownerId, data.tags);
+      const changed = diffFields(before, data);
+      const action = changed.includes('isPublished') ? (data.isPublished ? 'publish' : 'unpublish') : 'update';
+      audit({ actor: req.user, action, resource: 'course', resourceId: updated._id, resourceName: updated.title, changedFields: changed, req });
       res.json({ course: updated });
     })
   );
@@ -314,13 +320,14 @@ function coursesRouter({ requireAuth, requireRole }) {
     requireAuth,
     requireRole('admin', 'teacher'),
     asyncHandler(async (req, res) => {
-      await assertCanEditCourse(req.params.id, req.user);
+      const course = await assertCanEditCourse(req.params.id, req.user);
       await Promise.all([
         Lesson.deleteMany({ courseId: req.params.id }),
         Quiz.deleteMany({ courseId: req.params.id }),
         Module.deleteMany({ courseId: req.params.id }),
       ]);
       await Course.findByIdAndDelete(req.params.id);
+      audit({ actor: req.user, action: 'delete', resource: 'course', resourceId: req.params.id, resourceName: course.title, req });
       res.status(204).end();
     })
   );
@@ -352,6 +359,8 @@ function coursesRouter({ requireAuth, requireRole }) {
       });
       const data = schema.parse(req.body);
       const module = await Module.create({ ...data, courseId: req.params.courseId });
+      const parentCourse = await Course.findById(req.params.courseId).select('title');
+      audit({ actor: req.user, action: 'create', resource: 'module', resourceId: module._id, resourceName: module.title, parentId: req.params.courseId, parentName: parentCourse?.title || '', req });
       res.status(201).json({ module });
     })
   );
@@ -369,12 +378,15 @@ function coursesRouter({ requireAuth, requireRole }) {
         isPublished: z.coerce.boolean().optional().default(false),
       });
       const data = schema.parse(req.body);
+      const before = await Module.findById(req.params.moduleId);
       const module = await Module.findOneAndUpdate(
         { _id: req.params.moduleId, courseId: req.params.courseId },
         data,
         { new: true }
       );
       if (!module) throw new HttpError(404, 'Module not found');
+      const parentCourse = await Course.findById(req.params.courseId).select('title');
+      audit({ actor: req.user, action: 'update', resource: 'module', resourceId: module._id, resourceName: module.title, parentId: req.params.courseId, parentName: parentCourse?.title || '', changedFields: diffFields(before?.toObject(), data), req });
       res.json({ module });
     })
   );
@@ -385,12 +397,14 @@ function coursesRouter({ requireAuth, requireRole }) {
     requireRole('admin', 'teacher'),
     asyncHandler(async (req, res) => {
       await assertCanEditCourse(req.params.courseId, req.user);
+      const module = await Module.findById(req.params.moduleId);
       await Module.deleteOne({ _id: req.params.moduleId, courseId: req.params.courseId });
-      // Unassign lessons from this module
       await Lesson.updateMany(
         { moduleId: req.params.moduleId, courseId: req.params.courseId },
         { $set: { moduleId: null } }
       );
+      const parentCourse = await Course.findById(req.params.courseId).select('title');
+      audit({ actor: req.user, action: 'delete', resource: 'module', resourceId: req.params.moduleId, resourceName: module?.title || '', parentId: req.params.courseId, parentName: parentCourse?.title || '', req });
       res.status(204).end();
     })
   );
@@ -455,6 +469,8 @@ function coursesRouter({ requireAuth, requireRole }) {
       await assertCanEditCourse(req.params.courseId, req.user);
       const data = lessonSchema.parse(req.body);
       const lesson = await Lesson.create({ ...data, courseId: req.params.courseId });
+      const parentCourse = await Course.findById(req.params.courseId).select('title');
+      audit({ actor: req.user, action: 'create', resource: 'lesson', resourceId: lesson._id, resourceName: lesson.title, parentId: req.params.courseId, parentName: parentCourse?.title || '', req });
       res.status(201).json({ lesson });
     })
   );
@@ -465,6 +481,7 @@ function coursesRouter({ requireAuth, requireRole }) {
     requireRole('admin', 'teacher'),
     asyncHandler(async (req, res) => {
       await assertCanEditCourse(req.params.courseId, req.user);
+      const before = await Lesson.findById(req.params.lessonId);
       const data = lessonSchema.parse(req.body);
       const lesson = await Lesson.findOneAndUpdate(
         { _id: req.params.lessonId, courseId: req.params.courseId },
@@ -472,6 +489,10 @@ function coursesRouter({ requireAuth, requireRole }) {
         { new: true }
       );
       if (!lesson) throw new HttpError(404, 'Lesson not found');
+      const parentCourse = await Course.findById(req.params.courseId).select('title');
+      const changed = diffFields(before?.toObject(), data);
+      const action = changed.includes('isPublished') ? (data.isPublished ? 'publish' : 'unpublish') : 'update';
+      audit({ actor: req.user, action, resource: 'lesson', resourceId: lesson._id, resourceName: lesson.title, parentId: req.params.courseId, parentName: parentCourse?.title || '', changedFields: changed, req });
       res.json({ lesson });
     })
   );
@@ -482,7 +503,10 @@ function coursesRouter({ requireAuth, requireRole }) {
     requireRole('admin', 'teacher'),
     asyncHandler(async (req, res) => {
       await assertCanEditCourse(req.params.courseId, req.user);
+      const lesson = await Lesson.findById(req.params.lessonId);
       await Lesson.deleteOne({ _id: req.params.lessonId, courseId: req.params.courseId });
+      const parentCourse = await Course.findById(req.params.courseId).select('title');
+      audit({ actor: req.user, action: 'delete', resource: 'lesson', resourceId: req.params.lessonId, resourceName: lesson?.title || '', parentId: req.params.courseId, parentName: parentCourse?.title || '', req });
       res.status(204).end();
     })
   );

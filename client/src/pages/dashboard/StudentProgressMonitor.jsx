@@ -33,18 +33,19 @@ export default function StudentProgressMonitor() {
       setLoading(true);
       const res = await api.get(`/reports/course/${courseId}/students`);
       const rows = Array.isArray(res.data.students) ? res.data.students : [];
-      setStudents(
-        rows.map((s) => ({
-          _id: s.studentId || s._id,
-          name: s.name,
-          email: s.email,
-          isActive: s.isActive,
-          isCompleted: s.isCompleted,
-          progressPercent: s.progress?.percentage ?? s.progressPercent ?? 0,
-          lessonCount: s.progress?.lessonsTotal ?? s.lessonCount ?? 0,
-          lessonsCompleted: s.progress?.lessonsCompleted ?? s.lessonsCompleted ?? 0,
-        }))
-      );
+      const mapped = rows.map((s) => ({
+        _id: s.studentId || s._id,
+        name: s.name,
+        email: s.email,
+        isActive: s.isActive,
+        isCompleted: s.isCompleted,
+        progressPercent: s.progress?.percentage ?? s.progressPercent ?? 0,
+        lessonCount: s.progress?.lessonsTotal ?? s.lessonCount ?? 0,
+        lessonsCompleted: s.progress?.lessonsCompleted ?? s.lessonsCompleted ?? 0,
+      }));
+      setStudents(mapped);
+      // sync real count into sidebar
+      setCourses((prev) => prev.map((c) => c._id === courseId ? { ...c, studentCount: mapped.length } : c));
       setSelectedStudent(null);
       setStudentDetail(null);
     } catch (err) {

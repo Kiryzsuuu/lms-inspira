@@ -713,65 +713,63 @@ export default function CourseDetail() {
               </div>
             ) : null}
 
-            {/* Module overview list */}
-            {modules.length > 0 ? (
+            {/* Silabus — module accordion (public / non-enrolled) */}
+            {isStudent && !isEnrolled && modules.length > 0 && (
               <div className="mt-8">
-                <h2 className="font-bold text-lg text-slate-900 mb-3">Silabus Kursus</h2>
+                <h2 className="font-display font-bold text-lg mb-3" style={{ color: '#111827' }}>Silabus Kursus</h2>
                 <div className="space-y-2">
-                  {modules.map((mod) => {
-                    const modLessons = lessons.filter((l) => String(l.moduleId) === String(mod._id));
-                    return (
-                      <div key={mod._id} className="border border-slate-200 rounded-lg px-4 py-3 bg-white">
-                        <div className="font-semibold text-slate-900 text-sm">{mod.title}</div>
-                        <div className="text-xs text-slate-500 mt-0.5">{modLessons.length} materi</div>
-                        {mod.description ? <div className="text-xs text-slate-600 mt-1">{mod.description}</div> : null}
-                      </div>
-                    );
-                  })}
+                  {moduleGroups.map(({ module, lessons: mLessons, offset }) => (
+                    <ModuleAccordion
+                      key={module._id}
+                      module={module}
+                      lessons={mLessons}
+                      selectedLesson={null}
+                      onSelectLesson={() => {}}
+                      isPaywalled={isPaywalled}
+                      isStudent={true}
+                      lessonProgress={{}}
+                      canOpenLessonByIndex={() => false}
+                      lessonIndexOffset={offset}
+                    />
+                  ))}
                 </div>
               </div>
-            ) : null}
+            )}
 
             {/* Lesson list for non-enrolled (teacher/admin inline view) */}
             {!isStudent && (
               <div className="mt-6 grid gap-4 lg:grid-cols-4">
-                <Card className="p-5 lg:col-span-1">
-                  <div className="text-sm font-semibold mb-3">Materi</div>
+                <div className="lg:col-span-1">
+                  <div className="text-sm font-semibold mb-3 text-gray-900">Modul</div>
                   <div className="space-y-2">
                     {moduleGroups.map(({ module, lessons: mLessons, offset }) => (
-                      <div key={module._id}>
-                        {modules.length > 0 && (
-                          <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide py-1">{module.title}</div>
-                        )}
-                        {mLessons.map((l, i) => (
-                          <button
-                            key={l._id}
-                            onClick={() => {
-                              setSelectedLesson(l);
-                              setSearchParams((prev) => {
-                                const next = new URLSearchParams(prev);
-                                next.set('lesson', l._id);
-                                return next;
-                              });
-                            }}
-                            className={
-                              'w-full border border-slate-200 px-3 py-2 text-left text-sm mb-1 ' +
-                              (selectedLesson?._id === l._id
-                                ? 'bg-orange-500 text-white'
-                                : 'bg-slate-50 text-slate-900 hover:bg-slate-100')
-                            }
-                          >
-                            <div className="flex items-center justify-between gap-3">
-                              <span className="truncate">{l.title}</span>
-                              <MateriTypeIcon lesson={l} />
-                            </div>
-                          </button>
-                        ))}
-                      </div>
+                      <ModuleAccordion
+                        key={module._id}
+                        module={module}
+                        lessons={mLessons}
+                        selectedLesson={selectedLesson}
+                        onSelectLesson={(l) => {
+                          setSelectedLesson(l);
+                          setSearchParams((prev) => {
+                            const next = new URLSearchParams(prev);
+                            next.set('lesson', l._id);
+                            return next;
+                          });
+                        }}
+                        isPaywalled={false}
+                        isStudent={false}
+                        lessonProgress={{}}
+                        canOpenLessonByIndex={() => true}
+                        lessonIndexOffset={offset}
+                      />
                     ))}
-                    {lessons.length === 0 && <div className="text-sm text-slate-600">Belum ada materi.</div>}
+                    {lessons.length === 0 && (
+                      <div className="text-sm p-4 rounded-[14px]" style={{ border: '1px solid #E5E7EB', color: '#9CA3AF' }}>
+                        Belum ada materi.
+                      </div>
+                    )}
                   </div>
-                </Card>
+                </div>
 
                 <Card className="p-5 lg:col-span-2">
                   <div className="text-sm font-semibold">Isi Materi</div>

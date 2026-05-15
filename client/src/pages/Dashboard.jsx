@@ -182,6 +182,11 @@ export default function Dashboard() {
                   href="/dashboard/royalties"
                 />
                 <QuickActionCard
+                  label="Log Aktivitas"
+                  description="Riwayat perubahan konten yang kamu buat"
+                  href="/dashboard/activity-log"
+                />
+                <QuickActionCard
                   label="Hero Carousel"
                   description="Kelola slide hero di halaman utama"
                   href="/dashboard/heroes"
@@ -234,6 +239,11 @@ export default function Dashboard() {
                   label="Testimoni"
                   description="Setujui atau tolak testimoni dari siswa"
                   href="/dashboard/testimonials"
+                />
+                <QuickActionCard
+                  label="Log Aktivitas"
+                  description="Audit trail semua perubahan konten oleh semua pengguna"
+                  href="/dashboard/activity-log"
                 />
               </div>
             </div>
