@@ -805,15 +805,11 @@ export default function CourseManager() {
         sidebarWidth="w-80"
       >
         {error ? <div className="mb-4 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div> : null}
-        <div className="flex flex-1 min-h-0 flex-col">
-            <Card
-              className="flex min-h-0 w-full flex-col overflow-auto p-4 sm:p-6"
-              onFocusCapture={() => setActivePanel('course')}
-            >
+        <div className="flex flex-1 min-h-0 flex-col overflow-auto">
               {!selected && activeTab !== 'new' ? (
                 <div className="text-sm text-slate-600">Pilih course di kiri untuk kelola materi & quiz.</div>
               ) : activeTab === 'new' ? (
-                <div className="max-w-2xl">
+                <div>
                   <div className="font-bold text-lg mb-6">Buat Course Baru</div>
                   <form className="grid gap-4" onSubmit={createCourse}>
                     <div>
@@ -1017,13 +1013,7 @@ export default function CourseManager() {
 
                 <div className="mt-4 flex-1 min-h-0 overflow-auto pr-1">
                   {activeTab === 'settings' && (
-                    <Card
-                      className={
-                        'p-5 xl:col-span-2 ' +
-                        (activePanel === 'course' ? 'ring-2 ring-slate-900 ring-offset-2' : '')
-                      }
-                      onFocusCapture={() => setActivePanel('course')}
-                    >
+                    <div>
                       <div className="font-bold">Pengaturan Kursus</div>
 
                     <div className="mt-4 space-y-3">
@@ -1179,11 +1169,11 @@ export default function CourseManager() {
                       </div>
                     </div>
                     </div>
-                    </Card>
+                    </div>
                   )}
 
                   {activeTab === 'modules' && (
-                    <Card className="p-5">
+                    <div>
                       <div className="font-bold mb-4">Modul Kursus</div>
                       <form className="grid gap-3 mb-6 border-b border-slate-200 pb-6" onSubmit={createOrUpdateModule}>
                         <div className="grid gap-3 sm:grid-cols-2">
@@ -1275,14 +1265,11 @@ export default function CourseManager() {
                           <div className="text-sm text-slate-600 italic">Belum ada modul. Tambah modul untuk mengorganisir materi.</div>
                         )}
                       </div>
-                    </Card>
+                    </div>
                   )}
 
                   {activeTab === 'lessons' && (
-                    <Card
-                      className={'p-5 ' + (activePanel === 'lesson' ? 'ring-2 ring-slate-900 ring-offset-2' : '')}
-                    onFocusCapture={() => setActivePanel('lesson')}
-                  >
+                    <div>
                     <div className="font-bold">Materi (Lessons)</div>
                     <form className="mt-3 grid gap-3" onSubmit={isEditingLesson ? updateLesson : createLesson}>
                       <div className="grid gap-3 sm:grid-cols-2">
@@ -1553,14 +1540,13 @@ export default function CourseManager() {
                       })()}
                       {lessons.length === 0 ? <div className="text-sm text-slate-600">Belum ada materi.</div> : null}
                     </div>
-                    </Card>
+                    </div>
                   )}
 
                   {activeTab === 'quiz' && (
-                    <Card
-                      className={'p-5 ' + (activePanel === 'quiz' ? 'ring-2 ring-slate-900 ring-offset-2' : '')}
-                    onFocusCapture={() => setActivePanel('quiz')}
-                  >
+                    <div
+                      onFocusCapture={() => setActivePanel('quiz')}
+                    >
                     <div className="font-bold">Quiz</div>
                     <form className="mt-3 grid gap-3" onSubmit={createQuiz}>
                       <div>
@@ -2008,12 +1994,11 @@ export default function CourseManager() {
                         <div className="mt-3 text-sm text-slate-600">Pilih quiz dulu untuk kelola soal.</div>
                       )}
                     </div>
-                    </Card>
+                    </div>
                   )}
                 </div>
                 </>
               )}
-            </Card>
         </div>
       </SidebarShell>
     </>
