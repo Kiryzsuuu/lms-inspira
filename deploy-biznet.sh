@@ -48,8 +48,16 @@ command -v docker    &>/dev/null && docker compose version &>/dev/null || \
 
 # Validasi env vars wajib
 source_env() {
-    # Baca .env.production tanpa mengeksekusi, hanya load variabel
-    set -a; source "$ENV_FILE"; set +a
+    # Parse .env file safely — handles & and other special chars in values
+    while IFS='=' read -r key value; do
+        [[ -z "$key" || "$key" =~ ^[[:space:]]*# ]] && continue
+        key="${key// /}"
+        value="${value%"${value##*[![:space:]]}"}"
+        # Strip surrounding quotes if present
+        value="${value#\"}" ; value="${value%\"}"
+        value="${value#\'}" ; value="${value%\'}"
+        export "$key=$value"
+    done < "$ENV_FILE"
 }
 source_env
 
