@@ -418,8 +418,12 @@ export default function CourseDetail() {
     setLockError('');
     try {
       await api.post(`/courses/${id}/start`);
-      const res = await api.get('/progress/me');
-      setProgress(res.data);
+      if (lessons.length > 0) {
+        nav(`/courses/${id}/lessons/${lessons[0]._id}`);
+      } else {
+        const res = await api.get('/progress/me');
+        setProgress(res.data);
+      }
     } catch (e) {
       setLockError(e?.response?.data?.error?.message || 'Gagal memulai course');
     }
