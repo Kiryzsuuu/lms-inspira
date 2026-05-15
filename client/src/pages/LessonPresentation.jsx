@@ -24,10 +24,10 @@ function getLessonType(lesson) {
 }
 
 const TM = {
-  video:   { ico: '📹', bg: C.blueXs,   col: C.blue,   lbl: 'Video'   },
-  read:    { ico: '📄', bg: C.violetXs, col: C.violet, lbl: 'Bacaan'  },
-  quiz:    { ico: '📝', bg: C.amberXs,  col: C.amber,  lbl: 'Quiz'    },
-  project: { ico: '🛠️', bg: C.tealXs,   col: C.teal,   lbl: 'Project' },
+  video:   { bg: C.blueXs,   col: C.blue,   lbl: 'Video'   },
+  read:    { bg: C.violetXs, col: C.violet, lbl: 'Bacaan'  },
+  quiz:    { bg: C.amberXs,  col: C.amber,  lbl: 'Quiz'    },
+  project: { bg: C.tealXs,   col: C.teal,   lbl: 'Project' },
 };
 const BS = {
   video:   { background: C.blueXs,   color: C.blue   },
@@ -230,11 +230,8 @@ export default function LessonPresentation() {
 
       {/* Topbar */}
       <header style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 200, height: TB_H, background: C.white, borderBottom: `1px solid ${C.n300}`, display: 'flex', alignItems: 'center', padding: '0 1.2rem', gap: '0.8rem' }}>
-        <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontFamily: "'Bricolage Grotesque',sans-serif", fontWeight: 800, fontSize: '0.95rem', letterSpacing: '-0.03em', color: C.n950, textDecoration: 'none', flexShrink: 0 }}>
-          <div style={{ width: 28, height: 28, borderRadius: 7, background: `linear-gradient(135deg,${C.blue},${C.blueM})`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <svg width="13" height="13" viewBox="0 0 18 18" fill="none"><path d="M9 1L10.5 6.5H16L11.5 10L13 15.5L9 12.5L5 15.5L6.5 10L2 6.5H7.5L9 1Z" fill="white" fillOpacity=".95" /></svg>
-          </div>
-          Inspira<span style={{ color: C.orange }}>Learn</span>
+        <Link to="/" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', flexShrink: 0 }}>
+          <img src="/logo-color.png" alt="InspiraLearn" style={{ height: 32, width: 'auto', objectFit: 'contain' }} />
         </Link>
         <div style={{ width: 1, height: 22, background: C.n300, flexShrink: 0 }} />
         <div className="pl-tb-mid" style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: '1rem' }}>
@@ -249,11 +246,11 @@ export default function LessonPresentation() {
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexShrink: 0, marginLeft: 'auto' }}>
           {cert.eligible && (
             <Link to={`/certificate/${id}`} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.77rem', fontWeight: 600, padding: '0.37rem 0.8rem', borderRadius: 7, background: `linear-gradient(135deg,${C.teal},#0a7a76)`, color: '#fff', textDecoration: 'none' }}>
-              🏆 Sertifikat
+              Sertifikat
             </Link>
           )}
           <Link to={`/courses/${id}`} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.77rem', fontWeight: 600, padding: '0.37rem 0.8rem', borderRadius: 7, background: 'transparent', color: C.n600, border: `1px solid ${C.n300}`, textDecoration: 'none' }}>
-            ← Detail
+            Detail Kursus
           </Link>
           <button onClick={() => setSidebarOpen(v => !v)} style={{ width: 32, height: 32, borderRadius: 7, display: 'flex', alignItems: 'center', justifyContent: 'center', background: C.n100, border: `1px solid ${C.n300}`, color: C.n600, fontSize: '0.85rem', cursor: 'pointer' }}>☰</button>
         </div>
@@ -324,13 +321,13 @@ export default function LessonPresentation() {
             <div style={{ background: `linear-gradient(135deg,${C.tealXs},${C.blueXs})`, border: `1px solid ${C.tealS}`, borderRadius: 10, padding: '0.8rem 1rem', textAlign: 'center' }}>
               {cert.eligible ? (
                 <>
-                  <div style={{ fontSize: '0.77rem', fontWeight: 700, color: C.teal, marginBottom: '0.2rem' }}>🎓 Eligible Sertifikat!</div>
+                  <div style={{ fontSize: '0.77rem', fontWeight: 700, color: C.teal, marginBottom: '0.2rem' }}>Eligible Sertifikat!</div>
                   <div style={{ fontSize: '0.68rem', color: C.n600, marginBottom: '0.55rem' }}>Selesaikan semua materi untuk mengunduh</div>
-                  <Link to={`/certificate/${id}`} style={{ display: 'block', padding: '0.46rem', background: `linear-gradient(135deg,${C.teal},#0a7a76)`, color: '#fff', borderRadius: 7, fontFamily: 'inherit', fontSize: '0.76rem', fontWeight: 700, textDecoration: 'none', textAlign: 'center' }}>📜 Unduh Sertifikat</Link>
+                  <Link to={`/certificate/${id}`} style={{ display: 'block', padding: '0.46rem', background: `linear-gradient(135deg,${C.teal},#0a7a76)`, color: '#fff', borderRadius: 7, fontFamily: 'inherit', fontSize: '0.76rem', fontWeight: 700, textDecoration: 'none', textAlign: 'center' }}>Unduh Sertifikat</Link>
                 </>
               ) : (
                 <>
-                  <div style={{ fontSize: '0.77rem', fontWeight: 700, color: C.n700, marginBottom: '0.2rem' }}>🎓 Sertifikat Kursus</div>
+                  <div style={{ fontSize: '0.77rem', fontWeight: 700, color: C.n700, marginBottom: '0.2rem' }}>Sertifikat Kursus</div>
                   <div style={{ fontSize: '0.68rem', color: C.n600, marginBottom: '0.3rem' }}>{completedCount}/{totalCount} materi selesai</div>
                   <div style={{ height: 5, background: C.n200, borderRadius: 9999, overflow: 'hidden' }}>
                     <div style={{ height: '100%', background: `linear-gradient(90deg,${C.blue},${C.teal})`, borderRadius: 9999, width: `${pct}%` }} />
@@ -410,7 +407,7 @@ export default function LessonPresentation() {
                   return first ? (
                     <button onClick={() => { setView('materi'); nav(`/courses/${id}/lessons/${first._id}`); }}
                       style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', background: C.blue, color: '#fff', padding: '0.68rem 1.4rem', borderRadius: 9, fontFamily: 'inherit', fontSize: '0.87rem', fontWeight: 700, cursor: 'pointer', border: 'none', boxShadow: `0 2px 8px rgba(12,98,141,.25)` }}>
-                      Mulai Materi Pertama →
+                      Mulai Materi Pertama
                     </button>
                   ) : null;
                 })()}
@@ -420,8 +417,8 @@ export default function LessonPresentation() {
               <div className="pl-content" style={{ padding: '1.75rem 2.25rem', maxWidth: 820 }}>
                 {!isActiveCourse && (
                   <div style={{ padding: '1rem', background: C.amberXs, border: '1px solid #fde68a', borderRadius: 9, color: '#92400e', fontSize: '0.86rem' }}>
-                    ⚠️ Silakan mulai kursus ini terlebih dahulu.{' '}
-                    <Link to={`/courses/${id}`} style={{ color: C.blue, fontWeight: 600 }}>Ke halaman kursus →</Link>
+                    Silakan mulai kursus ini terlebih dahulu.{' '}
+                    <Link to={`/courses/${id}`} style={{ color: C.blue, fontWeight: 600 }}>Ke halaman kursus</Link>
                   </div>
                 )}
                 {isPaywalled && (
@@ -447,12 +444,9 @@ export default function LessonPresentation() {
                 return (
                   <div className="pl-content" style={{ padding: '1.75rem 2.25rem 2.5rem', maxWidth: 820 }}>
                     {/* Header */}
-                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.7rem', marginBottom: '1.5rem' }}>
-                      <div style={{ width: 42, height: 42, borderRadius: 10, background: tm.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.3rem', flexShrink: 0 }}>{tm.ico}</div>
-                      <div>
-                        <div style={{ fontSize: '0.67rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: tm.col, marginBottom: '0.18rem' }}>{tm.lbl}</div>
-                        <div style={{ fontFamily: "'Bricolage Grotesque',sans-serif", fontSize: '1.5rem', fontWeight: 800, color: C.n950, letterSpacing: '-0.03em', lineHeight: 1.2 }}>{activeLesson.title}</div>
-                      </div>
+                    <div style={{ marginBottom: '1.5rem' }}>
+                      <div style={{ fontSize: '0.67rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: tm.col, marginBottom: '0.35rem' }}>{tm.lbl}</div>
+                      <div style={{ fontFamily: "'Bricolage Grotesque',sans-serif", fontSize: '1.5rem', fontWeight: 800, color: C.n950, letterSpacing: '-0.03em', lineHeight: 1.2 }}>{activeLesson.title}</div>
                     </div>
                     {/* Tabs */}
                     <div style={{ display: 'flex', borderBottom: `1.5px solid ${C.n200}`, marginBottom: '1.5rem', overflowX: 'auto' }}>
@@ -473,7 +467,7 @@ export default function LessonPresentation() {
                             <div style={{ display: 'flex', gap: '0.62rem', padding: '0.82rem 1rem', borderRadius: 9, borderLeft: `3px solid ${C.blue}`, background: C.blueXs, color: C.blueD, fontSize: '0.84rem', lineHeight: 1.6, marginBottom: '1.2rem' }}>
                               <span>ℹ️</span><div>Kerjakan quiz untuk menyelesaikan materi ini dan lanjut ke materi berikutnya.</div>
                             </div>
-                            <Link to={`/quiz/${activeLesson.quizId}`} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', background: C.amber, color: '#fff', padding: '0.68rem 1.4rem', borderRadius: 9, fontFamily: 'inherit', fontSize: '0.87rem', fontWeight: 700, textDecoration: 'none', boxShadow: `0 2px 8px rgba(217,119,6,.3)` }}>📝 Mulai Quiz →</Link>
+                            <Link to={`/quiz/${activeLesson.quizId}`} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', background: C.amber, color: '#fff', padding: '0.68rem 1.4rem', borderRadius: 9, fontFamily: 'inherit', fontSize: '0.87rem', fontWeight: 700, textDecoration: 'none', boxShadow: `0 2px 8px rgba(217,119,6,.3)` }}>Mulai Quiz</Link>
                           </div>
                         )}
                         {lType === 'project' && (
@@ -483,12 +477,12 @@ export default function LessonPresentation() {
                             </div>
                             {activeLesson.assignment?.instructionsHtml && (
                               <div style={{ marginBottom: '1.5rem' }}>
-                                <div style={{ fontFamily: "'Bricolage Grotesque',sans-serif", fontSize: '0.96rem', fontWeight: 800, color: C.n950, marginBottom: '0.82rem' }}>📋 Instruksi Project</div>
+                                <div style={{ fontFamily: "'Bricolage Grotesque',sans-serif", fontSize: '0.96rem', fontWeight: 800, color: C.n950, marginBottom: '0.82rem' }}>Instruksi Project</div>
                                 <div className="prose max-w-none" dangerouslySetInnerHTML={{ __html: cleanHtml(activeLesson.assignment.instructionsHtml) }} />
                               </div>
                             )}
                             {activeLesson.assignmentId && (
-                              <Link to={`/assignment/${activeLesson.assignmentId}`} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', background: C.teal, color: '#fff', padding: '0.68rem 1.4rem', borderRadius: 9, fontFamily: 'inherit', fontSize: '0.87rem', fontWeight: 700, textDecoration: 'none', boxShadow: `0 2px 8px rgba(11,168,148,.3)` }}>🛠️ Kerjakan Project →</Link>
+                              <Link to={`/assignment/${activeLesson.assignmentId}`} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', background: C.teal, color: '#fff', padding: '0.68rem 1.4rem', borderRadius: 9, fontFamily: 'inherit', fontSize: '0.87rem', fontWeight: 700, textDecoration: 'none', boxShadow: `0 2px 8px rgba(11,168,148,.3)` }}>Kerjakan Project</Link>
                             )}
                           </div>
                         )}
@@ -550,7 +544,7 @@ export default function LessonPresentation() {
                 nav(`/courses/${id}/lessons/${prevLessonId}`);
               }}
               style={{ display: 'flex', alignItems: 'center', gap: '0.42rem', fontSize: '0.82rem', fontWeight: 600, padding: '0.55rem 1.05rem', borderRadius: 8, background: 'transparent', color: prevDisabled ? C.n400 : C.n500, border: `1px solid ${C.n300}`, cursor: prevDisabled ? 'not-allowed' : 'pointer', opacity: prevDisabled ? 0.4 : 1 }}>
-              ← Sebelumnya
+              Sebelumnya
             </button>
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.28rem' }}>
               <div style={{ fontSize: '0.7rem', color: C.n400 }}>
@@ -579,7 +573,7 @@ export default function LessonPresentation() {
                 nav(`/courses/${id}/lessons/${nextLessonId}`);
               }}
               style={{ display: 'flex', alignItems: 'center', gap: '0.42rem', fontSize: '0.82rem', fontWeight: 600, padding: '0.55rem 1.05rem', borderRadius: 8, background: nextDisabled ? C.n300 : C.blue, color: '#fff', border: 'none', cursor: nextDisabled ? 'not-allowed' : 'pointer', opacity: nextDisabled ? 0.5 : 1, boxShadow: !nextDisabled ? `0 2px 6px rgba(12,98,141,.25)` : 'none' }}>
-              Berikutnya →
+              Berikutnya
             </button>
           </div>
         </main>
