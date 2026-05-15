@@ -12,6 +12,7 @@ const attachmentSchema = new mongoose.Schema(
 const lessonSchema = new mongoose.Schema(
   {
     courseId: { type: mongoose.Schema.Types.ObjectId, ref: 'Course', required: true, index: true },
+    moduleId: { type: mongoose.Schema.Types.ObjectId, ref: 'Module', index: true, default: null },
     title: { type: String, required: true, trim: true },
     contentMarkdown: { type: String, default: '' },
     contentHtml: { type: String, default: '' },

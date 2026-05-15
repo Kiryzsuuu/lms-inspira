@@ -1,6 +1,7 @@
 const express = require('express');
 const { z } = require('zod');
 const { Course } = require('../models/Course');
+const { Module } = require('../models/Module');
 const { Lesson } = require('../models/Lesson');
 const { Quiz } = require('../models/Quiz');
 const { Attempt } = require('../models/Attempt');
@@ -71,10 +72,31 @@ function coursesRouter({ requireAuth, requireRole }) {
       if (!course) throw new HttpError(404, 'Course not found');
       if (!course.isPublished) throw new HttpError(404, 'Course not found');
 
-      const lessons = await Lesson.find({ courseId: course._id, isPublished: true }).sort({ order: 1, createdAt: 1 });
-      const quizzes = await Quiz.find({ courseId: course._id, isPublished: true }).sort({ createdAt: -1 });
+      const [modules, lessons, quizzes] = await Promise.all([
+        Module.find({ courseId: course._id, isPublished: true }).sort({ order: 1, createdAt: 1 }),
+        Lesson.find({ courseId: course._id, isPublished: true }).sort({ order: 1, createdAt: 1 }),
+        Quiz.find({ courseId: course._id, isPublished: true }).sort({ createdAt: -1 }),
+      ]);
 
-      res.json({ course, lessons, quizzes });
+      res.json({ course, modules, lessons, quizzes });
+    })
+  );
+
+  // Teacher/Admin: preview course (bypasses isPublished check)
+  router.get(
+    '/:id/preview',
+    requireAuth,
+    requireRole('admin', 'teacher'),
+    asyncHandler(async (req, res) => {
+      const course = await assertCanEditCourse(req.params.id, req.user);
+
+      const [modules, lessons, quizzes] = await Promise.all([
+        Module.find({ courseId: course._id }).sort({ order: 1, createdAt: 1 }),
+        Lesson.find({ courseId: course._id }).sort({ order: 1, createdAt: 1 }),
+        Quiz.find({ courseId: course._id }).sort({ createdAt: -1 }),
+      ]);
+
+      res.json({ course, modules, lessons, quizzes });
     })
   );
 
@@ -293,9 +315,82 @@ function coursesRouter({ requireAuth, requireRole }) {
     requireRole('admin', 'teacher'),
     asyncHandler(async (req, res) => {
       await assertCanEditCourse(req.params.id, req.user);
-      await Lesson.deleteMany({ courseId: req.params.id });
-      await Quiz.deleteMany({ courseId: req.params.id });
+      await Promise.all([
+        Lesson.deleteMany({ courseId: req.params.id }),
+        Quiz.deleteMany({ courseId: req.params.id }),
+        Module.deleteMany({ courseId: req.params.id }),
+      ]);
       await Course.findByIdAndDelete(req.params.id);
+      res.status(204).end();
+    })
+  );
+
+  // ── Module CRUD ──────────────────────────────────────────────────────────────
+
+  router.get(
+    '/:courseId/modules',
+    requireAuth,
+    requireRole('admin', 'teacher'),
+    asyncHandler(async (req, res) => {
+      await assertCanEditCourse(req.params.courseId, req.user);
+      const modules = await Module.find({ courseId: req.params.courseId }).sort({ order: 1, createdAt: 1 });
+      res.json({ modules });
+    })
+  );
+
+  router.post(
+    '/:courseId/modules',
+    requireAuth,
+    requireRole('admin', 'teacher'),
+    asyncHandler(async (req, res) => {
+      await assertCanEditCourse(req.params.courseId, req.user);
+      const schema = z.object({
+        title: z.string().min(1),
+        description: z.string().optional().default(''),
+        order: z.coerce.number().optional().default(0),
+        isPublished: z.coerce.boolean().optional().default(false),
+      });
+      const data = schema.parse(req.body);
+      const module = await Module.create({ ...data, courseId: req.params.courseId });
+      res.status(201).json({ module });
+    })
+  );
+
+  router.put(
+    '/:courseId/modules/:moduleId',
+    requireAuth,
+    requireRole('admin', 'teacher'),
+    asyncHandler(async (req, res) => {
+      await assertCanEditCourse(req.params.courseId, req.user);
+      const schema = z.object({
+        title: z.string().min(1),
+        description: z.string().optional().default(''),
+        order: z.coerce.number().optional().default(0),
+        isPublished: z.coerce.boolean().optional().default(false),
+      });
+      const data = schema.parse(req.body);
+      const module = await Module.findOneAndUpdate(
+        { _id: req.params.moduleId, courseId: req.params.courseId },
+        data,
+        { new: true }
+      );
+      if (!module) throw new HttpError(404, 'Module not found');
+      res.json({ module });
+    })
+  );
+
+  router.delete(
+    '/:courseId/modules/:moduleId',
+    requireAuth,
+    requireRole('admin', 'teacher'),
+    asyncHandler(async (req, res) => {
+      await assertCanEditCourse(req.params.courseId, req.user);
+      await Module.deleteOne({ _id: req.params.moduleId, courseId: req.params.courseId });
+      // Unassign lessons from this module
+      await Lesson.updateMany(
+        { moduleId: req.params.moduleId, courseId: req.params.courseId },
+        { $set: { moduleId: null } }
+      );
       res.status(204).end();
     })
   );
@@ -307,10 +402,50 @@ function coursesRouter({ requireAuth, requireRole }) {
     requireRole('admin', 'teacher'),
     asyncHandler(async (req, res) => {
       await assertCanEditCourse(req.params.courseId, req.user);
-      const lessons = await Lesson.find({ courseId: req.params.courseId }).sort({ order: 1, createdAt: 1 });
+      const filter = { courseId: req.params.courseId };
+      if (req.query.moduleId) filter.moduleId = req.query.moduleId;
+      const lessons = await Lesson.find(filter).sort({ order: 1, createdAt: 1 });
       res.json({ lessons });
     })
   );
+
+  const lessonSchema = z.object({
+    title: z.string().min(2),
+    moduleId: z.string().optional().nullable().transform((v) => v || null),
+    contentMarkdown: z.string().optional().default(''),
+    contentHtml: z.string().optional().default(''),
+    videoEmbedUrl: z.string().optional().default(''),
+    attachments: z
+      .array(
+        z.object({
+          type: z.enum(['link', 'file']),
+          name: z.string().optional().default(''),
+          url: z.string().min(1),
+        })
+      )
+      .optional()
+      .default([]),
+    contentBlocks: z
+      .array(
+        z.object({
+          type: z.enum(['video', 'content', 'attachments']),
+          title: z.string().optional().default(''),
+        })
+      )
+      .optional()
+      .default([]),
+    quizId: z.string().optional().nullable(),
+    assignment: z
+      .object({
+        instructionsHtml: z.string().optional().default(''),
+        openAt: z.coerce.date().optional(),
+        closeAt: z.coerce.date().optional(),
+        durationSec: z.coerce.number().optional(),
+      })
+      .optional(),
+    order: z.coerce.number().optional().default(0),
+    isPublished: z.coerce.boolean().optional().default(false),
+  });
 
   router.post(
     '/:courseId/lessons',
@@ -318,43 +453,7 @@ function coursesRouter({ requireAuth, requireRole }) {
     requireRole('admin', 'teacher'),
     asyncHandler(async (req, res) => {
       await assertCanEditCourse(req.params.courseId, req.user);
-      const schema = z.object({
-        title: z.string().min(2),
-        contentMarkdown: z.string().optional().default(''),
-        contentHtml: z.string().optional().default(''),
-        videoEmbedUrl: z.string().optional().default(''),
-        attachments: z
-          .array(
-            z.object({
-              type: z.enum(['link', 'file']),
-              name: z.string().optional().default(''),
-              url: z.string().min(1),
-            })
-          )
-          .optional()
-          .default([]),
-        contentBlocks: z
-          .array(
-            z.object({
-              type: z.enum(['video', 'content', 'attachments']),
-              title: z.string().optional().default(''),
-            })
-          )
-          .optional()
-          .default([]),
-        quizId: z.string().optional().nullable(),
-        assignment: z
-          .object({
-            instructionsHtml: z.string().optional().default(''),
-            openAt: z.coerce.date().optional(),
-            closeAt: z.coerce.date().optional(),
-            durationSec: z.coerce.number().optional(),
-          })
-          .optional(),
-        order: z.coerce.number().optional().default(0),
-        isPublished: z.coerce.boolean().optional().default(false),
-      });
-      const data = schema.parse(req.body);
+      const data = lessonSchema.parse(req.body);
       const lesson = await Lesson.create({ ...data, courseId: req.params.courseId });
       res.status(201).json({ lesson });
     })
@@ -366,43 +465,7 @@ function coursesRouter({ requireAuth, requireRole }) {
     requireRole('admin', 'teacher'),
     asyncHandler(async (req, res) => {
       await assertCanEditCourse(req.params.courseId, req.user);
-      const schema = z.object({
-        title: z.string().min(2),
-        contentMarkdown: z.string().optional().default(''),
-        contentHtml: z.string().optional().default(''),
-        videoEmbedUrl: z.string().optional().default(''),
-        attachments: z
-          .array(
-            z.object({
-              type: z.enum(['link', 'file']),
-              name: z.string().optional().default(''),
-              url: z.string().min(1),
-            })
-          )
-          .optional()
-          .default([]),
-        contentBlocks: z
-          .array(
-            z.object({
-              type: z.enum(['video', 'content', 'attachments']),
-              title: z.string().optional().default(''),
-            })
-          )
-          .optional()
-          .default([]),
-        quizId: z.string().optional().nullable(),
-        assignment: z
-          .object({
-            instructionsHtml: z.string().optional().default(''),
-            openAt: z.coerce.date().optional(),
-            closeAt: z.coerce.date().optional(),
-            durationSec: z.coerce.number().optional(),
-          })
-          .optional(),
-        order: z.coerce.number().optional().default(0),
-        isPublished: z.coerce.boolean().optional().default(false),
-      });
-      const data = schema.parse(req.body);
+      const data = lessonSchema.parse(req.body);
       const lesson = await Lesson.findOneAndUpdate(
         { _id: req.params.lessonId, courseId: req.params.courseId },
         data,

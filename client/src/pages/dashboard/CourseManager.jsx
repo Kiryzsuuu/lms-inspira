@@ -5,6 +5,28 @@ import { useAuth } from '../../lib/auth';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { RichTextEditor } from '../../components/RichTextEditor';
 
+function LessonCard({ l, onEdit, onToggle, onDelete }) {
+  return (
+    <Card className="p-4 mb-2">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <div className="font-semibold leading-snug line-clamp-2 break-words">{l.title}</div>
+          <div className="mt-1 text-xs text-slate-500">
+            <span className="whitespace-nowrap">Order: {l.order}</span>
+            <span className="px-1">·</span>
+            <span className={l.isPublished ? 'text-emerald-600' : 'text-rose-500'}>{l.isPublished ? 'Published' : 'Draft'}</span>
+          </div>
+        </div>
+        <div className="flex flex-wrap gap-2 shrink-0">
+          <Button variant="outline" className="px-3 text-xs" onClick={() => onEdit(l)}>Edit</Button>
+          <Button variant="outline" className="px-3 text-xs" onClick={() => onToggle(l)}>Toggle</Button>
+          <Button variant="danger" className="px-3 text-xs" onClick={() => onDelete(l)}>Hapus</Button>
+        </div>
+      </div>
+    </Card>
+  );
+}
+
 export default function CourseManager() {
   const { api } = useAuth();
 
@@ -43,6 +65,10 @@ export default function CourseManager() {
     });
   }
 
+  const [modules, setModules] = useState([]);
+  const [moduleForm, setModuleForm] = useState({ title: '', description: '', order: 0, isPublished: true });
+  const [editingModuleId, setEditingModuleId] = useState('');
+
   const [lessons, setLessons] = useState([]);
   const defaultLessonHtml =
     '<h2>Tujuan Pembelajaran</h2><ul><li>Tulis tujuan 1</li><li>Tulis tujuan 2</li></ul><h2>Materi</h2><p>Tulis materi di sini...</p><h2>Ringkasan</h2><ul><li>Point penting 1</li><li>Point penting 2</li></ul><h2>Latihan</h2><ol><li>Pertanyaan latihan 1</li><li>Pertanyaan latihan 2</li></ol>';
@@ -50,6 +76,7 @@ export default function CourseManager() {
   function getDefaultLessonForm(nextOrder = 1) {
     return {
       title: '',
+      moduleId: '',
       contentMarkdown: '',
       contentHtml: defaultLessonHtml,
       videoEmbedUrl: '',
@@ -125,6 +152,7 @@ export default function CourseManager() {
 
   async function loadCourseDetails(courseId) {
     if (!courseId) {
+      setModules([]);
       setLessons([]);
       setQuizzes([]);
       setActiveQuizId('');
@@ -132,10 +160,12 @@ export default function CourseManager() {
       return;
     }
     try {
-      const [lRes, qRes] = await Promise.all([
+      const [mRes, lRes, qRes] = await Promise.all([
+        api.get(`/courses/${courseId}/modules`),
         api.get(`/courses/${courseId}/lessons`),
         api.get(`/quizzes/course/${courseId}`),
       ]);
+      setModules(mRes.data.modules || []);
       setLessons(lRes.data.lessons || []);
       setQuizzes(qRes.data.quizzes || []);
     } catch (e) {
@@ -169,6 +199,8 @@ export default function CourseManager() {
   useEffect(() => {
     // When switching course, exit edit mode and reset form
     setEditingLessonId('');
+    setEditingModuleId('');
+    setModuleForm({ title: '', description: '', order: 0, isPublished: true });
     setLessonForm((f) => getDefaultLessonForm(f?.order || 1));
     setAttachLink({ name: '', url: '' });
   }, [selectedId]);
@@ -211,6 +243,49 @@ export default function CourseManager() {
     } catch (_) {
       // ignore; Bank Soal may be unused on this screen
     }
+  }
+
+  async function createOrUpdateModule(e) {
+    e.preventDefault();
+    if (!selected) return;
+    if (!moduleForm.title.trim()) { setError('Nama modul wajib diisi'); return; }
+    setError('');
+    try {
+      if (editingModuleId) {
+        await api.put(`/courses/${selected._id}/modules/${editingModuleId}`, moduleForm);
+      } else {
+        await api.post(`/courses/${selected._id}/modules`, moduleForm);
+      }
+      setEditingModuleId('');
+      setModuleForm({ title: '', description: '', order: modules.length, isPublished: true });
+      await loadCourseDetails(selected._id);
+    } catch (e) {
+      setError(e?.response?.data?.error?.message || 'Gagal simpan modul');
+    }
+  }
+
+  function beginEditModule(mod) {
+    setEditingModuleId(mod._id);
+    setModuleForm({ title: mod.title || '', description: mod.description || '', order: mod.order || 0, isPublished: mod.isPublished !== false });
+  }
+
+  async function deleteModule(mod) {
+    if (!selected) return;
+    askConfirm({
+      title: 'Hapus modul?',
+      message: 'Modul dihapus. Materi yang ada di modul ini akan menjadi tidak termodul.',
+      confirmText: 'Hapus',
+      confirmVariant: 'danger',
+      onConfirm: async () => {
+        setError('');
+        try {
+          await api.delete(`/courses/${selected._id}/modules/${mod._id}`);
+          await loadCourseDetails(selected._id);
+        } catch (e) {
+          setError(e?.response?.data?.error?.message || 'Gagal hapus modul');
+        }
+      },
+    });
   }
 
   async function importQuestionsFromBank(e) {
@@ -361,6 +436,7 @@ export default function CourseManager() {
     setEditingLessonId(lesson._id);
     setLessonForm({
       title: lesson.title || '',
+      moduleId: lesson.moduleId ? String(lesson.moduleId) : '',
       contentMarkdown: lesson.contentMarkdown || '',
       contentHtml: lesson.contentHtml || defaultLessonHtml,
       videoEmbedUrl,
@@ -908,6 +984,16 @@ export default function CourseManager() {
                     Pengaturan
                   </button>
                   <button
+                    onClick={() => setActiveTab('modules')}
+                    className={`px-4 py-2 font-semibold text-sm transition-colors ${
+                      activeTab === 'modules'
+                        ? 'text-primary border-b-2 border-primary'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    Modul {modules.length > 0 ? `(${modules.length})` : ''}
+                  </button>
+                  <button
                     onClick={() => setActiveTab('lessons')}
                     className={`px-4 py-2 font-semibold text-sm transition-colors ${
                       activeTab === 'lessons'
@@ -1096,6 +1182,102 @@ export default function CourseManager() {
                     </Card>
                   )}
 
+                  {activeTab === 'modules' && (
+                    <Card className="p-5">
+                      <div className="font-bold mb-4">Modul Kursus</div>
+                      <form className="grid gap-3 mb-6 border-b border-slate-200 pb-6" onSubmit={createOrUpdateModule}>
+                        <div className="grid gap-3 sm:grid-cols-2">
+                          <div>
+                            <Label>Nama Modul</Label>
+                            <div className="mt-1">
+                              <Input
+                                value={moduleForm.title}
+                                onChange={(e) => setModuleForm((f) => ({ ...f, title: e.target.value }))}
+                                placeholder="mis: Pendahuluan"
+                              />
+                            </div>
+                          </div>
+                          <div>
+                            <Label>Order</Label>
+                            <div className="mt-1">
+                              <Input
+                                type="number"
+                                value={moduleForm.order}
+                                onChange={(e) => setModuleForm((f) => ({ ...f, order: Number(e.target.value) }))}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                        <div>
+                          <Label>Deskripsi (opsional)</Label>
+                          <div className="mt-1">
+                            <Input
+                              value={moduleForm.description}
+                              onChange={(e) => setModuleForm((f) => ({ ...f, description: e.target.value }))}
+                              placeholder="Deskripsi singkat modul"
+                            />
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <input
+                            id="modPublished"
+                            type="checkbox"
+                            className="h-4 w-4"
+                            checked={moduleForm.isPublished}
+                            onChange={(e) => setModuleForm((f) => ({ ...f, isPublished: e.target.checked }))}
+                          />
+                          <Label htmlFor="modPublished">Publish</Label>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button type="submit">{editingModuleId ? 'Simpan Modul' : 'Tambah Modul'}</Button>
+                          {editingModuleId && (
+                            <Button type="button" variant="outline" onClick={() => {
+                              setEditingModuleId('');
+                              setModuleForm({ title: '', description: '', order: modules.length, isPublished: true });
+                            }}>
+                              Batal
+                            </Button>
+                          )}
+                        </div>
+                      </form>
+
+                      <div className="grid gap-3">
+                        {modules.map((mod) => {
+                          const modLessons = lessons.filter((l) => String(l.moduleId) === String(mod._id));
+                          return (
+                            <div key={mod._id} className="border border-slate-200 rounded-lg p-4">
+                              <div className="flex items-start justify-between gap-3">
+                                <div>
+                                  <div className="font-semibold text-slate-900">{mod.title}</div>
+                                  {mod.description && <div className="text-xs text-slate-500 mt-0.5">{mod.description}</div>}
+                                  <div className="text-xs text-slate-400 mt-1">
+                                    Order: {mod.order} · {modLessons.length} materi · {mod.isPublished ? 'Published' : 'Draft'}
+                                  </div>
+                                  {modLessons.length > 0 && (
+                                    <div className="mt-1 text-xs text-slate-500">
+                                      {modLessons.map((l) => l.title).join(', ')}
+                                    </div>
+                                  )}
+                                </div>
+                                <div className="flex gap-2 shrink-0">
+                                  <Button variant="outline" className="px-3 text-xs" onClick={() => beginEditModule(mod)}>
+                                    Edit
+                                  </Button>
+                                  <Button variant="danger" className="px-3 text-xs" onClick={() => deleteModule(mod)}>
+                                    Hapus
+                                  </Button>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                        {modules.length === 0 && (
+                          <div className="text-sm text-slate-600 italic">Belum ada modul. Tambah modul untuk mengorganisir materi.</div>
+                        )}
+                      </div>
+                    </Card>
+                  )}
+
                   {activeTab === 'lessons' && (
                     <Card
                       className={'p-5 ' + (activePanel === 'lesson' ? 'ring-2 ring-slate-900 ring-offset-2' : '')}
@@ -1103,10 +1285,27 @@ export default function CourseManager() {
                   >
                     <div className="font-bold">Materi (Lessons)</div>
                     <form className="mt-3 grid gap-3" onSubmit={isEditingLesson ? updateLesson : createLesson}>
-                      <div>
-                        <Label>Judul Materi</Label>
-                        <div className="mt-1">
-                          <Input value={lessonForm.title} onChange={(e) => setLessonForm((f) => ({ ...f, title: e.target.value }))} />
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <div>
+                          <Label>Judul Materi</Label>
+                          <div className="mt-1">
+                            <Input value={lessonForm.title} onChange={(e) => setLessonForm((f) => ({ ...f, title: e.target.value }))} />
+                          </div>
+                        </div>
+                        <div>
+                          <Label>Modul <span className="text-slate-400 font-normal">(opsional)</span></Label>
+                          <div className="mt-1">
+                            <select
+                              className="w-full border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+                              value={lessonForm.moduleId || ''}
+                              onChange={(e) => setLessonForm((f) => ({ ...f, moduleId: e.target.value || null }))}
+                            >
+                              <option value="">Tanpa modul</option>
+                              {modules.map((m) => (
+                                <option key={m._id} value={m._id}>{m.title}</option>
+                              ))}
+                            </select>
+                          </div>
                         </div>
                       </div>
                       <div>
@@ -1325,32 +1524,33 @@ export default function CourseManager() {
                     </form>
 
                     <div className="mt-4 grid gap-3">
-                      {lessons.map((l) => (
-                        <Card key={l._id} className="aspect-[16/9] p-4">
-                          <div className="flex h-full flex-col justify-between gap-3">
-                            <div className="min-w-0">
-                              <div className="font-semibold leading-snug line-clamp-2 break-words">{l.title}</div>
-                              <div className="mt-1 text-xs text-slate-500">
-                                <span className="whitespace-nowrap">Order: {l.order}</span>
-                                <span className="px-1">•</span>
-                                <span className="whitespace-nowrap">Published: {String(l.isPublished)}</span>
-                              </div>
-                            </div>
-
-                            <div className="flex flex-wrap gap-2">
-                              <Button variant="outline" className="px-3" onClick={() => beginEditLesson(l)}>
-                                Edit
-                              </Button>
-                              <Button variant="outline" className="px-3" onClick={() => toggleLessonPublish(l)}>
-                                Toggle
-                              </Button>
-                              <Button variant="danger" className="px-3" onClick={() => deleteLesson(l)}>
-                                Hapus
-                              </Button>
-                            </div>
-                          </div>
-                        </Card>
-                      ))}
+                      {(() => {
+                        if (modules.length === 0) {
+                          return lessons.map((l) => (
+                            <LessonCard key={l._id} l={l} onEdit={beginEditLesson} onToggle={toggleLessonPublish} onDelete={deleteLesson} />
+                          ));
+                        }
+                        const groups = [];
+                        for (const mod of modules) {
+                          const ml = lessons.filter((l) => String(l.moduleId) === String(mod._id));
+                          groups.push(<div key={mod._id}>
+                            <div className="text-xs font-bold text-slate-500 uppercase tracking-wide py-1 border-b border-slate-100 mb-2">{mod.title}</div>
+                            {ml.length === 0 ? <div className="text-xs text-slate-400 italic mb-2">Belum ada materi di modul ini.</div> : ml.map((l) => (
+                              <LessonCard key={l._id} l={l} onEdit={beginEditLesson} onToggle={toggleLessonPublish} onDelete={deleteLesson} />
+                            ))}
+                          </div>);
+                        }
+                        const uncat = lessons.filter((l) => !l.moduleId || !modules.find((m) => String(m._id) === String(l.moduleId)));
+                        if (uncat.length > 0) {
+                          groups.push(<div key="__uncat">
+                            <div className="text-xs font-bold text-slate-500 uppercase tracking-wide py-1 border-b border-slate-100 mb-2">Tidak Termodul</div>
+                            {uncat.map((l) => (
+                              <LessonCard key={l._id} l={l} onEdit={beginEditLesson} onToggle={toggleLessonPublish} onDelete={deleteLesson} />
+                            ))}
+                          </div>);
+                        }
+                        return groups;
+                      })()}
                       {lessons.length === 0 ? <div className="text-sm text-slate-600">Belum ada materi.</div> : null}
                     </div>
                     </Card>

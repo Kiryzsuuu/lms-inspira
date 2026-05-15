@@ -7,11 +7,14 @@ import { ConfirmDialog } from './ConfirmDialog';
 function NavDropdown({ label, isOpen, onHover, children }) {
   return (
     <div className="relative" onMouseEnter={() => onHover(true)} onMouseLeave={() => onHover(false)}>
-      <button className="text-white font-medium text-sm hover:scale-105 transition-transform py-2">
+      <button className="text-slate-600 font-medium text-sm hover:text-orange-600 transition-colors py-2 flex items-center gap-1">
         {label}
+        <svg className="h-3.5 w-3.5 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </svg>
       </button>
       {isOpen && (
-        <div className="absolute top-full left-0 mt-0 w-48 bg-white border border-slate-200 rounded-xl shadow-lg z-50">
+        <div className="absolute top-full left-0 mt-0 w-52 bg-white border border-slate-200 rounded-xl shadow-lg z-50 py-1">
           {children}
         </div>
       )}
@@ -22,7 +25,7 @@ function NavDropdown({ label, isOpen, onHover, children }) {
 function MobileMenuGroup({ label, children }) {
   return (
     <>
-      <div className="px-4 py-2 text-xs font-semibold uppercase text-slate-500 border-t border-slate-100">
+      <div className="px-4 py-2 text-xs font-semibold uppercase text-slate-400 border-t border-slate-100">
         {label}
       </div>
       {children}
@@ -34,7 +37,7 @@ function MobileMenuItem({ onSelect, children }) {
   return (
     <button
       type="button"
-      className="w-full px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 transition-colors"
+      className="w-full px-4 py-2.5 text-left text-sm text-slate-700 hover:bg-orange-50 hover:text-orange-700 transition-colors"
       onClick={onSelect}
     >
       {children}
@@ -107,35 +110,35 @@ export function Navbar() {
           confirmExitRef.current();
         }}
       />
-      <header className="sticky top-0 z-30 bg-slate-900 border-b border-slate-800">
+      <header className="sticky top-0 z-30 bg-white border-b border-slate-200 shadow-sm">
       <div className="flex h-16 w-full items-center justify-between px-[clamp(1rem,2vw,2.5rem)]">
         {minimalHeader ? (
           <>
             <button
               type="button"
-              className="flex items-center gap-2 font-extrabold tracking-tight text-white hover:scale-105 transition-transform"
+              className="flex items-center gap-2 font-extrabold tracking-tight text-slate-900 hover:opacity-80 transition-opacity"
               onClick={handleExitClick}
               aria-label="Kembali ke home"
             >
               <img src="/lms-logo.png" alt="LMS" className="h-6 w-auto sm:h-7" />
-              <span className="hidden sm:block font-bold">Inspira Innovation</span>
+              <span className="hidden sm:block font-bold text-slate-900">Inspira Innovation</span>
             </button>
 
             <div className="flex items-center gap-2">
-              <Button className="bg-primary text-white" onClick={handleExitClick}>
-                Exit
+              <Button className="bg-orange-500 hover:bg-orange-600 text-white border-0" onClick={handleExitClick}>
+                Keluar
               </Button>
             </div>
           </>
         ) : (
           <>
-            <Link to="/" className="flex items-center gap-2 font-extrabold tracking-tight text-white hover:scale-105 transition-transform">
+            <Link to="/" className="flex items-center gap-2 font-extrabold tracking-tight text-slate-900 hover:opacity-80 transition-opacity">
               <img src="/lms-logo.png" alt="LMS" className="h-6 w-auto sm:h-7" />
-              <span className="hidden sm:block font-bold">Inspira Innovation</span>
+              <span className="hidden sm:block font-bold text-slate-900">Inspira Innovation</span>
             </Link>
 
             <nav className="hidden flex-1 items-center justify-center gap-8 sm:flex">
-              <Link to="/courses" className="text-white font-medium text-sm hover:scale-105 transition-transform py-2">
+              <Link to="/courses" className="text-slate-600 font-medium text-sm hover:text-orange-600 transition-colors py-2">
                 Kursus
               </Link>
 
@@ -145,16 +148,16 @@ export function Navbar() {
                   isOpen={dropdownOpen === 'pembelajaran'}
                   onHover={(open) => setDropdownOpen(open ? 'pembelajaran' : null)}
                 >
-                  <Link to="/dashboard/courses" className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 border-b border-slate-100">
+                  <Link to="/dashboard/courses" className="block px-4 py-2 text-sm text-slate-700 hover:bg-orange-50 hover:text-orange-700 rounded-lg mx-1">
                     Kelola Kursus
                   </Link>
-                  <Link to="/dashboard/question-bank" className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 border-b border-slate-100">
+                  <Link to="/dashboard/question-bank" className="block px-4 py-2 text-sm text-slate-700 hover:bg-orange-50 hover:text-orange-700 rounded-lg mx-1">
                     Bank Soal
                   </Link>
-                  <Link to="/dashboard/student-progress" className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 border-b border-slate-100">
+                  <Link to="/dashboard/student-progress" className="block px-4 py-2 text-sm text-slate-700 hover:bg-orange-50 hover:text-orange-700 rounded-lg mx-1">
                     Monitor Siswa
                   </Link>
-                  <Link to="/dashboard/heroes" className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50">
+                  <Link to="/dashboard/heroes" className="block px-4 py-2 text-sm text-slate-700 hover:bg-orange-50 hover:text-orange-700 rounded-lg mx-1">
                     Hero Carousel
                   </Link>
                 </NavDropdown>
@@ -166,13 +169,13 @@ export function Navbar() {
                   isOpen={dropdownOpen === 'admin'}
                   onHover={(open) => setDropdownOpen(open ? 'admin' : null)}
                 >
-                  <Link to="/dashboard/users" className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 border-b border-slate-100">
+                  <Link to="/dashboard/users" className="block px-4 py-2 text-sm text-slate-700 hover:bg-orange-50 hover:text-orange-700 rounded-lg mx-1">
                     Kelola Pengguna
                   </Link>
-                  <Link to="/dashboard/accounting" className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 border-b border-slate-100">
+                  <Link to="/dashboard/accounting" className="block px-4 py-2 text-sm text-slate-700 hover:bg-orange-50 hover:text-orange-700 rounded-lg mx-1">
                     Pembukuan
                   </Link>
-                  <Link to="/dashboard/coupons" className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50">
+                  <Link to="/dashboard/coupons" className="block px-4 py-2 text-sm text-slate-700 hover:bg-orange-50 hover:text-orange-700 rounded-lg mx-1">
                     Kelola Kupon
                   </Link>
                 </NavDropdown>
@@ -184,12 +187,12 @@ export function Navbar() {
                 {!isAuthed ? (
                   <>
                     <Link to="/login">
-                      <Button variant="outline" className="bg-transparent text-white border-white hover:bg-white/10">
+                      <Button variant="outline" className="text-slate-700 border-slate-300 hover:border-orange-400 hover:text-orange-600">
                         Masuk
                       </Button>
                     </Link>
                     <Link to="/register">
-                      <Button className="bg-primary text-white">
+                      <Button className="bg-orange-500 hover:bg-orange-600 text-white border-0">
                         Daftar
                       </Button>
                     </Link>
@@ -198,7 +201,7 @@ export function Navbar() {
                   <>
                     {role === 'student' && (
                       <Link to="/cart" className="relative inline-flex" aria-label="Keranjang">
-                        <div className="text-white p-2 rounded-lg hover:scale-110 transition-transform">
+                        <div className="text-slate-600 p-2 rounded-lg hover:text-orange-600 hover:bg-orange-50 transition-colors">
                           <svg
                             xmlns="http://www.w3.org/2000/svg"
                             viewBox="0 0 24 24"
@@ -216,7 +219,7 @@ export function Navbar() {
                           </svg>
                         </div>
                         {cartCount > 0 && (
-                          <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full bg-rose-500 ring-2 ring-slate-900" />
+                          <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full bg-rose-500 ring-2 ring-white" />
                         )}
                       </Link>
                     )}
@@ -224,34 +227,36 @@ export function Navbar() {
                     <div className="relative">
                       <button
                         onClick={() => setUserMenuOpen(!userMenuOpen)}
-                        className="flex items-center gap-2 px-3 py-2 rounded-lg text-white hover:scale-105 transition-transform"
+                        className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-slate-50 transition-colors"
                       >
-                        <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center">
-                          <span className="text-sm font-semibold text-primary">{user?.name?.charAt(0)?.toUpperCase() || 'U'}</span>
+                        <div className="h-8 w-8 rounded-full bg-orange-100 flex items-center justify-center">
+                          <span className="text-sm font-semibold text-orange-700">{user?.name?.charAt(0)?.toUpperCase() || 'U'}</span>
                         </div>
-                        <span className="text-sm hidden md:block text-white">{user?.name || 'Profile'}</span>
+                        <span className="text-sm hidden md:block text-slate-700">{user?.name || 'Profile'}</span>
                       </button>
 
                       {userMenuOpen && (
                         <>
                           <button type="button" className="fixed inset-0 z-30" onClick={() => setUserMenuOpen(false)} />
-                          <div className="absolute right-0 top-full mt-2 w-48 bg-white border border-slate-200 rounded-xl shadow-lg z-40">
-                            <Link to="/dashboard" className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 border-b border-slate-100">
+                          <div className="absolute right-0 top-full mt-2 w-48 bg-white border border-slate-200 rounded-xl shadow-lg z-40 py-1">
+                            <Link to="/dashboard" className="block px-4 py-2 text-sm text-slate-700 hover:bg-orange-50 hover:text-orange-700 rounded-lg mx-1">
                               Dashboard
                             </Link>
-                            <Link to="/my-profile" className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 border-b border-slate-100">
+                            <Link to="/my-profile" className="block px-4 py-2 text-sm text-slate-700 hover:bg-orange-50 hover:text-orange-700 rounded-lg mx-1">
                               Profil Saya
                             </Link>
-                            <button
-                              type="button"
-                              className="w-full px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 transition-colors"
-                              onClick={() => {
-                                setUserMenuOpen(false);
-                                logout();
-                              }}
-                            >
-                              Logout
-                            </button>
+                            <div className="border-t border-slate-100 mt-1 pt-1">
+                              <button
+                                type="button"
+                                className="w-full px-4 py-2 text-left text-sm text-rose-600 hover:bg-rose-50 rounded-lg mx-0 transition-colors"
+                                onClick={() => {
+                                  setUserMenuOpen(false);
+                                  logout();
+                                }}
+                              >
+                                Logout
+                              </button>
+                            </div>
                           </div>
                         </>
                       )}
@@ -266,7 +271,7 @@ export function Navbar() {
                   aria-haspopup="menu"
                   aria-expanded={mobileMenuOpen}
                   onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                  className="flex items-center justify-center h-10 w-10 rounded-lg text-white hover:text-white hover:bg-slate-800 transition-colors"
+                  className="flex items-center justify-center h-10 w-10 rounded-lg text-slate-700 hover:bg-slate-100 transition-colors"
                 >
                   <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />

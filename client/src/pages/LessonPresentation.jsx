@@ -71,22 +71,26 @@ export default function LessonPresentation() {
   const { api, role, user } = useAuth();
 
   const [course, setCourse] = useState(null);
+  const [modules, setModules] = useState([]);
   const [lessons, setLessons] = useState([]);
   const [lessonProgress, setLessonProgress] = useState({});
   const [progress, setProgress] = useState({ activeCourseId: null });
   const [cert, setCert] = useState({ eligible: false, completed: 0, total: 0, quizzesEligible: true, quizzesSubmitted: 0, quizzesTotal: 0 });
   const [openAttachmentUrl, setOpenAttachmentUrl] = useState('');
   const [lockError, setLockError] = useState('');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
     api
       .get(`/courses/${id}`)
       .then((res) => {
         setCourse(res.data.course);
+        setModules(res.data.modules || []);
         setLessons(res.data.lessons || []);
       })
       .catch(() => {
         setCourse(null);
+        setModules([]);
         setLessons([]);
       });
   }, [id, api]);
@@ -178,17 +182,80 @@ export default function LessonPresentation() {
   }
 
 
+  const activeModule = useMemo(() => {
+    if (!activeLesson?.moduleId) return null;
+    return modules.find((m) => String(m._id) === String(activeLesson.moduleId)) || null;
+  }, [activeLesson, modules]);
+
   return (
-    <Container className="py-6">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <div className="text-xs font-semibold text-slate-500">{course?.title || 'Course'}</div>
-          <h1 className="mt-1 text-xl font-extrabold tracking-tight text-slate-900">{activeLesson?.title || 'Materi'}</h1>
+    <div className="min-h-screen bg-slate-50">
+    <Container className="py-4">
+      {/* Breadcrumb */}
+      <div className="flex items-center justify-between gap-3 mb-4">
+        <div className="flex items-center gap-2 text-sm min-w-0">
+          <button onClick={() => nav(`/courses/${id}`)} className="text-slate-500 hover:text-orange-600 transition-colors shrink-0">
+            ← {course?.title || 'Kursus'}
+          </button>
+          {activeModule && (
+            <>
+              <span className="text-slate-300">/</span>
+              <span className="text-slate-500 truncate hidden sm:block">{activeModule.title}</span>
+            </>
+          )}
+          {activeLesson && (
+            <>
+              <span className="text-slate-300">/</span>
+              <span className="font-semibold text-slate-900 truncate">{activeLesson.title}</span>
+            </>
+          )}
         </div>
-        <Button variant="outline" onClick={() => nav(`/courses/${id}`)}>
-          Exit
-        </Button>
+        {modules.length > 0 && (
+          <button
+            onClick={() => setSidebarOpen((v) => !v)}
+            className="text-slate-600 hover:text-orange-600 transition-colors text-sm font-medium shrink-0 hidden sm:block"
+          >
+            {sidebarOpen ? 'Tutup Silabus' : 'Buka Silabus'}
+          </button>
+        )}
       </div>
+
+      <div className="flex gap-6">
+        {/* Silabus sidebar */}
+        {sidebarOpen && modules.length > 0 && (
+          <div className="hidden sm:block w-64 shrink-0">
+            <div className="bg-white border border-slate-200 rounded-xl p-4 sticky top-20">
+              <div className="font-semibold text-sm text-slate-900 mb-3">Silabus</div>
+              <div className="space-y-2 max-h-[70vh] overflow-y-auto">
+                {modules.map((mod) => {
+                  const modLessons = lessons.filter((l) => String(l.moduleId) === String(mod._id));
+                  return (
+                    <div key={mod._id}>
+                      <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide py-1">{mod.title}</div>
+                      {modLessons.map((l) => {
+                        const isActive = String(l._id) === String(lessonId);
+                        const completed = lessonProgress[String(l._id)]?.isCompleted;
+                        return (
+                          <button
+                            key={l._id}
+                            onClick={() => nav(`/courses/${id}/lessons/${l._id}`)}
+                            className={`w-full text-left px-2 py-1.5 text-xs rounded transition-colors flex items-center gap-2 mb-0.5 ${isActive ? 'bg-orange-100 text-orange-800 font-medium' : 'text-slate-600 hover:bg-slate-50'}`}
+                          >
+                            <span className="shrink-0">
+                              {completed ? '✓' : isActive ? '▶' : '·'}
+                            </span>
+                            <span className="truncate">{l.title}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div className="flex-1 min-w-0">
 
       {!activeLesson ? (
         <div className="mt-6 border border-slate-200 bg-white p-6 text-sm text-slate-600">Materi tidak ditemukan.</div>
@@ -342,6 +409,9 @@ export default function LessonPresentation() {
           </div>
         </div>
       )}
+        </div>
+      </div>
     </Container>
+    </div>
   );
 }
