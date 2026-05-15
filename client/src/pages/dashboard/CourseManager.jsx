@@ -180,7 +180,7 @@ export default function CourseManager() {
   useEffect(() => {
     // Populate course form when a course is selected
     if (!selected) {
-      setCourseForm({ title: '', description: '', coverImageUrl: '', priceIdr: 0, isPublished: false });
+      setCourseForm({ title: '', description: '', coverImageUrl: '', priceIdr: 0, isPublished: false, tags: [], templateId: '' });
       return;
     }
     setCourseForm({
@@ -261,7 +261,7 @@ export default function CourseManager() {
       const res = await api.post('/courses', courseForm);
       await loadCourses();
       setSelectedId(res.data.course._id);
-      setCourseForm({ title: '', description: '', coverImageUrl: '', priceIdr: 0, isPublished: false });
+      setCourseForm({ title: '', description: '', coverImageUrl: '', priceIdr: 0, isPublished: false, tags: [], templateId: '' });
     } catch (e) {
       setError(e?.response?.data?.error?.message || 'Gagal membuat course');
     }
