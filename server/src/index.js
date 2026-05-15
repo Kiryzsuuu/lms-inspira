@@ -114,7 +114,7 @@ async function main() {
 
     if (fs.existsSync(indexHtml)) {
       app.use(express.static(clientDist));
-      app.get('*', (req, res) => res.sendFile(indexHtml));
+      app.get(/.*/, (req, res) => res.sendFile(indexHtml));
     }
   }
 
