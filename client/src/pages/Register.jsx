@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Card, Container, Button, Input, Label } from '../components/ui';
+import { Container, Input, Label } from '../components/ui';
 import { useAuth } from '../lib/auth';
 
 const EDUCATION_LEVELS = [
@@ -10,6 +10,19 @@ const EDUCATION_LEVELS = [
 const REFERRAL_SOURCES = [
   'Media Sosial', 'Rekomendasi', 'Search Engine', 'Teman/Keluarga', 'Lainnya'
 ];
+
+const SELECT_CLASS = [
+  'w-full rounded-[10px] border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900',
+  'focus:outline-none focus:border-[#0C628D] focus:ring-2 focus:ring-[rgba(12,98,141,.15)]',
+  'transition-colors duration-150',
+].join(' ');
+
+const TEXTAREA_CLASS = [
+  'w-full rounded-[10px] border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900',
+  'placeholder:text-gray-400 font-[inherit]',
+  'focus:outline-none focus:border-[#0C628D] focus:ring-2 focus:ring-[rgba(12,98,141,.15)]',
+  'transition-colors duration-150',
+].join(' ');
 
 export default function Register() {
   const { api, setToken } = useAuth();
@@ -39,7 +52,6 @@ export default function Register() {
     setError('');
     setLoading(true);
     try {
-      // Validate required fields
       if (!formData.name.trim()) throw new Error('Username harus diisi');
       if (!formData.fullName.trim()) throw new Error('Nama Lengkap harus diisi');
       if (!formData.email.trim()) throw new Error('Email harus diisi');
@@ -63,19 +75,34 @@ export default function Register() {
   }
 
   return (
-    <section className="py-10">
-      <Container className="max-w-2xl">
-        <Card className="p-6 sm:p-8">
-          <h1 className="text-2xl font-extrabold tracking-tight">Daftar Akun Baru</h1>
-          <p className="mt-1 text-sm text-slate-600">Isi form berikut untuk membuat akun. Akun baru otomatis role: student.</p>
+    <div className="min-h-screen flex items-center justify-center py-14 px-4" style={{ background: '#F7F8FA' }}>
+      <div className="w-full max-w-[600px]">
+        {/* Logo */}
+        <div className="flex justify-center mb-8">
+          <div className="px-4 py-2 rounded-[12px]" style={{ background: '#0A0E1A' }}>
+            <img src="/logo-putih.png" alt="Inspira Innovation" className="h-[32px] w-auto object-contain" />
+          </div>
+        </div>
 
-          {error ? <div className="mt-4 bg-rose-50 p-3 text-sm text-rose-700">{error}</div> : null}
+        {/* Card */}
+        <div
+          className="bg-white rounded-[20px] p-8"
+          style={{ border: '1px solid #E5E7EB', boxShadow: '0 20px 25px rgba(0,0,0,.08), 0 8px 10px rgba(0,0,0,.04)' }}
+        >
+          <h1 className="font-display font-extrabold text-2xl tracking-tight text-gray-900 mb-1">Daftar Akun Baru</h1>
+          <p className="text-sm text-gray-500 mb-6">Isi form berikut untuk membuat akun. Akun baru otomatis role: student.</p>
 
-          <form className="mt-6 grid gap-4" onSubmit={submit}>
+          {error && (
+            <div className="mb-5 rounded-[10px] p-3 text-sm bg-rose-50 border border-rose-200 text-rose-700">
+              {error}
+            </div>
+          )}
+
+          <form className="grid gap-4" onSubmit={submit}>
             {/* Username & Password */}
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
-                <Label htmlFor="username">Username</Label>
+                <Label htmlFor="username" className="block mb-1">Username</Label>
                 <Input
                   id="username"
                   name="username"
@@ -86,7 +113,7 @@ export default function Register() {
                 />
               </div>
               <div>
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="password" className="block mb-1">Password</Label>
                 <Input
                   id="password"
                   name="password"
@@ -99,9 +126,11 @@ export default function Register() {
               </div>
             </div>
 
-            {/* Nama Lengkap */}
             <div>
-              <Label>Nama Lengkap <span className="text-rose-600">*</span> (Pastikan sudah benar, untuk keperluan sertifikat)</Label>
+              <Label className="block mb-1">
+                Nama Lengkap <span className="text-rose-500">*</span>
+                <span className="ml-1 text-gray-400 font-normal normal-case tracking-normal">(untuk keperluan sertifikat)</span>
+              </Label>
               <Input
                 value={formData.fullName}
                 onChange={(e) => handleChange('fullName', e.target.value)}
@@ -109,9 +138,10 @@ export default function Register() {
               />
             </div>
 
-            {/* Email */}
             <div>
-              <Label>Email <span className="text-rose-600">*</span> (Pastikan sudah benar)</Label>
+              <Label className="block mb-1">
+                Email <span className="text-rose-500">*</span>
+              </Label>
               <Input
                 type="email"
                 value={formData.email}
@@ -120,9 +150,8 @@ export default function Register() {
               />
             </div>
 
-            {/* Asal Lembaga */}
             <div>
-              <Label>Asal Lembaga/Instansi</Label>
+              <Label className="block mb-1">Asal Lembaga / Instansi</Label>
               <Input
                 value={formData.institution}
                 onChange={(e) => handleChange('institution', e.target.value)}
@@ -130,9 +159,10 @@ export default function Register() {
               />
             </div>
 
-            {/* WhatsApp */}
             <div>
-              <Label>No WhatsApp <span className="text-rose-600">*</span> (Pastikan sudah benar)</Label>
+              <Label className="block mb-1">
+                No WhatsApp <span className="text-rose-500">*</span>
+              </Label>
               <Input
                 value={formData.whatsappNumber}
                 onChange={(e) => handleChange('whatsappNumber', e.target.value)}
@@ -140,77 +170,79 @@ export default function Register() {
               />
             </div>
 
-            {/* Dari mana tahunya */}
             <div>
-              <Label>Dari mana tahunya tentang kami?</Label>
+              <Label className="block mb-1">Dari mana mengetahui kami?</Label>
               <select
                 value={formData.referralSource}
                 onChange={(e) => handleChange('referralSource', e.target.value)}
-                className="w-full border border-slate-200 bg-white px-3 py-2 text-sm rounded focus:outline-none focus:ring-2 focus:ring-orange-400"
+                className={SELECT_CLASS}
               >
                 <option value="">Pilih sumber</option>
                 {REFERRAL_SOURCES.map((src) => (
-                  <option key={src} value={src}>
-                    {src}
-                  </option>
+                  <option key={src} value={src}>{src}</option>
                 ))}
               </select>
             </div>
 
-            {/* Alasan */}
             <div>
-              <Label>Alasan bergabung dengan program ini</Label>
+              <Label className="block mb-1">Alasan bergabung</Label>
               <textarea
                 value={formData.reason}
                 onChange={(e) => handleChange('reason', e.target.value)}
                 placeholder="Ceritakan motivasi Anda mengikuti program ini"
-                className="w-full border border-slate-200 px-3 py-2 text-sm rounded focus:outline-none focus:ring-2 focus:ring-orange-400"
+                className={TEXTAREA_CLASS}
                 rows={3}
               />
             </div>
 
-            {/* Pendidikan Terakhir */}
             <div>
-              <Label>Pendidikan Terakhir</Label>
+              <Label className="block mb-1">Pendidikan Terakhir</Label>
               <select
                 value={formData.educationLevel}
                 onChange={(e) => handleChange('educationLevel', e.target.value)}
-                className="w-full border border-slate-200 bg-white px-3 py-2 text-sm rounded focus:outline-none focus:ring-2 focus:ring-orange-400"
+                className={SELECT_CLASS}
               >
                 <option value="">Pilih tingkat pendidikan</option>
                 {EDUCATION_LEVELS.map((level) => (
-                  <option key={level} value={level}>
-                    {level}
-                  </option>
+                  <option key={level} value={level}>{level}</option>
                 ))}
               </select>
             </div>
 
-            {/* Kode Referral (opsional) */}
             <div>
-              <Label>Kode Referral <span className="text-slate-400 font-normal">(opsional)</span></Label>
+              <Label className="block mb-1">
+                Kode Referral
+                <span className="ml-1 text-gray-400 font-normal normal-case tracking-normal">(opsional)</span>
+              </Label>
               <Input
                 value={formData.referralCode}
                 onChange={(e) => handleChange('referralCode', e.target.value.toUpperCase())}
                 placeholder="Masukkan kode dari pengajar (jika ada)"
                 maxLength={16}
               />
-              <p className="mt-1 text-xs text-slate-500">Dapatkan potongan 5% untuk pembelian course pertama Anda.</p>
+              <p className="mt-1 text-xs text-gray-400">Dapatkan potongan 5% untuk pembelian course pertama Anda.</p>
             </div>
 
-            <Button disabled={loading} type="submit" className="w-full bg-[#d76810] text-white hover:bg-[#c55a0a]">
-              {loading ? 'Membuat Akun...' : 'Daftar'}
-            </Button>
+            <button
+              disabled={loading}
+              type="submit"
+              className="w-full font-semibold rounded-[10px] py-3 text-[0.9rem] text-white transition-all duration-200 mt-1 disabled:opacity-50"
+              style={{ background: '#0C628D', boxShadow: '0 1px 2px rgba(12,98,141,.3),inset 0 1px 0 rgba(255,255,255,.08)' }}
+              onMouseEnter={(e) => { if (!loading) { e.currentTarget.style.background = '#0A527A'; e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(12,98,141,.4)'; } }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = '#0C628D'; e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '0 1px 2px rgba(12,98,141,.3),inset 0 1px 0 rgba(255,255,255,.08)'; }}
+            >
+              {loading ? 'Membuat Akun...' : 'Daftar Sekarang'}
+            </button>
           </form>
 
-          <div className="mt-4 text-sm text-slate-600">
+          <div className="mt-5 text-sm text-gray-500">
             Sudah punya akun?{' '}
-            <Link to="/login" className="font-semibold text-slate-900 hover:underline">
-              Login
+            <Link to="/login" className="font-semibold" style={{ color: '#0C628D' }}>
+              Masuk
             </Link>
           </div>
-        </Card>
-      </Container>
-    </section>
+        </div>
+      </div>
+    </div>
   );
 }

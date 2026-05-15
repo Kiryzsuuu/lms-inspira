@@ -45,13 +45,13 @@ export default function AboutUs() {
   }
 
   return (
-    <div className="bg-white">
+    <div>
       {/* Hero Section */}
       <section className="bg-gradient-to-br from-slate-900 to-slate-800 text-white py-20">
         <Container>
           <div className="max-w-3xl">
             <h1 className="text-4xl sm:text-5xl font-extrabold mb-4">
-              {aboutText?.title || 'Tentang Inspira Innovation'}
+              {aboutText?.title || 'Tentang InspiraLearn'}
             </h1>
             <p className="text-xl text-slate-300">
               {aboutText?.tagline || 'Platform Pembelajaran Terpadu'}

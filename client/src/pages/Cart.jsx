@@ -172,10 +172,10 @@ export default function Cart() {
   }
 
   return (
-    <section className="bg-slate-100/70 py-8 sm:py-10">
+    <section className="py-8 sm:py-10" style={{ background: '#F7F8FA' }}>
       <Container className="max-w-6xl space-y-6">
-        <Card className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-          <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-[#d76810] px-6 py-8 text-white sm:px-8">
+        <Card className="overflow-hidden">
+          <div className="px-6 py-8 text-white sm:px-8" style={{ background: 'linear-gradient(135deg, #0A0E1A 0%, #111827 60%, #0C628D 100%)' }}>
             <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
               <div>
                 <div className="text-xs font-semibold uppercase tracking-[0.2em] text-orange-100">Midtrans checkout</div>

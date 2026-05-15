@@ -189,10 +189,10 @@ export default function App() {
         <Route
           path="*"
           element={
-            <Container className="py-10">
-              <div className="border border-slate-200 bg-white p-8 text-sm text-slate-600">
-                Halaman tidak ditemukan. <a className="font-semibold text-slate-900 hover:underline" href="/">Kembali</a>
-              </div>
+            <Container className="py-20 text-center">
+              <h1 className="font-display text-6xl font-extrabold text-gray-200 mb-4">404</h1>
+              <p className="text-gray-500 mb-6">Halaman tidak ditemukan.</p>
+              <a className="font-semibold text-sm" style={{ color: '#0C628D' }} href="/">Kembali ke Beranda</a>
             </Container>
           }
         />

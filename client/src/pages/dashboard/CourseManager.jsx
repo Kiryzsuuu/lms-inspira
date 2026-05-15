@@ -751,7 +751,7 @@ export default function CourseManager() {
           }}
           className={
             'px-3 py-2 text-left text-sm font-medium rounded-lg transition break-words ' +
-            (selectedId === c._id ? 'bg-[#d76810] text-white' : 'bg-slate-100 text-slate-900 hover:bg-slate-200')
+            (selectedId === c._id ? 'bg-[#0C628D] text-white' : 'bg-gray-100 text-gray-900 hover:bg-gray-200')
           }
         >
           <div className="flex items-start justify-between gap-2">

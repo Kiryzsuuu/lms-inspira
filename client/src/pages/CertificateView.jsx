@@ -79,7 +79,7 @@ export default function CertificateView() {
     <section className="min-h-screen bg-slate-100/70 py-8 sm:py-10">
       <Container className="space-y-6">
         <div className="mx-auto max-w-6xl rounded-3xl border border-slate-200 bg-white shadow-sm">
-          <div className="flex flex-col gap-4 border-b border-slate-200 bg-gradient-to-r from-slate-900 via-slate-800 to-[#d76810] px-6 py-6 text-white sm:flex-row sm:items-center sm:justify-between sm:px-8">
+          <div className="flex flex-col gap-4 border-b border-slate-200 bg-gradient-to-r from-navy to-[#F3921B] px-6 py-6 text-white sm:flex-row sm:items-center sm:justify-between sm:px-8">
             <div>
               <div className="text-xs font-semibold uppercase tracking-[0.2em] text-orange-100">Certificate</div>
               <h1 className="mt-2 text-2xl font-bold">Sertifikat Penyelesaian</h1>
@@ -98,22 +98,22 @@ export default function CertificateView() {
           <div className="p-4 sm:p-8">
             <div
               ref={certRef}
-              className="relative overflow-hidden rounded-[2rem] border-[14px] border-[#d76810] bg-white p-6 shadow-2xl sm:p-12"
+              className="relative overflow-hidden rounded-[2rem] border-[14px] border-[#F3921B] bg-white p-6 shadow-2xl sm:p-12"
               style={{ aspectRatio: '1.414/1' }}
             >
               <div className="absolute inset-x-6 top-6 flex items-center justify-between text-[11px] font-semibold uppercase tracking-[0.3em] text-slate-400 sm:inset-x-10 sm:top-10">
-                <span>LMS Inspira</span>
+                <span>InspiraLearn</span>
                 <span>Official Certificate</span>
               </div>
               <div className="flex h-full flex-col items-center justify-center text-center">
-                <div className="h-1.5 w-32 rounded-full bg-[#d76810]" />
+                <div className="h-1.5 w-32 rounded-full bg-[#F3921B]" />
                 <div className="mt-6 text-sm font-semibold uppercase tracking-[0.35em] text-slate-500">Certificate of Completion</div>
                 <div className="mt-6 text-lg text-slate-500">This certifies that</div>
                 <div className="mt-4 text-4xl font-extrabold tracking-tight text-slate-900 sm:text-5xl">
                   {certificate.metadata?.userName || 'Student Name'}
                 </div>
                 <div className="mt-6 text-lg text-slate-500">has successfully completed the course</div>
-                <div className="mt-4 max-w-3xl text-2xl font-bold text-[#d76810] sm:text-3xl">
+                <div className="mt-4 max-w-3xl text-2xl font-bold text-[#F3921B] sm:text-3xl">
                   {certificate.metadata?.courseName || 'Course Name'}
                 </div>
                 <div className="mt-6 rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-medium text-slate-600">
@@ -133,7 +133,7 @@ export default function CertificateView() {
                   </div>
                   <div className="text-right">
                     <div className="mx-auto mb-2 h-px w-40 bg-slate-300 sm:ml-auto sm:mr-0" />
-                    <div className="text-base font-semibold text-slate-900">{certificate.metadata?.instructorName || 'LMS Inspira'}</div>
+                    <div className="text-base font-semibold text-slate-900">{certificate.metadata?.instructorName || 'InspiraLearn'}</div>
                     <div className="mt-1 text-xs uppercase tracking-[0.2em] text-slate-400">Authorized Signature</div>
                   </div>
                 </div>

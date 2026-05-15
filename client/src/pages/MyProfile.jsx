@@ -348,7 +348,7 @@ export default function MyProfile() {
                           <Button
                             onClick={saveProfile}
                             disabled={loading}
-                            className="bg-[#d76810] text-white hover:bg-[#c55a0a]"
+                            className="bg-[#F3921B] text-white hover:bg-[#D97C0D]"
                           >
                             Simpan
                           </Button>
@@ -426,7 +426,7 @@ export default function MyProfile() {
                           <Button
                             onClick={updateEmail}
                             disabled={loading}
-                            className="bg-[#d76810] text-white hover:bg-[#c55a0a]"
+                            className="bg-[#F3921B] text-white hover:bg-[#D97C0D]"
                           >
                             Simpan
                           </Button>
@@ -504,7 +504,7 @@ export default function MyProfile() {
                           <Button
                             onClick={updatePassword}
                             disabled={loading}
-                            className="bg-[#d76810] text-white hover:bg-[#c55a0a]"
+                            className="bg-[#F3921B] text-white hover:bg-[#D97C0D]"
                           >
                             Simpan
                           </Button>

@@ -157,7 +157,7 @@ export default function HeroManager() {
                 />
                 <Label htmlFor="isActive" className="text-xs sm:text-sm">Active</Label>
               </div>
-              <Button type="submit" className="bg-[#d76810] text-white hover:bg-[#c55a0a] mt-2">
+              <Button type="submit" className="bg-[#F3921B] text-white hover:bg-[#D97C0D] mt-2">
                 Tambah Slide
               </Button>
             </form>

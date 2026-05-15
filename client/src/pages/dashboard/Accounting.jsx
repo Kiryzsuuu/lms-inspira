@@ -251,7 +251,7 @@ export default function Accounting() {
                     <YAxis />
                     <Tooltip formatter={(value) => `Rp ${formatIdr(value)}`} />
                     <Legend />
-                    <Line type="monotone" dataKey="amount" stroke="#d76810" name="Revenue" />
+                    <Line type="monotone" dataKey="amount" stroke="#F3921B" name="Revenue" />
                   </LineChart>
                 </ResponsiveContainer>
               ) : (
@@ -303,7 +303,7 @@ export default function Accounting() {
                         <XAxis type="number" />
                         <YAxis dataKey="title" type="category" width={290} />
                         <Tooltip formatter={(value) => `Rp ${formatIdr(value)}`} />
-                        <Bar dataKey="revenue" fill="#d76810" name="Revenue" />
+                        <Bar dataKey="revenue" fill="#F3921B" name="Revenue" />
                       </BarChart>
                     </ResponsiveContainer>
                   </Card>

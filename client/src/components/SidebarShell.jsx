@@ -41,18 +41,20 @@ export function SidebarShell({
   }, []);
 
   return (
-    <section className="min-h-screen bg-slate-100/70 py-6 sm:py-8">
+    <section className="min-h-screen py-6 sm:py-8" style={{ background: '#F7F8FA' }}>
       <Container className="space-y-6">
-        <Card className="overflow-hidden rounded-3xl border border-slate-200/80 bg-white shadow-sm">
-          <div className="border-b border-slate-200 bg-gradient-to-r from-white via-orange-50/40 to-white px-5 py-6 sm:px-8">
+        <Card className="overflow-hidden rounded-[20px] border border-gray-200 bg-white shadow-sm">
+          <div className="border-b border-gray-200 bg-white px-5 py-6 sm:px-8">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
               <div className="space-y-2">
-                <div className="inline-flex items-center rounded-full border border-orange-200 bg-orange-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-orange-700">
-                  LMS Inspira
+                <div className="mb-2">
+                  <div className="inline-flex px-2.5 py-1 rounded-[8px]" style={{ background: '#0A0E1A' }}>
+                    <img src="/logo-putih.png" alt="Inspira Innovation" className="h-[20px] w-auto object-contain" />
+                  </div>
                 </div>
                 <div>
-                  <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">{title}</h1>
-                  {description ? <p className="mt-2 max-w-2xl text-sm text-slate-600">{description}</p> : null}
+                  <h1 className="font-display text-3xl font-extrabold tracking-tight text-gray-900">{title}</h1>
+                  {description ? <p className="mt-2 max-w-2xl text-sm text-gray-500">{description}</p> : null}
                 </div>
               </div>
               <div className="flex flex-wrap items-center gap-3">{actions}</div>
@@ -62,23 +64,23 @@ export function SidebarShell({
           <div className="relative flex min-h-[calc(100vh-14rem)] bg-white">
             <aside
               className={clsx(
-                'hidden border-r border-slate-200 bg-slate-50/90 lg:block relative transition-all duration-300',
+                'hidden border-r border-gray-200 bg-gray-50/80 lg:block relative transition-all duration-300',
                 collapsed ? 'w-0 overflow-hidden' : sidebarWidth
               )}
             >
               <div className="sticky top-0 space-y-4 p-5">
-                {sidebarTitle ? <div className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">{sidebarTitle}</div> : null}
+                {sidebarTitle ? <div className="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">{sidebarTitle}</div> : null}
                 <div className="space-y-3">{renderSidebar ? renderSidebar(() => {}) : sidebar}</div>
               </div>
             </aside>
 
             <button
               onClick={() => setCollapsed(!collapsed)}
-              className="hidden lg:flex absolute top-4 left-0 z-10 h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white shadow-sm hover:bg-slate-50 transition-all"
+              className="hidden lg:flex absolute top-4 left-0 z-10 h-8 w-8 items-center justify-center rounded-full border border-gray-200 bg-white shadow-sm hover:bg-gray-50 transition-all"
               style={{ left: collapsed ? '8px' : `calc(${sidebarWidth === 'w-72' ? '288px' : sidebarWidth === 'w-80' ? '320px' : sidebarWidth} - 16px)` }}
               title={collapsed ? 'Buka sidebar' : 'Tutup sidebar'}
             >
-              <svg className="h-4 w-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="h-4 w-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 {collapsed ? (
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                 ) : (
@@ -88,7 +90,7 @@ export function SidebarShell({
             </button>
 
             <div className="flex-1">
-              <div className="border-b border-slate-200 px-5 py-3 lg:hidden">
+              <div className="border-b border-gray-200 px-5 py-3 lg:hidden">
                 <Button variant="outline" className="w-full justify-center rounded-2xl" onClick={() => setSidebarOpen(true)}>
                   Buka menu
                 </Button>
@@ -101,12 +103,12 @@ export function SidebarShell({
 
       {sidebarOpen ? (
         <div className="fixed inset-0 z-50 lg:hidden">
-          <div className="absolute inset-0 bg-slate-950/35" onClick={() => setSidebarOpen(false)} />
-          <div className="absolute left-0 top-0 h-full w-[88vw] max-w-sm border-r border-slate-200 bg-white shadow-2xl">
-            <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
+          <div className="absolute inset-0 bg-gray-950/35" onClick={() => setSidebarOpen(false)} />
+          <div className="absolute left-0 top-0 h-full w-[88vw] max-w-sm border-r border-gray-200 bg-white shadow-2xl">
+            <div className="flex items-center justify-between border-b border-gray-200 px-5 py-4">
               <div>
-                {sidebarTitle ? <div className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">{sidebarTitle}</div> : null}
-                <div className="text-lg font-bold text-slate-900">Menu</div>
+                {sidebarTitle ? <div className="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">{sidebarTitle}</div> : null}
+                <div className="font-display text-lg font-bold text-gray-900">Menu</div>
               </div>
               <Button variant="ghost" className="rounded-xl px-3" onClick={() => setSidebarOpen(false)}>
                 Tutup
