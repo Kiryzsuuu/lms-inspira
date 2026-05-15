@@ -122,21 +122,24 @@ export default function Home() {
                   className="w-[6px] h-[6px] rounded-full animate-[kicker-pulse_2s_ease-in-out_infinite] flex-shrink-0"
                   style={{ background: '#0C628D' }}
                 />
-                Platform Belajar #1 Indonesia · {published.length > 0 ? `${published.length}+ Kursus` : '500+ Kursus'}
+                {S.heroBadgePrefix || 'Platform Belajar #1 Indonesia'} · {published.length > 0 ? `${published.length}+ Kursus` : '500+ Kursus'}
               </div>
 
               <h1
                 className="mb-5 font-display"
                 style={{ fontSize: 'clamp(2.4rem, 5vw, 4rem)', letterSpacing: '-0.03em', color: '#0A0E1A', fontWeight: 800, lineHeight: 1.1 }}
               >
-                Kuasai Skill<br />yang Dibutuhkan<br />
+                {(S.heroTitle || 'Kuasai Skill\nyang Dibutuhkan').split('\n').map((line, i, arr) => (
+                  <span key={i}>{line}{i < arr.length - 1 && <br />}</span>
+                ))}
+                <br />
                 <span style={{ background: 'linear-gradient(135deg, #F3921B, #D97C0D)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
-                  Industri Sekarang
+                  {S.heroAccent || 'Industri Sekarang'}
                 </span>
               </h1>
 
               <p className="mb-8 text-[1.05rem] leading-[1.75] max-w-[480px]" style={{ color: '#6B7280' }}>
-                Belajar dari praktisi terbaik. Kurikulum dirancang langsung dari kebutuhan industri — bukan teori kosong.
+                {S.heroDesc || 'Belajar dari praktisi terbaik. Kurikulum dirancang langsung dari kebutuhan industri — bukan teori kosong.'}
               </p>
 
               <div className="flex items-center gap-3 flex-wrap mb-10">
@@ -332,7 +335,7 @@ export default function Home() {
       {/* ===== TICKER ===== */}
       <div className="overflow-hidden py-[0.9rem]" style={{ background: '#0A0E1A' }} aria-hidden="true">
         <div className="flex gap-10 animate-[ticker-scroll_30s_linear_infinite] w-max">
-          {(categories.length > 0 ? [...categories.map(c => c.name), ...categories.map(c => c.name)] : [...TICKER_ITEMS, ...TICKER_ITEMS]).map((item, i) => (
+          {(() => { const src = (S.tickerItems && S.tickerItems.length > 0) ? S.tickerItems : categories.length > 0 ? categories.map(c => c.name) : TICKER_ITEMS; return [...src, ...src]; })().map((item, i) => (
             <span key={i} className="flex items-center gap-[0.65rem] text-[0.82rem] font-medium whitespace-nowrap" style={{ color: 'rgba(255,255,255,.55)' }}>
               {item}
               <span className="w-[4px] h-[4px] rounded-full flex-shrink-0" style={{ background: 'rgba(255,255,255,.2)' }} />
@@ -654,10 +657,10 @@ export default function Home() {
       <div className="py-16" style={{ background: '#fff', borderTop: '1px solid #F3F4F6', borderBottom: '1px solid #F3F4F6' }}>
         <div className="w-full max-w-[1200px] mx-auto px-6">
           <p className="text-center text-[0.78rem] font-semibold uppercase tracking-[.06em] mb-8" style={{ color: '#9CA3AF' }}>
-            Alumni kami bekerja di lebih dari 300 perusahaan
+            {S.alumniSectionTitle || 'Alumni kami bekerja di lebih dari 300 perusahaan'}
           </p>
           <div className="flex flex-wrap justify-center items-center gap-3">
-            {PARTNERS.map((p) => (
+            {(S.alumniPartners || PARTNERS).map((p) => (
               <div
                 key={p}
                 className="flex items-center gap-2 rounded-full px-[1.1rem] py-[0.45rem] text-[0.85rem] font-semibold transition-all cursor-default"
