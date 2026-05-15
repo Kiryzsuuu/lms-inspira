@@ -74,8 +74,8 @@ export function SidebarShell({
 
             <button
               onClick={() => setCollapsed(!collapsed)}
-              className="hidden lg:flex absolute top-4 left-0 z-10 h-8 w-8 items-center justify-center rounded-full border border-gray-200 bg-white shadow-sm hover:bg-gray-50 transition-all"
-              style={{ left: collapsed ? '8px' : `calc(${sidebarWidth === 'w-72' ? '288px' : sidebarWidth === 'w-80' ? '320px' : sidebarWidth} - 16px)` }}
+              className="hidden lg:flex absolute top-4 z-10 h-8 w-8 items-center justify-center rounded-full border border-gray-200 bg-white shadow-sm hover:bg-gray-50 transition-all"
+              style={{ right: collapsed ? 'auto' : '-16px', left: collapsed ? '8px' : 'auto' }}
               title={collapsed ? 'Buka sidebar' : 'Tutup sidebar'}
             >
               <svg className="h-4 w-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -88,9 +88,9 @@ export function SidebarShell({
             </button>
 
             <div className="flex-1">
-              <div className="border-b border-gray-200 px-5 py-3 lg:hidden">
+              <div className="sticky top-0 z-20 border-b border-gray-200 bg-white px-5 py-3 lg:hidden">
                 <Button variant="outline" className="w-full justify-center rounded-2xl" onClick={() => setSidebarOpen(true)}>
-                  Buka menu
+                  ☰ Buka Menu
                 </Button>
               </div>
               <div className={clsx('p-5 sm:p-6 lg:p-8', contentClassName)}>{children}</div>

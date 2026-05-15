@@ -70,7 +70,7 @@ export default function LessonPresentation() {
   const [progress, setProgress] = useState({ activeCourseId: null });
   const [cert, setCert] = useState({ eligible: false, completed: 0, total: 0 });
 
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth > 768);
   const [openMods, setOpenMods] = useState(new Set());
   const [view, setView] = useState('materi');
   const [viewModId, setViewModId] = useState(null);
@@ -124,6 +124,15 @@ export default function LessonPresentation() {
       setOpenMods(prev => { const n = new Set(prev); n.add(String(active.moduleId)); return n; });
     }
   }, [lessonId, lessons]);
+
+  useEffect(() => {
+    function onResize() {
+      if (window.innerWidth > 768) setSidebarOpen(true);
+      else setSidebarOpen(false);
+    }
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
 
   const isStudent = role === 'student';
   const hasPurchased = isStudent && (user?.purchasedCourseIds || []).some(x => String(x) === String(id));
@@ -194,16 +203,30 @@ export default function LessonPresentation() {
   return (
     <>
       <style>{`
-        .pl-sidebar{transition:width .18s cubic-bezier(.4,0,.2,1),opacity .18s}
-        .pl-overlay{display:none;position:fixed;inset:0;top:${TB_H}px;background:rgba(15,23,42,.35);z-index:90;cursor:pointer}
+        *,*::before,*::after{box-sizing:border-box}
+        .pl-sidebar{transition:width .22s cubic-bezier(.4,0,.2,1),opacity .22s}
+        .pl-overlay{display:none;position:fixed;inset:0;top:${TB_H}px;background:rgba(15,23,42,.4);z-index:90;cursor:pointer}
         @media(max-width:768px){
-          .pl-sidebar{position:fixed!important;left:0;top:${TB_H}px;height:calc(100vh - ${TB_H}px);z-index:100;width:${SB_W}px!important;opacity:1!important;transform:translateX(-100%);transition:transform .3s ease!important}
+          .pl-sidebar{
+            position:fixed!important;left:0;top:${TB_H}px;
+            height:calc(100vh - ${TB_H}px)!important;
+            z-index:100;width:min(${SB_W}px, 88vw)!important;
+            opacity:1!important;
+            transform:translateX(-100%);
+            transition:transform .28s cubic-bezier(.4,0,.2,1)!important;
+            box-shadow:4px 0 24px rgba(15,23,42,.15);
+          }
           .pl-sidebar.open{transform:translateX(0)!important}
-          .pl-tb-mid{display:none!important}
           .pl-overlay.show{display:block!important}
-          .pl-content{padding:1.2rem!important}
-          .pl-bnav{padding:.75rem 1.2rem!important}
-          .pl-crumb{padding:.58rem 1.2rem!important}
+          .pl-tb-mid{display:none!important}
+          .pl-content{padding:1rem 1rem 5rem!important}
+          .pl-bnav{padding:.65rem 1rem!important;flex-wrap:nowrap!important;gap:.5rem!important}
+          .pl-crumb{padding:.5rem 1rem!important;font-size:.68rem!important}
+          .pl-bnav-label{display:none!important}
+        }
+        @media(max-width:480px){
+          .pl-bnav button{font-size:.75rem!important;padding:.45rem .7rem!important}
+          .pl-bnav-done{font-size:.7rem!important;padding:.3rem .6rem!important}
         }
         .pl-mi:hover{background:${C.blueXs}!important}
         .pl-mov-item:hover{border-color:${C.blueS}!important;background:${C.blueXs}!important;color:${C.blue}!important}
@@ -536,25 +559,25 @@ export default function LessonPresentation() {
           </div>
 
           {/* Bottom nav */}
-          <div className="pl-bnav" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.82rem 2.25rem', borderTop: `1px solid ${C.n200}`, background: C.white, flexShrink: 0, gap: '1rem', flexWrap: 'wrap' }}>
+          <div className="pl-bnav" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.82rem 2.25rem', borderTop: `1px solid ${C.n200}`, background: C.white, flexShrink: 0, gap: '0.75rem' }}>
             <button disabled={prevDisabled}
               onClick={() => {
                 if (view === 'module-overview') { setView('materi'); return; }
                 if (!prevLessonId) return;
                 nav(`/courses/${id}/lessons/${prevLessonId}`);
               }}
-              style={{ display: 'flex', alignItems: 'center', gap: '0.42rem', fontSize: '0.82rem', fontWeight: 600, padding: '0.55rem 1.05rem', borderRadius: 8, background: 'transparent', color: prevDisabled ? C.n400 : C.n500, border: `1px solid ${C.n300}`, cursor: prevDisabled ? 'not-allowed' : 'pointer', opacity: prevDisabled ? 0.4 : 1 }}>
+              style={{ display: 'flex', alignItems: 'center', gap: '0.42rem', fontSize: '0.82rem', fontWeight: 600, padding: '0.55rem 1.05rem', borderRadius: 8, background: 'transparent', color: prevDisabled ? C.n400 : C.n500, border: `1px solid ${C.n300}`, cursor: prevDisabled ? 'not-allowed' : 'pointer', opacity: prevDisabled ? 0.4 : 1, flexShrink: 0 }}>
               Sebelumnya
             </button>
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.28rem' }}>
-              <div style={{ fontSize: '0.7rem', color: C.n400 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.28rem', flex: 1, minWidth: 0 }}>
+              <div className="pl-bnav-label" style={{ fontSize: '0.7rem', color: C.n400 }}>
                 {view === 'module-overview' ? `Modul ${vmIdx + 1} dari ${modules.length}` : `Materi ${activeIdx + 1} dari ${totalCount}`}
               </div>
               {view === 'materi' && isStudent && isActiveCourse && !isPaywalled && activeLesson && (
-                <button
+                <button className="pl-bnav-done"
                   onClick={async () => { if (!isDone(activeLesson._id)) { setLockError(''); await markComplete(activeLesson._id); } }}
                   disabled={markingDone || isDone(activeLesson._id)}
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: '0.32rem', fontSize: '0.74rem', fontWeight: 600, padding: '0.36rem 0.82rem', borderRadius: 7, cursor: isDone(activeLesson._id) ? 'default' : markingDone ? 'wait' : 'pointer', background: isDone(activeLesson._id) ? C.teal : C.n100, color: isDone(activeLesson._id) ? '#fff' : C.n600, border: `1.5px solid ${isDone(activeLesson._id) ? C.teal : C.n300}` }}>
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '0.32rem', fontSize: '0.74rem', fontWeight: 600, padding: '0.36rem 0.82rem', borderRadius: 7, cursor: isDone(activeLesson._id) ? 'default' : markingDone ? 'wait' : 'pointer', background: isDone(activeLesson._id) ? C.teal : C.n100, color: isDone(activeLesson._id) ? '#fff' : C.n600, border: `1.5px solid ${isDone(activeLesson._id) ? C.teal : C.n300}`, whiteSpace: 'nowrap' }}>
                   ✓ {isDone(activeLesson._id) ? 'Selesai' : markingDone ? 'Menyimpan...' : 'Tandai Selesai'}
                 </button>
               )}
@@ -572,7 +595,7 @@ export default function LessonPresentation() {
                 if (!ok) return;
                 nav(`/courses/${id}/lessons/${nextLessonId}`);
               }}
-              style={{ display: 'flex', alignItems: 'center', gap: '0.42rem', fontSize: '0.82rem', fontWeight: 600, padding: '0.55rem 1.05rem', borderRadius: 8, background: nextDisabled ? C.n300 : C.blue, color: '#fff', border: 'none', cursor: nextDisabled ? 'not-allowed' : 'pointer', opacity: nextDisabled ? 0.5 : 1, boxShadow: !nextDisabled ? `0 2px 6px rgba(12,98,141,.25)` : 'none' }}>
+              style={{ display: 'flex', alignItems: 'center', gap: '0.42rem', fontSize: '0.82rem', fontWeight: 600, padding: '0.55rem 1.05rem', borderRadius: 8, background: nextDisabled ? C.n300 : C.blue, color: '#fff', border: 'none', cursor: nextDisabled ? 'not-allowed' : 'pointer', opacity: nextDisabled ? 0.5 : 1, boxShadow: !nextDisabled ? `0 2px 6px rgba(12,98,141,.25)` : 'none', flexShrink: 0 }}>
               Berikutnya
             </button>
           </div>
