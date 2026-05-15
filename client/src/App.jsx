@@ -1,4 +1,4 @@
-import { Navigate, Route, Routes } from 'react-router-dom';
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { Navbar } from './components/Navbar';
 import { Footer } from './components/Footer';
 import Home from './pages/Home';
@@ -37,11 +37,11 @@ import { RequireAuth } from './components/RequireAuth';
 import { Container } from './components/ui';
 
 export default function App() {
-  return (
-    <div className="flex flex-col min-h-screen">
-      <Navbar />
-      <main className="flex-1">
-      <Routes>
+  const { pathname } = useLocation();
+  const isLessonPage = /^\/courses\/[^/]+\/lessons\/[^/]+$/.test(pathname);
+
+  const routes = (
+    <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/courses" element={<Courses />} />
         <Route path="/courses/:id" element={<CourseDetail />} />
@@ -233,8 +233,15 @@ export default function App() {
             </Container>
           }
         />
-      </Routes>
-      </main>
+    </Routes>
+  );
+
+  if (isLessonPage) return routes;
+
+  return (
+    <div className="flex flex-col min-h-screen">
+      <Navbar />
+      <main className="flex-1">{routes}</main>
       <Footer />
     </div>
   );

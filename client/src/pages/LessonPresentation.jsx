@@ -1,68 +1,61 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { Button, Card, Container } from '../components/ui';
 import { useAuth } from '../lib/auth';
 
-function Markdown({ text }) {
-  const lines = (text || '').split('\n');
-  return (
-    <div className="space-y-3">
-      {lines.map((line, idx) => {
-        if (line.startsWith('### ')) return <h3 key={idx}>{line.slice(4)}</h3>;
-        if (line.startsWith('## ')) return <h2 key={idx}>{line.slice(3)}</h2>;
-        if (line.startsWith('# ')) return <h1 key={idx}>{line.slice(2)}</h1>;
-        if (!line.trim()) return <div key={idx} className="h-2" />;
-        return <p key={idx}>{line}</p>;
-      })}
-    </div>
-  );
+const C = {
+  blue: '#0C628D', blueM: '#1178AB', blueD: '#084E72', blueS: '#C8E6F5', blueXs: '#EBF6FC',
+  orange: '#F3921B', orangeXs: '#FEF5E7',
+  teal: '#0BA894', tealS: '#B2EFE9', tealXs: '#E8FAF8',
+  violet: '#7C3AED', violetXs: '#F5F3FF',
+  amber: '#D97706', amberXs: '#FFFBEB',
+  n950: '#0F172A', n900: '#1E293B', n800: '#334155', n700: '#475569',
+  n600: '#64748B', n500: '#94A3B8', n400: '#CBD5E1', n300: '#E2E8F0',
+  n200: '#F1F5F9', n100: '#F8FAFC', white: '#FFFFFF',
+};
+const TB_H = 58;
+const SB_W = 300;
+
+function getLessonType(lesson) {
+  if (!lesson) return 'read';
+  if (lesson.quizId) return 'quiz';
+  if (lesson.assignmentId) return 'project';
+  if (lesson.videoEmbedUrl) return 'video';
+  return 'read';
 }
 
-function isPdfUrl(url) {
-  const u = String(url || '').toLowerCase();
-  if (!u) return false;
-  if (u.endsWith('.pdf')) return true;
-  if (u.includes('.pdf?')) return true;
-  if (u.includes('application/pdf')) return true;
-  return false;
-}
+const TM = {
+  video:   { ico: '📹', bg: C.blueXs,   col: C.blue,   lbl: 'Video'   },
+  read:    { ico: '📄', bg: C.violetXs, col: C.violet, lbl: 'Bacaan'  },
+  quiz:    { ico: '📝', bg: C.amberXs,  col: C.amber,  lbl: 'Quiz'    },
+  project: { ico: '🛠️', bg: C.tealXs,   col: C.teal,   lbl: 'Project' },
+};
+const BS = {
+  video:   { background: C.blueXs,   color: C.blue   },
+  read:    { background: C.violetXs, color: C.violet },
+  quiz:    { background: C.amberXs,  color: C.amber  },
+  project: { background: C.tealXs,   color: C.teal   },
+};
 
-function getLessonBlocks(lesson) {
-  const blocks = Array.isArray(lesson?.contentBlocks) ? lesson.contentBlocks : [];
-  const hasVideo = Boolean(lesson?.videoEmbedUrl);
-  const hasAttachments = Boolean((lesson?.attachments || []).length);
-
-  if (blocks.length > 0) {
-    const seen = new Set();
-    const cleaned = blocks
-      .filter((b) => b && b.type)
-      .map((b) => ({ type: b.type, title: b.title || '' }))
-      .filter((b) => {
-        if (seen.has(b.type)) return false;
-        seen.add(b.type);
-        return true;
-      });
-
-    if (!seen.has('content')) cleaned.unshift({ type: 'content', title: 'Materi' });
-    if (!hasVideo) return cleaned.filter((b) => b.type !== 'video');
-    return cleaned;
-  }
-
-  return [
-    ...(hasVideo ? [{ type: 'video', title: 'Video' }] : []),
-    { type: 'content', title: 'Materi' },
-    ...(hasAttachments ? [{ type: 'attachments', title: 'Lampiran' }] : []),
-  ];
-}
-
-function cleanLessonHtml(html) {
+function cleanHtml(html) {
   let s = String(html || '');
-  if (!s) return '';
-  // Remove empty list items often produced by rich-text editors.
   s = s.replace(/<li>\s*<p>\s*(?:<br\s*\/?\s*>)\s*<\/p>\s*<\/li>/gi, '');
   s = s.replace(/<li>\s*<p>\s*<\/p>\s*<\/li>/gi, '');
   s = s.replace(/<li>\s*(?:<br\s*\/?\s*>)\s*<\/li>/gi, '');
   return s;
+}
+
+function MarkdownText({ text }) {
+  return (
+    <div style={{ fontSize: '0.88rem', color: C.n700, lineHeight: 1.85 }}>
+      {String(text || '').split('\n').map((line, i) => {
+        if (line.startsWith('### ')) return <h3 key={i} style={{ fontFamily: "'Bricolage Grotesque',sans-serif", fontSize: '0.96rem', fontWeight: 800, color: C.n900, margin: '1rem 0 0.4rem' }}>{line.slice(4)}</h3>;
+        if (line.startsWith('## ')) return <h2 key={i} style={{ fontFamily: "'Bricolage Grotesque',sans-serif", fontSize: '1.1rem', fontWeight: 800, color: C.n900, margin: '1.2rem 0 0.5rem' }}>{line.slice(3)}</h2>;
+        if (line.startsWith('# ')) return <h1 key={i} style={{ fontFamily: "'Bricolage Grotesque',sans-serif", fontSize: '1.3rem', fontWeight: 800, color: C.n950, margin: '1.5rem 0 0.6rem' }}>{line.slice(2)}</h1>;
+        if (!line.trim()) return <div key={i} style={{ height: '0.5rem' }} />;
+        return <p key={i} style={{ marginBottom: '0.85rem' }}>{line}</p>;
+      })}
+    </div>
+  );
 }
 
 export default function LessonPresentation() {
@@ -75,343 +68,522 @@ export default function LessonPresentation() {
   const [lessons, setLessons] = useState([]);
   const [lessonProgress, setLessonProgress] = useState({});
   const [progress, setProgress] = useState({ activeCourseId: null });
-  const [cert, setCert] = useState({ eligible: false, completed: 0, total: 0, quizzesEligible: true, quizzesSubmitted: 0, quizzesTotal: 0 });
-  const [openAttachmentUrl, setOpenAttachmentUrl] = useState('');
+  const [cert, setCert] = useState({ eligible: false, completed: 0, total: 0 });
+
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [openMods, setOpenMods] = useState(new Set());
+  const [view, setView] = useState('materi');
+  const [viewModId, setViewModId] = useState(null);
+  const [activeTab, setActiveTab] = useState('materi');
+  const [note, setNote] = useState('');
   const [lockError, setLockError] = useState('');
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [markingDone, setMarkingDone] = useState(false);
 
   useEffect(() => {
-    api
-      .get(`/courses/${id}`)
-      .then((res) => {
+    api.get(`/courses/${id}`)
+      .then(res => {
         setCourse(res.data.course);
-        setModules(res.data.modules || []);
-        setLessons(res.data.lessons || []);
+        const mods = res.data.modules || [];
+        const lsns = res.data.lessons || [];
+        setModules(mods);
+        setLessons(lsns);
+        const active = lsns.find(l => String(l._id) === String(lessonId));
+        if (active?.moduleId) setOpenMods(new Set([String(active.moduleId)]));
+        else if (mods.length > 0) setOpenMods(new Set([String(mods[0]._id)]));
       })
-      .catch(() => {
-        setCourse(null);
-        setModules([]);
-        setLessons([]);
-      });
+      .catch(() => {});
   }, [id, api]);
 
   useEffect(() => {
     if (role !== 'student') return;
-    api
-      .get('/progress/me')
-      .then((res) => setProgress(res.data))
-      .catch(() => setProgress({ activeCourseId: null }));
+    api.get('/progress/me').then(r => setProgress(r.data)).catch(() => {});
   }, [role, api]);
 
   useEffect(() => {
     if (role !== 'student') return;
-    api
-      .get(`/progress/course/${id}`)
-      .then((res) => {
+    api.get(`/progress/course/${id}`)
+      .then(res => {
         const map = {};
         for (const row of res.data.lessons || []) map[String(row.lessonId)] = row;
         setLessonProgress(map);
-      })
-      .catch(() => setLessonProgress({}));
-
-    api
-      .get(`/progress/course/${id}/certificate`)
-      .then((res) => setCert(res.data))
-      .catch(() => setCert({ eligible: false, completed: 0, total: 0, quizzesEligible: true, quizzesSubmitted: 0, quizzesTotal: 0 }));
+      }).catch(() => {});
+    api.get(`/progress/course/${id}/certificate`)
+      .then(res => setCert(res.data)).catch(() => {});
   }, [role, id, api]);
 
+  useEffect(() => {
+    setActiveTab('materi');
+    setLockError('');
+    setView('materi');
+    setNote(localStorage.getItem(`note-${lessonId}`) || '');
+  }, [lessonId]);
+
+  useEffect(() => {
+    const active = lessons.find(l => String(l._id) === String(lessonId));
+    if (active?.moduleId) {
+      setOpenMods(prev => { const n = new Set(prev); n.add(String(active.moduleId)); return n; });
+    }
+  }, [lessonId, lessons]);
+
   const isStudent = role === 'student';
-  const priceIdr = course?.priceIdr || 0;
-  const hasPurchased = isStudent && (user?.purchasedCourseIds || []).some((x) => String(x) === String(id));
-  const isPaywalled = isStudent && priceIdr > 0 && !hasPurchased;
-
-  const activeLesson = useMemo(() => {
-    return lessons.find((l) => String(l._id) === String(lessonId)) || null;
-  }, [lessons, lessonId]);
-
-  const activeIdx = useMemo(() => {
-    if (!activeLesson) return -1;
-    return lessons.findIndex((l) => String(l._id) === String(activeLesson._id));
-  }, [lessons, activeLesson]);
-
-  function isLessonCompleted(lId) {
-    return Boolean(lessonProgress[String(lId)]?.isCompleted);
-  }
-
-  function canOpenLessonByIndex(idx) {
-    if (!isStudent) return true;
-    if (idx <= 0) return true;
-    const prev = lessons[idx - 1];
-    if (!prev) return true;
-    return isLessonCompleted(prev._id);
-  }
-
-  // For students: require course to be active (started via /courses/:id/start)
+  const hasPurchased = isStudent && (user?.purchasedCourseIds || []).some(x => String(x) === String(id));
+  const isPaywalled = isStudent && (course?.priceIdr || 0) > 0 && !hasPurchased;
   const isActiveCourse = !isStudent || (progress?.activeCourseId && String(progress.activeCourseId) === String(id));
-  const allowed = isActiveCourse && !isPaywalled && activeIdx >= 0 && canOpenLessonByIndex(activeIdx);
+
+  const activeLesson = useMemo(() => lessons.find(l => String(l._id) === String(lessonId)) || null, [lessons, lessonId]);
+  const activeIdx = useMemo(() => activeLesson ? lessons.findIndex(l => String(l._id) === String(activeLesson._id)) : -1, [lessons, activeLesson]);
+
+  const isDone = (lId) => Boolean(lessonProgress[String(lId)]?.isCompleted);
+  const canOpen = (idx) => {
+    if (!isStudent || idx <= 0) return true;
+    return isDone(lessons[idx - 1]?._id);
+  };
+
   const prevLessonId = activeIdx > 0 ? lessons[activeIdx - 1]?._id : null;
   const nextLessonId = activeIdx >= 0 && activeIdx < lessons.length - 1 ? lessons[activeIdx + 1]?._id : null;
+  const allowed = isActiveCourse && !isPaywalled && activeIdx >= 0 && canOpen(activeIdx);
 
-  async function markLessonComplete(lessonToCompleteId) {
-    if (!isStudent) return true;
-    if (!lessonToCompleteId) return true;
-    if (isLessonCompleted(lessonToCompleteId)) return true;
+  const completedCount = Object.values(lessonProgress).filter(r => r.isCompleted).length;
+  const totalCount = lessons.length;
+  const pct = totalCount > 0 ? Math.round(completedCount / totalCount * 100) : 0;
 
+  async function markComplete(lId) {
+    if (!isStudent || !lId || isDone(lId)) return true;
+    setMarkingDone(true);
     try {
-      await api.post(`/progress/lessons/${lessonToCompleteId}/complete`);
-      setLessonProgress((cur) => ({
-        ...cur,
-        [String(lessonToCompleteId)]: {
-          lessonId: lessonToCompleteId,
-          isCompleted: true,
-          completedAt: new Date().toISOString(),
-        },
-      }));
-      try {
-        const certRes = await api.get(`/progress/course/${id}/certificate`);
-        setCert(certRes.data);
-      } catch {
-        // ignore
-      }
+      await api.post(`/progress/lessons/${lId}/complete`);
+      setLessonProgress(cur => ({ ...cur, [String(lId)]: { lessonId: lId, isCompleted: true, completedAt: new Date().toISOString() } }));
+      try { const r = await api.get(`/progress/course/${id}/certificate`); setCert(r.data); } catch {}
       window.dispatchEvent(new Event('progress:changed'));
       return true;
     } catch (e) {
-      setLockError(e?.response?.data?.error?.message || 'Gagal menyimpan progress materi');
+      setLockError(e?.response?.data?.error?.message || 'Gagal menyimpan progress');
       return false;
-    }
+    } finally { setMarkingDone(false); }
   }
 
+  function saveNote(val) { setNote(val); localStorage.setItem(`note-${lessonId}`, val); }
+
+  function toggleMod(modId) {
+    setOpenMods(prev => { const n = new Set(prev); n.has(modId) ? n.delete(modId) : n.add(modId); return n; });
+  }
 
   const activeModule = useMemo(() => {
     if (!activeLesson?.moduleId) return null;
-    return modules.find((m) => String(m._id) === String(activeLesson.moduleId)) || null;
+    return modules.find(m => String(m._id) === String(activeLesson.moduleId)) || null;
   }, [activeLesson, modules]);
 
-  return (
-    <div className="min-h-screen bg-slate-50">
-    <Container className="py-4">
-      {/* Breadcrumb */}
-      <div className="flex items-center justify-between gap-3 mb-4">
-        <div className="flex items-center gap-2 text-sm min-w-0">
-          <button onClick={() => nav(`/courses/${id}`)} className="text-slate-500 hover:text-orange-600 transition-colors shrink-0">
-            ← {course?.title || 'Kursus'}
-          </button>
-          {activeModule && (
-            <>
-              <span className="text-slate-300">/</span>
-              <span className="text-slate-500 truncate hidden sm:block">{activeModule.title}</span>
-            </>
-          )}
-          {activeLesson && (
-            <>
-              <span className="text-slate-300">/</span>
-              <span className="font-semibold text-slate-900 truncate">{activeLesson.title}</span>
-            </>
-          )}
-        </div>
-        {modules.length > 0 && (
-          <button
-            onClick={() => setSidebarOpen((v) => !v)}
-            className="text-slate-600 hover:text-orange-600 transition-colors text-sm font-medium shrink-0 hidden sm:block"
-          >
-            {sidebarOpen ? 'Tutup Silabus' : 'Buka Silabus'}
-          </button>
-        )}
-      </div>
+  const viewingModule = useMemo(() => {
+    if (view !== 'module-overview' || !viewModId) return null;
+    return modules.find(m => String(m._id) === String(viewModId)) || null;
+  }, [view, viewModId, modules]);
 
-      <div className="flex gap-6">
-        {/* Silabus sidebar */}
-        {sidebarOpen && modules.length > 0 && (
-          <div className="hidden sm:block w-64 shrink-0">
-            <div className="bg-white border border-slate-200 rounded-xl p-4 sticky top-20">
-              <div className="font-semibold text-sm text-slate-900 mb-3">Silabus</div>
-              <div className="space-y-2 max-h-[70vh] overflow-y-auto">
-                {modules.map((mod) => {
-                  const modLessons = lessons.filter((l) => String(l.moduleId) === String(mod._id));
-                  return (
-                    <div key={mod._id}>
-                      <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide py-1">{mod.title}</div>
-                      {modLessons.map((l) => {
-                        const isActive = String(l._id) === String(lessonId);
-                        const completed = lessonProgress[String(l._id)]?.isCompleted;
-                        return (
-                          <button
-                            key={l._id}
-                            onClick={() => nav(`/courses/${id}/lessons/${l._id}`)}
-                            className={`w-full text-left px-2 py-1.5 text-xs rounded transition-colors flex items-center gap-2 mb-0.5 ${isActive ? 'bg-orange-100 text-orange-800 font-medium' : 'text-slate-600 hover:bg-slate-50'}`}
-                          >
-                            <span className="shrink-0">
-                              {completed ? '✓' : isActive ? '▶' : '·'}
-                            </span>
-                            <span className="truncate">{l.title}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  );
-                })}
+  const vmIdx = viewingModule ? modules.indexOf(viewingModule) : -1;
+
+  if (!course) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: C.n200 }}>
+        <div style={{ color: C.n500, fontSize: '0.9rem' }}>Memuat kursus...</div>
+      </div>
+    );
+  }
+
+  const prevDisabled = !prevLessonId && view === 'materi';
+  const nextDisabled = !nextLessonId && view === 'materi';
+
+  return (
+    <>
+      <style>{`
+        .pl-sidebar{transition:width .18s cubic-bezier(.4,0,.2,1),opacity .18s}
+        .pl-overlay{display:none;position:fixed;inset:0;top:${TB_H}px;background:rgba(15,23,42,.35);z-index:90;cursor:pointer}
+        @media(max-width:768px){
+          .pl-sidebar{position:fixed!important;left:0;top:${TB_H}px;height:calc(100vh - ${TB_H}px);z-index:100;width:${SB_W}px!important;opacity:1!important;transform:translateX(-100%);transition:transform .3s ease!important}
+          .pl-sidebar.open{transform:translateX(0)!important}
+          .pl-tb-mid{display:none!important}
+          .pl-overlay.show{display:block!important}
+          .pl-content{padding:1.2rem!important}
+          .pl-bnav{padding:.75rem 1.2rem!important}
+          .pl-crumb{padding:.58rem 1.2rem!important}
+        }
+        .pl-mi:hover{background:${C.blueXs}!important}
+        .pl-mov-item:hover{border-color:${C.blueS}!important;background:${C.blueXs}!important;color:${C.blue}!important}
+        .prose h1,.prose h2,.prose h3{font-family:'Bricolage Grotesque',sans-serif;font-weight:800;color:${C.n950};letter-spacing:-.02em}
+        .prose h1{font-size:1.3rem;margin:1.5rem 0 .6rem}
+        .prose h2{font-size:1.1rem;margin:1.2rem 0 .5rem}
+        .prose h3{font-size:.96rem;margin:1rem 0 .4rem}
+        .prose p{font-size:.88rem;color:${C.n700};line-height:1.85;margin-bottom:.85rem}
+        .prose ul,.prose ol{margin:.2rem 0 .85rem 1.2rem;font-size:.88rem;color:${C.n700}}
+        .prose li{margin-bottom:.38rem;line-height:1.7}
+        .prose code{background:${C.n200};color:${C.blueD};font-family:monospace;font-size:.82em;padding:.07rem .3rem;border-radius:4px}
+        .prose pre{background:${C.n950};color:#e2e8f0;padding:.9rem 1.1rem;border-radius:10px;font-family:monospace;font-size:.79rem;line-height:1.7;overflow-x:auto;margin:.2rem 0 .95rem}
+        .prose strong{font-weight:700;color:${C.n800}}
+        .prose a{color:${C.blue};text-decoration:underline}
+        .prose img{max-width:100%;border-radius:8px}
+        .prose blockquote{border-left:3px solid ${C.blueS};padding:.5rem 1rem;background:${C.blueXs};border-radius:0 8px 8px 0;margin:.5rem 0 1rem;color:${C.n700};font-size:.86rem}
+        .prose table{width:100%;border-collapse:collapse;font-size:.84rem;margin-bottom:.85rem}
+        .prose th{background:${C.n100};padding:.5rem .75rem;text-align:left;font-weight:600;border:1px solid ${C.n300}}
+        .prose td{padding:.5rem .75rem;border:1px solid ${C.n300}}
+      `}</style>
+
+      {/* Mobile overlay */}
+      <div className={`pl-overlay${sidebarOpen ? ' show' : ''}`} onClick={() => setSidebarOpen(false)} />
+
+      {/* Topbar */}
+      <header style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 200, height: TB_H, background: C.white, borderBottom: `1px solid ${C.n300}`, display: 'flex', alignItems: 'center', padding: '0 1.2rem', gap: '0.8rem' }}>
+        <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontFamily: "'Bricolage Grotesque',sans-serif", fontWeight: 800, fontSize: '0.95rem', letterSpacing: '-0.03em', color: C.n950, textDecoration: 'none', flexShrink: 0 }}>
+          <div style={{ width: 28, height: 28, borderRadius: 7, background: `linear-gradient(135deg,${C.blue},${C.blueM})`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <svg width="13" height="13" viewBox="0 0 18 18" fill="none"><path d="M9 1L10.5 6.5H16L11.5 10L13 15.5L9 12.5L5 15.5L6.5 10L2 6.5H7.5L9 1Z" fill="white" fillOpacity=".95" /></svg>
+          </div>
+          Inspira<span style={{ color: C.orange }}>Learn</span>
+        </Link>
+        <div style={{ width: 1, height: 22, background: C.n300, flexShrink: 0 }} />
+        <div className="pl-tb-mid" style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <div style={{ fontSize: '0.82rem', fontWeight: 600, color: C.n700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 220 }}>{course.title}</div>
+          <div style={{ flex: 1, maxWidth: 280, display: 'flex', alignItems: 'center', gap: '0.55rem' }}>
+            <div style={{ flex: 1, height: 5, background: C.n300, borderRadius: 9999, overflow: 'hidden' }}>
+              <div style={{ height: '100%', background: `linear-gradient(90deg,${C.blue},${C.teal})`, borderRadius: 9999, width: `${pct}%`, transition: 'width .6s ease' }} />
+            </div>
+            <div style={{ fontSize: '0.72rem', fontWeight: 600, color: C.n500, whiteSpace: 'nowrap' }}>{completedCount}/{totalCount} selesai</div>
+          </div>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexShrink: 0, marginLeft: 'auto' }}>
+          {cert.eligible && (
+            <Link to={`/certificate/${id}`} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.77rem', fontWeight: 600, padding: '0.37rem 0.8rem', borderRadius: 7, background: `linear-gradient(135deg,${C.teal},#0a7a76)`, color: '#fff', textDecoration: 'none' }}>
+              🏆 Sertifikat
+            </Link>
+          )}
+          <Link to={`/courses/${id}`} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.77rem', fontWeight: 600, padding: '0.37rem 0.8rem', borderRadius: 7, background: 'transparent', color: C.n600, border: `1px solid ${C.n300}`, textDecoration: 'none' }}>
+            ← Detail
+          </Link>
+          <button onClick={() => setSidebarOpen(v => !v)} style={{ width: 32, height: 32, borderRadius: 7, display: 'flex', alignItems: 'center', justifyContent: 'center', background: C.n100, border: `1px solid ${C.n300}`, color: C.n600, fontSize: '0.85rem', cursor: 'pointer' }}>☰</button>
+        </div>
+      </header>
+
+      {/* Shell */}
+      <div style={{ display: 'flex', height: '100vh', paddingTop: TB_H, fontFamily: "'Inter',system-ui,sans-serif", overflow: 'hidden', background: C.n200 }}>
+
+        {/* Sidebar */}
+        <aside className={`pl-sidebar${sidebarOpen ? ' open' : ''}`}
+          style={{ width: sidebarOpen ? SB_W : 0, flexShrink: 0, background: C.white, borderRight: `1px solid ${C.n300}`, display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden', opacity: sidebarOpen ? 1 : 0, pointerEvents: sidebarOpen ? 'auto' : 'none' }}>
+          <div style={{ padding: '0.85rem 1rem 0.75rem', borderBottom: `1px solid ${C.n200}`, flexShrink: 0 }}>
+            <div style={{ fontFamily: "'Bricolage Grotesque',sans-serif", fontSize: '0.87rem', fontWeight: 700, color: C.n950, lineHeight: 1.35, marginBottom: '0.5rem' }}>{course.title}</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <div style={{ flex: 1, height: 4, background: C.n200, borderRadius: 9999, overflow: 'hidden' }}>
+                <div style={{ height: '100%', background: `linear-gradient(90deg,${C.blue},${C.teal})`, borderRadius: 9999, width: `${pct}%`, transition: 'width .5s ease' }} />
               </div>
+              <div style={{ fontSize: '0.69rem', fontWeight: 600, color: C.n500, whiteSpace: 'nowrap' }}>{completedCount} / {totalCount} materi</div>
             </div>
           </div>
-        )}
 
-        <div className="flex-1 min-w-0">
-
-      {!activeLesson ? (
-        <div className="mt-6 border border-slate-200 bg-white p-6 text-sm text-slate-600">Materi tidak ditemukan.</div>
-      ) : !isActiveCourse ? (
-        <div className="mt-6 border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-          ⚠️ Silakan mulai course ini terlebih dahulu dari halaman course detail.
-        </div>
-      ) : isPaywalled ? (
-        <div className="mt-6 border border-red-300 bg-red-50 p-4 text-sm text-red-800">
-          🔒 Course ini berbayar dan belum dibeli. Materi tidak dapat diakses.
-        </div>
-      ) : !allowed ? (
-        <div className="mt-6 border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-          ⚠️ Materi ini masih terkunci. Selesaikan materi sebelumnya terlebih dahulu.
-        </div>
-      ) : (
-        <div className="mt-6 grid gap-4">
-          <Card className="p-5">
-            {getLessonBlocks(activeLesson).map((b, blockIdx) => {
-              if (b.type === 'video') {
-                if (!activeLesson.videoEmbedUrl) return null;
-                return (
-                  <div key={`${b.type}-${blockIdx}`} className={blockIdx === 0 ? '' : 'mt-6'}>
-                    <div className="text-sm font-semibold">{b.title || 'Video'}</div>
-                    <div className="mt-2 border border-slate-200 bg-white">
-                      <div className="aspect-video bg-slate-100">
-                        <iframe
-                          title="Lesson video"
-                          src={activeLesson.videoEmbedUrl}
-                          className="h-full w-full"
-                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                          allowFullScreen
-                        />
-                      </div>
-                    </div>
-                  </div>
-                );
-              }
-
-              if (b.type === 'attachments') {
-                if ((activeLesson.attachments || []).length === 0) return null;
-                return (
-                  <div key={`${b.type}-${blockIdx}`} className={blockIdx === 0 ? '' : 'mt-6'}>
-                    <div className="text-sm font-semibold">{b.title || 'Lampiran'}</div>
-                    <div className="mt-2 grid gap-2">
-                      {(activeLesson.attachments || []).map((a, idx) => {
-                        const label = a.name || a.url;
-                        const pdf = isPdfUrl(a.url);
-                        const isOpen = pdf && openAttachmentUrl && String(openAttachmentUrl) === String(a.url);
-                        return (
-                          <div key={idx} className="border border-slate-200 bg-white">
-                            <button
-                              type="button"
-                              onClick={() => {
-                                if (!pdf) {
-                                  window.open(a.url, '_blank', 'noreferrer');
-                                  return;
-                                }
-                                setOpenAttachmentUrl((cur) => (cur === a.url ? '' : a.url));
-                              }}
-                              className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-sm font-semibold text-slate-900 hover:bg-slate-50"
-                            >
-                              <span className="truncate">{label}</span>
-                              <span className="text-xs font-semibold text-slate-600">{pdf ? (isOpen ? 'TUTUP' : 'BUKA') : 'LINK'}</span>
-                            </button>
-                            {isOpen ? (
-                              <div className="border-t border-slate-200 bg-slate-50">
-                                <div className="aspect-video">
-                                  <iframe title={label} src={a.url} className="h-full w-full" />
-                                </div>
-                                <div className="px-3 py-2 text-xs text-slate-600">
-                                  Jika PDF tidak tampil, gunakan tombol di atas untuk membuka link.
-                                </div>
-                              </div>
-                            ) : null}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                );
-              }
-
+          <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden' }}>
+            {modules.map((mod, mi) => {
+              const modLessons = lessons.filter(l => String(l.moduleId) === String(mod._id));
+              const modDone = modLessons.filter(l => isDone(l._id)).length;
+              const isOpen = openMods.has(String(mod._id));
               return (
-                <div key={`${b.type}-${blockIdx}`} className={blockIdx === 0 ? '' : 'mt-6'}>
-                  <div className="text-sm font-semibold">{b.title || 'Materi'}</div>
-                  <div className="mt-2">
-                    {activeLesson.contentHtml ? (
-                      <div className="prose max-w-none" dangerouslySetInnerHTML={{ __html: cleanLessonHtml(activeLesson.contentHtml) }} />
-                    ) : (
-                      <Markdown text={activeLesson.contentMarkdown} />
-                    )}
+                <div key={mod._id}>
+                  <div onClick={() => { toggleMod(String(mod._id)); setViewModId(mod._id); setView('module-overview'); }}
+                    style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.5rem', padding: '0.7rem 1rem', background: isOpen ? C.blueXs : C.n100, cursor: 'pointer', userSelect: 'none', borderBottom: `1px solid ${C.n200}`, borderLeft: isOpen ? `3px solid ${C.blue}` : '3px solid transparent', position: 'sticky', top: 0, zIndex: 2 }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: '0.62rem', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: isOpen ? C.blue : C.n400, marginBottom: '0.1rem' }}>Modul {mi + 1}</div>
+                      <div style={{ fontSize: '0.83rem', fontWeight: 700, color: isOpen ? C.blueD : C.n800, lineHeight: 1.3 }}>{mod.title}</div>
+                      <div style={{ fontSize: '0.67rem', color: C.n400, marginTop: '0.18rem' }}>{modLessons.length} materi · {modDone} selesai</div>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexShrink: 0, marginTop: 2 }}>
+                      {modDone === modLessons.length && modLessons.length > 0 && (
+                        <span style={{ fontSize: '0.62rem', fontWeight: 700, padding: '0.11rem 0.42rem', borderRadius: 9999, background: C.tealXs, color: C.teal, border: `1px solid ${C.tealS}` }}>✓ Selesai</span>
+                      )}
+                      <span style={{ fontSize: '0.67rem', color: isOpen ? C.blue : C.n400, display: 'inline-block', transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform .25s' }}>▾</span>
+                    </div>
                   </div>
+                  {isOpen && modLessons.map(lesson => {
+                    const isActive = String(lesson._id) === String(lessonId) && view === 'materi';
+                    const done = isDone(lesson._id);
+                    const lType = getLessonType(lesson);
+                    return (
+                      <div key={lesson._id} className="pl-mi"
+                        onClick={() => { setView('materi'); nav(`/courses/${id}/lessons/${lesson._id}`); }}
+                        style={{ display: 'flex', alignItems: 'flex-start', gap: '0.55rem', padding: '0.58rem 1rem', borderBottom: `1px solid ${C.n100}`, cursor: 'pointer', background: isActive ? C.blueXs : 'transparent', borderLeft: isActive ? `3px solid ${C.blue}` : '3px solid transparent' }}>
+                        <div style={{ width: 21, height: 21, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.58rem', fontWeight: 800, flexShrink: 0, marginTop: 2, background: done ? C.teal : isActive ? C.blue : C.white, color: done || isActive ? '#fff' : C.n400, border: done || isActive ? 'none' : `1.5px solid ${C.n300}` }}>
+                          {done ? '✓' : isActive ? '▶' : '—'}
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: '0.79rem', fontWeight: isActive ? 600 : 500, color: isActive ? C.blue : C.n700, lineHeight: 1.4, marginBottom: '0.15rem' }}>{lesson.title}</div>
+                          <span style={{ ...BS[lType], fontSize: '0.61rem', fontWeight: 700, padding: '0.09rem 0.36rem', borderRadius: 3, textTransform: 'uppercase', letterSpacing: '0.04em' }}>{TM[lType].lbl}</span>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               );
             })}
+          </div>
 
-            {!isPaywalled && activeLesson?.quizId ? (
-              <div className="mt-6 border-t border-slate-200 pt-4">
-                <div className="text-sm font-semibold">Quiz Materi</div>
-                <div className="mt-2 text-sm text-slate-600">
-                  Kerjakan quiz setelah membaca materi. Setelah submit, kamu akan melihat nilai, benar/salah, dan progress akan tersimpan.
-                </div>
-                <div className="mt-3">
-                  <Link to={`/quiz/${activeLesson.quizId}`}>
-                    <Button className="w-full sm:w-auto">Mulai Quiz</Button>
-                  </Link>
-                </div>
-              </div>
+          {/* Certificate card */}
+          <div style={{ flexShrink: 0, padding: '0.7rem', borderTop: `1px solid ${C.n200}` }}>
+            <div style={{ background: `linear-gradient(135deg,${C.tealXs},${C.blueXs})`, border: `1px solid ${C.tealS}`, borderRadius: 10, padding: '0.8rem 1rem', textAlign: 'center' }}>
+              {cert.eligible ? (
+                <>
+                  <div style={{ fontSize: '0.77rem', fontWeight: 700, color: C.teal, marginBottom: '0.2rem' }}>🎓 Eligible Sertifikat!</div>
+                  <div style={{ fontSize: '0.68rem', color: C.n600, marginBottom: '0.55rem' }}>Selesaikan semua materi untuk mengunduh</div>
+                  <Link to={`/certificate/${id}`} style={{ display: 'block', padding: '0.46rem', background: `linear-gradient(135deg,${C.teal},#0a7a76)`, color: '#fff', borderRadius: 7, fontFamily: 'inherit', fontSize: '0.76rem', fontWeight: 700, textDecoration: 'none', textAlign: 'center' }}>📜 Unduh Sertifikat</Link>
+                </>
+              ) : (
+                <>
+                  <div style={{ fontSize: '0.77rem', fontWeight: 700, color: C.n700, marginBottom: '0.2rem' }}>🎓 Sertifikat Kursus</div>
+                  <div style={{ fontSize: '0.68rem', color: C.n600, marginBottom: '0.3rem' }}>{completedCount}/{totalCount} materi selesai</div>
+                  <div style={{ height: 5, background: C.n200, borderRadius: 9999, overflow: 'hidden' }}>
+                    <div style={{ height: '100%', background: `linear-gradient(90deg,${C.blue},${C.teal})`, borderRadius: 9999, width: `${pct}%` }} />
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </aside>
+
+        {/* Main */}
+        <main style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: C.white }}>
+          {/* Breadcrumb */}
+          <div className="pl-crumb" style={{ display: 'flex', alignItems: 'center', gap: '0.32rem', padding: '0.6rem 2rem', borderBottom: `1px solid ${C.n200}`, flexShrink: 0, flexWrap: 'wrap' }}>
+            <Link to={`/courses/${id}`} style={{ fontSize: '0.73rem', color: C.blue, fontWeight: 500, textDecoration: 'none' }}>{course.title}</Link>
+            {view === 'module-overview' && viewingModule ? (
+              <>
+                <span style={{ fontSize: '0.61rem', color: C.n400 }}>›</span>
+                <span style={{ fontSize: '0.73rem', fontWeight: 600, color: C.n800 }}>Modul {vmIdx + 1}: {viewingModule.title}</span>
+              </>
+            ) : activeModule ? (
+              <>
+                <span style={{ fontSize: '0.61rem', color: C.n400 }}>›</span>
+                <button onClick={() => { setViewModId(activeModule._id); setView('module-overview'); }} style={{ fontSize: '0.73rem', color: C.blue, fontWeight: 500, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+                  Modul {modules.indexOf(activeModule) + 1}: {activeModule.title}
+                </button>
+                <span style={{ fontSize: '0.61rem', color: C.n400 }}>›</span>
+                <span style={{ fontSize: '0.73rem', fontWeight: 600, color: C.n800 }}>{activeLesson?.title}</span>
+              </>
+            ) : activeLesson ? (
+              <>
+                <span style={{ fontSize: '0.61rem', color: C.n400 }}>›</span>
+                <span style={{ fontSize: '0.73rem', fontWeight: 600, color: C.n800 }}>{activeLesson.title}</span>
+              </>
             ) : null}
+          </div>
 
-            {lockError ? <div className="mt-4 bg-rose-50 p-3 text-sm text-rose-700">{lockError}</div> : null}
-          </Card>
+          {/* Scrollable content */}
+          <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden' }}>
+            {view === 'module-overview' && viewingModule ? (
+              /* Module overview */
+              <div className="pl-content" style={{ padding: '1.75rem 2.25rem 2.5rem', maxWidth: 820 }}>
+                <div style={{ background: `linear-gradient(135deg,${C.blueXs},${C.white})`, border: `1px solid ${C.blueS}`, borderRadius: 14, padding: '1.4rem', marginBottom: '1.4rem' }}>
+                  <div style={{ fontSize: '0.68rem', fontWeight: 700, color: C.blue, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '0.35rem' }}>Modul {vmIdx + 1} dari {modules.length}</div>
+                  <div style={{ fontFamily: "'Bricolage Grotesque',sans-serif", fontSize: '1.35rem', fontWeight: 800, color: C.n950, marginBottom: '0.55rem', letterSpacing: '-0.03em' }}>{viewingModule.title}</div>
+                  {viewingModule.description && <div style={{ fontSize: '0.87rem', color: C.n600, lineHeight: 1.75, marginBottom: '1rem' }}>{viewingModule.description}</div>}
+                  <div style={{ display: 'flex', gap: '1.1rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
+                    {(() => {
+                      const ml = lessons.filter(l => String(l.moduleId) === String(viewingModule._id));
+                      return (
+                        <>
+                          <span style={{ fontSize: '0.79rem', color: C.n600 }}>📚 <strong style={{ color: C.n800 }}>{ml.length}</strong> materi</span>
+                          <span style={{ fontSize: '0.79rem', color: C.n600 }}>✅ <strong style={{ color: C.n800 }}>{ml.filter(l => isDone(l._id)).length}</strong> selesai</span>
+                          <span style={{ fontSize: '0.79rem', color: C.n600 }}>📹 <strong style={{ color: C.n800 }}>{ml.filter(l => l.videoEmbedUrl).length}</strong> video</span>
+                        </>
+                      );
+                    })()}
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                    {lessons.filter(l => String(l.moduleId) === String(viewingModule._id)).map(lesson => {
+                      const done = isDone(lesson._id);
+                      const lType = getLessonType(lesson);
+                      return (
+                        <div key={lesson._id} className="pl-mov-item"
+                          onClick={() => { setView('materi'); nav(`/courses/${id}/lessons/${lesson._id}`); }}
+                          style={{ display: 'flex', alignItems: 'center', gap: '0.55rem', padding: '0.58rem 0.82rem', borderRadius: 9, background: C.white, border: `1px solid ${C.n300}`, cursor: 'pointer', fontSize: '0.83rem', color: C.n700 }}>
+                          <span style={{ ...BS[lType], fontSize: '0.61rem', fontWeight: 700, padding: '0.09rem 0.36rem', borderRadius: 3, textTransform: 'uppercase', letterSpacing: '0.04em', flexShrink: 0 }}>{TM[lType].lbl}</span>
+                          {lesson.title}
+                          <span style={{ fontSize: '0.71rem', fontWeight: 700, marginLeft: 'auto', color: done ? C.teal : C.n400 }}>{done ? '✓ Selesai' : '—'}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+                {(() => {
+                  const first = lessons.find(l => String(l.moduleId) === String(viewingModule._id));
+                  return first ? (
+                    <button onClick={() => { setView('materi'); nav(`/courses/${id}/lessons/${first._id}`); }}
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', background: C.blue, color: '#fff', padding: '0.68rem 1.4rem', borderRadius: 9, fontFamily: 'inherit', fontSize: '0.87rem', fontWeight: 700, cursor: 'pointer', border: 'none', boxShadow: `0 2px 8px rgba(12,98,141,.25)` }}>
+                      Mulai Materi Pertama →
+                    </button>
+                  ) : null;
+                })()}
+              </div>
+            ) : !allowed ? (
+              /* Access denied */
+              <div className="pl-content" style={{ padding: '1.75rem 2.25rem', maxWidth: 820 }}>
+                {!isActiveCourse && (
+                  <div style={{ padding: '1rem', background: C.amberXs, border: '1px solid #fde68a', borderRadius: 9, color: '#92400e', fontSize: '0.86rem' }}>
+                    ⚠️ Silakan mulai kursus ini terlebih dahulu.{' '}
+                    <Link to={`/courses/${id}`} style={{ color: C.blue, fontWeight: 600 }}>Ke halaman kursus →</Link>
+                  </div>
+                )}
+                {isPaywalled && (
+                  <div style={{ padding: '1rem', background: '#fff1f2', border: '1px solid #fecdd3', borderRadius: 9, color: '#9f1239', fontSize: '0.86rem' }}>
+                    🔒 Kursus berbayar. Beli kursus untuk akses semua materi.
+                  </div>
+                )}
+                {isActiveCourse && !isPaywalled && (
+                  <div style={{ padding: '1rem', background: C.amberXs, border: '1px solid #fde68a', borderRadius: 9, color: '#92400e', fontSize: '0.86rem' }}>
+                    ⚠️ Selesaikan materi sebelumnya terlebih dahulu.
+                  </div>
+                )}
+              </div>
+            ) : !activeLesson ? (
+              <div style={{ padding: '1.75rem 2.25rem', color: C.n500, fontSize: '0.88rem' }}>Materi tidak ditemukan.</div>
+            ) : (
+              /* Lesson content */
+              (() => {
+                const lType = getLessonType(activeLesson);
+                const tm = TM[lType];
+                const tabs = ['materi', 'catatan', ...(activeLesson.attachments?.length ? ['lampiran'] : []), 'diskusi'];
+                const tabLabel = { materi: 'Materi', catatan: 'Catatan Saya', lampiran: `Lampiran (${activeLesson.attachments?.length || 0})`, diskusi: 'Diskusi' };
+                return (
+                  <div className="pl-content" style={{ padding: '1.75rem 2.25rem 2.5rem', maxWidth: 820 }}>
+                    {/* Header */}
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.7rem', marginBottom: '1.5rem' }}>
+                      <div style={{ width: 42, height: 42, borderRadius: 10, background: tm.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.3rem', flexShrink: 0 }}>{tm.ico}</div>
+                      <div>
+                        <div style={{ fontSize: '0.67rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: tm.col, marginBottom: '0.18rem' }}>{tm.lbl}</div>
+                        <div style={{ fontFamily: "'Bricolage Grotesque',sans-serif", fontSize: '1.5rem', fontWeight: 800, color: C.n950, letterSpacing: '-0.03em', lineHeight: 1.2 }}>{activeLesson.title}</div>
+                      </div>
+                    </div>
+                    {/* Tabs */}
+                    <div style={{ display: 'flex', borderBottom: `1.5px solid ${C.n200}`, marginBottom: '1.5rem', overflowX: 'auto' }}>
+                      {tabs.map(tab => (
+                        <button key={tab} onClick={() => setActiveTab(tab)} style={{ fontSize: '0.81rem', fontWeight: 600, padding: '0.6rem 1rem', whiteSpace: 'nowrap', cursor: 'pointer', background: 'transparent', border: 'none', borderBottom: `2.5px solid ${activeTab === tab ? C.blue : 'transparent'}`, marginBottom: '-1.5px', color: activeTab === tab ? C.blue : C.n500 }}>{tabLabel[tab]}</button>
+                      ))}
+                    </div>
+                    {/* Materi */}
+                    {activeTab === 'materi' && (
+                      <div>
+                        {lType === 'video' && (
+                          <div style={{ borderRadius: 14, marginBottom: '1.5rem', overflow: 'hidden', background: '#0A1929', aspectRatio: '16/9', maxHeight: 440, boxShadow: '0 8px 30px rgba(15,23,42,.2)' }}>
+                            <iframe title="video" src={activeLesson.videoEmbedUrl} style={{ width: '100%', height: '100%', border: 'none' }} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowFullScreen />
+                          </div>
+                        )}
+                        {lType === 'quiz' && (
+                          <div>
+                            <div style={{ display: 'flex', gap: '0.62rem', padding: '0.82rem 1rem', borderRadius: 9, borderLeft: `3px solid ${C.blue}`, background: C.blueXs, color: C.blueD, fontSize: '0.84rem', lineHeight: 1.6, marginBottom: '1.2rem' }}>
+                              <span>ℹ️</span><div>Kerjakan quiz untuk menyelesaikan materi ini dan lanjut ke materi berikutnya.</div>
+                            </div>
+                            <Link to={`/quiz/${activeLesson.quizId}`} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', background: C.amber, color: '#fff', padding: '0.68rem 1.4rem', borderRadius: 9, fontFamily: 'inherit', fontSize: '0.87rem', fontWeight: 700, textDecoration: 'none', boxShadow: `0 2px 8px rgba(217,119,6,.3)` }}>📝 Mulai Quiz →</Link>
+                          </div>
+                        )}
+                        {lType === 'project' && (
+                          <div>
+                            <div style={{ display: 'flex', gap: '0.62rem', padding: '0.82rem 1rem', borderRadius: 9, borderLeft: `3px solid ${C.teal}`, background: C.tealXs, color: '#0a6060', fontSize: '0.84rem', lineHeight: 1.6, marginBottom: '1.2rem' }}>
+                              <span>🏆</span><div><strong>Project portfolio-ready!</strong> Cantumkan di LinkedIn, GitHub, atau resume kamu.</div>
+                            </div>
+                            {activeLesson.assignment?.instructionsHtml && (
+                              <div style={{ marginBottom: '1.5rem' }}>
+                                <div style={{ fontFamily: "'Bricolage Grotesque',sans-serif", fontSize: '0.96rem', fontWeight: 800, color: C.n950, marginBottom: '0.82rem' }}>📋 Instruksi Project</div>
+                                <div className="prose max-w-none" dangerouslySetInnerHTML={{ __html: cleanHtml(activeLesson.assignment.instructionsHtml) }} />
+                              </div>
+                            )}
+                            {activeLesson.assignmentId && (
+                              <Link to={`/assignment/${activeLesson.assignmentId}`} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', background: C.teal, color: '#fff', padding: '0.68rem 1.4rem', borderRadius: 9, fontFamily: 'inherit', fontSize: '0.87rem', fontWeight: 700, textDecoration: 'none', boxShadow: `0 2px 8px rgba(11,168,148,.3)` }}>🛠️ Kerjakan Project →</Link>
+                            )}
+                          </div>
+                        )}
+                        {(lType === 'read' || lType === 'video') && activeLesson.contentHtml ? (
+                          <div className="prose max-w-none" dangerouslySetInnerHTML={{ __html: cleanHtml(activeLesson.contentHtml) }} />
+                        ) : (lType === 'read' || lType === 'video') && activeLesson.contentMarkdown ? (
+                          <MarkdownText text={activeLesson.contentMarkdown} />
+                        ) : lType === 'read' ? (
+                          <div style={{ color: C.n500, fontSize: '0.86rem' }}>Konten materi belum tersedia.</div>
+                        ) : null}
+                      </div>
+                    )}
+                    {/* Catatan */}
+                    {activeTab === 'catatan' && (
+                      <div>
+                        <div style={{ fontSize: '0.83rem', color: C.n600, marginBottom: '0.75rem' }}>Catatan pribadi untuk materi ini. Tersimpan otomatis di browser.</div>
+                        <textarea value={note} onChange={e => saveNote(e.target.value)} placeholder="Tulis catatan kamu di sini..."
+                          style={{ width: '100%', minHeight: 200, border: `1.5px solid ${C.n300}`, borderRadius: 9, padding: '0.82rem', fontFamily: 'inherit', fontSize: '0.84rem', color: C.n800, resize: 'vertical', outline: 'none', background: C.white, lineHeight: 1.6 }} />
+                      </div>
+                    )}
+                    {/* Lampiran */}
+                    {activeTab === 'lampiran' && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.42rem' }}>
+                        {(activeLesson.attachments || []).map((a, i) => (
+                          <a key={i} href={a.url} target="_blank" rel="noreferrer" style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', padding: '0.62rem 0.88rem', background: C.n100, border: `1px solid ${C.n300}`, borderRadius: 9, textDecoration: 'none' }}>
+                            <div style={{ width: 32, height: 32, borderRadius: 8, background: C.blueXs, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.92rem', flexShrink: 0 }}>{a.type === 'file' ? '📄' : '🔗'}</div>
+                            <div>
+                              <div style={{ fontSize: '0.82rem', fontWeight: 600, color: C.n800 }}>{a.name || a.url}</div>
+                              <div style={{ fontSize: '0.69rem', color: C.n400 }}>{a.type === 'file' ? 'File' : 'Link'}</div>
+                            </div>
+                            <div style={{ fontSize: '0.7rem', fontWeight: 600, color: C.blue, marginLeft: 'auto' }}>⬇ Buka</div>
+                          </a>
+                        ))}
+                      </div>
+                    )}
+                    {/* Diskusi */}
+                    {activeTab === 'diskusi' && (
+                      <div style={{ padding: '2rem', textAlign: 'center', background: C.n100, borderRadius: 12, border: `1px solid ${C.n300}` }}>
+                        <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>💬</div>
+                        <div style={{ fontSize: '0.87rem', fontWeight: 600, color: C.n700, marginBottom: '0.35rem' }}>Fitur Diskusi</div>
+                        <div style={{ fontSize: '0.79rem', color: C.n500 }}>Fitur diskusi akan segera hadir.</div>
+                      </div>
+                    )}
+                    {lockError && (
+                      <div style={{ marginTop: '1rem', padding: '0.75rem', background: '#fff1f2', border: '1px solid #fecdd3', borderRadius: 9, fontSize: '0.84rem', color: '#9f1239' }}>{lockError}</div>
+                    )}
+                  </div>
+                );
+              })()
+            )}
+          </div>
 
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <Button
-              variant="outline"
+          {/* Bottom nav */}
+          <div className="pl-bnav" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.82rem 2.25rem', borderTop: `1px solid ${C.n200}`, background: C.white, flexShrink: 0, gap: '1rem', flexWrap: 'wrap' }}>
+            <button disabled={prevDisabled}
               onClick={() => {
+                if (view === 'module-overview') { setView('materi'); return; }
                 if (!prevLessonId) return;
                 nav(`/courses/${id}/lessons/${prevLessonId}`);
               }}
-              disabled={!prevLessonId}
-            >
-              Sebelumnya
-            </Button>
-
-            {isStudent && isActiveCourse && !isPaywalled && !nextLessonId && !isLessonCompleted(activeLesson?._id) ? (
-              <Button
-                variant="outline"
-                onClick={async () => {
-                  setLockError('');
-                  await markLessonComplete(activeLesson?._id);
-                }}
-              >
-                Tandai Materi Selesai
-              </Button>
-            ) : null}
-
-            <Button
+              style={{ display: 'flex', alignItems: 'center', gap: '0.42rem', fontSize: '0.82rem', fontWeight: 600, padding: '0.55rem 1.05rem', borderRadius: 8, background: 'transparent', color: prevDisabled ? C.n400 : C.n500, border: `1px solid ${C.n300}`, cursor: prevDisabled ? 'not-allowed' : 'pointer', opacity: prevDisabled ? 0.4 : 1 }}>
+              ← Sebelumnya
+            </button>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.28rem' }}>
+              <div style={{ fontSize: '0.7rem', color: C.n400 }}>
+                {view === 'module-overview' ? `Modul ${vmIdx + 1} dari ${modules.length}` : `Materi ${activeIdx + 1} dari ${totalCount}`}
+              </div>
+              {view === 'materi' && isStudent && isActiveCourse && !isPaywalled && activeLesson && (
+                <button
+                  onClick={async () => { if (!isDone(activeLesson._id)) { setLockError(''); await markComplete(activeLesson._id); } }}
+                  disabled={markingDone || isDone(activeLesson._id)}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '0.32rem', fontSize: '0.74rem', fontWeight: 600, padding: '0.36rem 0.82rem', borderRadius: 7, cursor: isDone(activeLesson._id) ? 'default' : markingDone ? 'wait' : 'pointer', background: isDone(activeLesson._id) ? C.teal : C.n100, color: isDone(activeLesson._id) ? '#fff' : C.n600, border: `1.5px solid ${isDone(activeLesson._id) ? C.teal : C.n300}` }}>
+                  ✓ {isDone(activeLesson._id) ? 'Selesai' : markingDone ? 'Menyimpan...' : 'Tandai Selesai'}
+                </button>
+              )}
+            </div>
+            <button disabled={nextDisabled}
               onClick={async () => {
+                if (view === 'module-overview') {
+                  const first = lessons.find(l => String(l.moduleId) === String(viewModId));
+                  if (first) { setView('materi'); nav(`/courses/${id}/lessons/${first._id}`); }
+                  return;
+                }
                 if (!nextLessonId) return;
                 setLockError('');
-                const ok = await markLessonComplete(activeLesson?._id);
+                const ok = await markComplete(activeLesson?._id);
                 if (!ok) return;
                 nav(`/courses/${id}/lessons/${nextLessonId}`);
               }}
-              disabled={!nextLessonId}
-            >
-              Berikutnya
-            </Button>
+              style={{ display: 'flex', alignItems: 'center', gap: '0.42rem', fontSize: '0.82rem', fontWeight: 600, padding: '0.55rem 1.05rem', borderRadius: 8, background: nextDisabled ? C.n300 : C.blue, color: '#fff', border: 'none', cursor: nextDisabled ? 'not-allowed' : 'pointer', opacity: nextDisabled ? 0.5 : 1, boxShadow: !nextDisabled ? `0 2px 6px rgba(12,98,141,.25)` : 'none' }}>
+              Berikutnya →
+            </button>
           </div>
-        </div>
-      )}
-        </div>
+        </main>
       </div>
-    </Container>
-    </div>
+    </>
   );
 }
