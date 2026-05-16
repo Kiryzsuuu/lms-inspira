@@ -307,30 +307,17 @@ export default function CertificateView() {
                       </div>
                     </div>
 
-                    {/* QR + Verified seal */}
+                    {/* QR code */}
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-                      {/* Verified seal — SVG for crisp rendering */}
-                      <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <defs>
-                          <linearGradient id="sealGrad" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
-                            <stop offset="0%" stopColor="#0C628D"/>
-                            <stop offset="100%" stopColor="#0FADA8"/>
-                          </linearGradient>
-                        </defs>
-                        <circle cx="32" cy="32" r="31" fill="url(#sealGrad)"/>
-                        <polyline points="18,33 27,42 46,22" stroke="white" strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-                        <text x="32" y="56" textAnchor="middle" fill="rgba(255,255,255,0.82)" fontSize="6" fontWeight="700" letterSpacing="1" fontFamily="Arial,sans-serif">VERIFIED</text>
-                      </svg>
-                      {/* QR code */}
                       {qrDataUrl && (
                         <img
                           src={qrDataUrl}
                           alt="QR Verifikasi"
-                          style={{ width: 52, height: 52, display: 'block' }}
+                          style={{ width: 64, height: 64, display: 'block' }}
                         />
                       )}
                       <div style={{ fontSize: '0.42em', color: '#9CA3AF', textAlign: 'center' }}>
-                        InspiraLearn
+                        Scan untuk verifikasi
                       </div>
                     </div>
                   </div>
