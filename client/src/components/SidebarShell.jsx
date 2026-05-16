@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import clsx from 'clsx';
-import { Button, Card, Container } from './ui';
+import { Button } from './ui';
+
+const SB_PX = { 'w-64': 256, 'w-72': 288, 'w-80': 320, 'w-96': 384 };
 
 export function SidebarShell({
   title,
@@ -15,107 +17,159 @@ export function SidebarShell({
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(() => {
-    try {
-      return localStorage.getItem('sidebar-collapsed') === 'true';
-    } catch {
-      return false;
-    }
+    try { return localStorage.getItem('sidebar-collapsed') === 'true'; } catch { return false; }
   });
 
   useEffect(() => {
-    try {
-      localStorage.setItem('sidebar-collapsed', String(collapsed));
-    } catch {
-      // Silently ignore localStorage errors
-    }
+    try { localStorage.setItem('sidebar-collapsed', String(collapsed)); } catch {}
   }, [collapsed]);
 
   useEffect(() => {
-    function handleResize() {
-      if (window.innerWidth >= 1024) setSidebarOpen(false);
-    }
-
-    handleResize();
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    function onResize() { if (window.innerWidth >= 1024) setSidebarOpen(false); }
+    onResize();
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
   }, []);
 
+  const sbPx = SB_PX[sidebarWidth] || 288;
+
   return (
-    <section className="min-h-screen py-6 sm:py-8" style={{ background: '#F7F8FA' }}>
-      <Container className="space-y-6">
-        <Card className="overflow-hidden rounded-[20px] border border-gray-200 bg-white shadow-sm">
-          <div className="border-b border-gray-200 bg-white px-5 py-6 sm:px-8">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-              <div className="space-y-2">
-                <div className="mb-2">
-                  <img src="/logo-color.png" alt="Inspira Innovation" className="h-[24px] w-auto object-contain" />
-                </div>
-                <div>
-                  <h1 className="font-display text-3xl font-extrabold tracking-tight text-gray-900">{title}</h1>
-                  {description ? <p className="mt-2 max-w-2xl text-sm text-gray-500">{description}</p> : null}
-                </div>
-              </div>
-              <div className="flex flex-wrap items-center gap-3">{actions}</div>
+    <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', background: '#F7F8FA', padding: '1.25rem' }}>
+      {/* Card — fills remaining height */}
+      <div style={{
+        flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column',
+        borderRadius: 20, border: '1px solid #e5e7eb', background: '#fff',
+        boxShadow: '0 1px 4px rgba(0,0,0,0.07)', overflow: 'hidden',
+      }}>
+        {/* Page header */}
+        <div style={{ flexShrink: 0, borderBottom: '1px solid #e5e7eb', padding: '1.25rem 2rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16, flexWrap: 'wrap' }}>
+            <div>
+              <img src="/logo-color.png" alt="Inspira Innovation" style={{ height: 24, width: 'auto', objectFit: 'contain', marginBottom: 6 }} />
+              <h1 style={{ fontFamily: "'Bricolage Grotesque', sans-serif", fontSize: '1.75rem', fontWeight: 800, color: '#0A0E1A', letterSpacing: '-0.02em', lineHeight: 1.2 }}>
+                {title}
+              </h1>
+              {description && <p style={{ marginTop: 4, fontSize: '0.85rem', color: '#64748b' }}>{description}</p>}
             </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>{actions}</div>
           </div>
+        </div>
 
-          <div className="relative flex min-h-[calc(100vh-14rem)] bg-white">
-            <aside
-              className={clsx(
-                'hidden border-r border-gray-200 bg-gray-50/80 lg:block relative transition-all duration-300',
-                collapsed ? 'w-0 overflow-hidden' : sidebarWidth
+        {/* Body: sidebar + toggle + content */}
+        <div style={{ flex: 1, minHeight: 0, display: 'flex', overflow: 'hidden' }}>
+
+          {/* Desktop sidebar — scrollable */}
+          <aside
+            style={{
+              width: collapsed ? 0 : sbPx,
+              flexShrink: 0,
+              overflow: 'hidden',
+              borderRight: collapsed ? 'none' : '1px solid #e5e7eb',
+              background: '#f9fafb',
+              transition: 'width 0.25s ease',
+            }}
+            className="hidden lg:flex lg:flex-col"
+          >
+            {/* Inner wrapper — fixed width so content doesn't squeeze during transition */}
+            <div style={{ width: sbPx, display: 'flex', flexDirection: 'column', height: '100%' }}>
+              {sidebarTitle && (
+                <div style={{
+                  flexShrink: 0, padding: '0.85rem 1.25rem 0.65rem',
+                  fontSize: '0.68rem', fontWeight: 700, textTransform: 'uppercase',
+                  letterSpacing: '0.14em', color: '#9ca3af',
+                  borderBottom: '1px solid #e5e7eb', background: '#f9fafb',
+                }}>
+                  {sidebarTitle}
+                </div>
               )}
-            >
-              <div className="sticky top-0 space-y-4 p-5">
-                {sidebarTitle ? <div className="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">{sidebarTitle}</div> : null}
-                <div className="space-y-3">{renderSidebar ? renderSidebar(() => {}) : sidebar}</div>
+              <div style={{ flex: 1, overflowY: 'auto', padding: '1rem 1rem 1.5rem' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {renderSidebar ? renderSidebar(() => {}) : sidebar}
+                </div>
               </div>
-            </aside>
+            </div>
+          </aside>
 
-            <button
-              onClick={() => setCollapsed(!collapsed)}
-              className="hidden lg:flex absolute top-4 z-10 h-8 w-8 items-center justify-center rounded-full border border-gray-200 bg-white shadow-sm hover:bg-gray-50 transition-all"
-              style={{ right: collapsed ? 'auto' : '-16px', left: collapsed ? '8px' : 'auto' }}
-              title={collapsed ? 'Buka sidebar' : 'Tutup sidebar'}
-            >
-              <svg className="h-4 w-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                {collapsed ? (
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                ) : (
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                )}
+          {/* Collapse toggle strip — always visible at sidebar/content boundary */}
+          <button
+            onClick={() => setCollapsed(c => !c)}
+            title={collapsed ? 'Buka sidebar' : 'Tutup sidebar'}
+            className="hidden lg:flex"
+            style={{
+              flexShrink: 0, width: 20, border: 'none',
+              borderRight: '1px solid #e5e7eb',
+              background: '#f3f4f6',
+              cursor: 'pointer', padding: 0,
+              alignItems: 'center', justifyContent: 'center',
+              transition: 'background 0.15s',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.background = '#e5e7eb'; }}
+            onMouseLeave={e => { e.currentTarget.style.background = '#f3f4f6'; }}
+          >
+            <div style={{
+              height: 44, width: 16,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              borderRadius: '0 8px 8px 0',
+              background: '#fff',
+              border: '1px solid #e5e7eb',
+              borderLeft: 'none',
+              boxShadow: '2px 0 4px rgba(0,0,0,0.06)',
+            }}>
+              <svg width="8" height="14" viewBox="0 0 8 14" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                {collapsed
+                  ? <path d="M1 1l6 6-6 6" />
+                  : <path d="M7 1L1 7l6 6" />}
               </svg>
-            </button>
+            </div>
+          </button>
 
-            <div className="flex-1">
-              <div className="sticky top-0 z-20 border-b border-gray-200 bg-white px-5 py-3 lg:hidden">
-                <Button variant="outline" className="w-full justify-center rounded-2xl" onClick={() => setSidebarOpen(true)}>
-                  ☰ Buka Menu
-                </Button>
+          {/* Main content — scrollable */}
+          <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            {/* Mobile menu bar */}
+            <div className="lg:hidden" style={{ flexShrink: 0, borderBottom: '1px solid #e5e7eb', padding: '0.65rem 1.25rem' }}>
+              <Button variant="outline" className="w-full justify-center rounded-2xl" onClick={() => setSidebarOpen(true)}>
+                ☰ Buka Menu
+              </Button>
+            </div>
+            <div style={{ flex: 1, overflowY: 'auto' }}>
+              <div className={clsx('p-5 sm:p-6 lg:p-8', contentClassName)}>
+                {children}
               </div>
-              <div className={clsx('p-5 sm:p-6 lg:p-8', contentClassName)}>{children}</div>
             </div>
           </div>
-        </Card>
-      </Container>
+        </div>
+      </div>
 
-      {sidebarOpen ? (
-        <div className="fixed inset-0 z-50 lg:hidden">
-          <div className="absolute inset-0 bg-gray-950/35" onClick={() => setSidebarOpen(false)} />
-          <div className="absolute left-0 top-0 h-full w-[88vw] max-w-sm border-r border-gray-200 bg-white shadow-2xl">
-            <div className="flex items-center justify-between border-b border-gray-200 px-5 py-4">
-              <div>
-                {sidebarTitle ? <div className="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">{sidebarTitle}</div> : null}
-                <div className="font-display text-lg font-bold text-gray-900">Menu</div>
-              </div>
+      {/* Mobile drawer */}
+      {sidebarOpen && (
+        <div className="lg:hidden" style={{ position: 'fixed', inset: 0, zIndex: 50 }}>
+          <div
+            style={{ position: 'absolute', inset: 0, background: 'rgba(15,23,42,0.35)' }}
+            onClick={() => setSidebarOpen(false)}
+          />
+          <div style={{
+            position: 'absolute', left: 0, top: 0, height: '100%',
+            width: '88vw', maxWidth: 384,
+            borderRight: '1px solid #e5e7eb', background: '#fff',
+            boxShadow: '4px 0 24px rgba(0,0,0,0.15)',
+            display: 'flex', flexDirection: 'column',
+          }}>
+            <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #e5e7eb', padding: '1rem 1.25rem' }}>
+              {sidebarTitle && (
+                <div style={{ fontSize: '0.68rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.14em', color: '#9ca3af' }}>
+                  {sidebarTitle}
+                </div>
+              )}
               <Button variant="ghost" className="rounded-xl px-3" onClick={() => setSidebarOpen(false)}>
                 Tutup
               </Button>
             </div>
-            <div className="h-[calc(100%-72px)] overflow-y-auto p-5">{renderSidebar ? renderSidebar(() => setSidebarOpen(false)) : sidebar}</div>
+            <div style={{ flex: 1, overflowY: 'auto', padding: '1rem 1.25rem 1.5rem' }}>
+              {renderSidebar ? renderSidebar(() => setSidebarOpen(false)) : sidebar}
+            </div>
           </div>
         </div>
-      ) : null}
-    </section>
+      )}
+    </div>
   );
 }
