@@ -509,14 +509,14 @@ export default function LessonPresentation() {
                         <div style={{ fontFamily: "'Bricolage Grotesque',sans-serif", fontSize: '1.4rem', fontWeight: 800, color: C.n950, letterSpacing: '-0.03em', lineHeight: 1.2 }}>{activeLesson.title}</div>
                       </div>
                       {/* Tabs */}
-                      <div style={{ display: 'flex', borderBottom: `1.5px solid ${C.n200}`, padding: '0 2rem', marginTop: '0.85rem', overflowX: 'auto' }}>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', borderBottom: `1.5px solid ${C.n200}`, padding: '0 2rem', marginTop: '0.85rem', overflow: 'hidden' }}>
                         {tabs.map(tab => (
                           <button key={tab} onClick={() => setActiveTab(tab)} style={{ fontSize: '0.81rem', fontWeight: 600, padding: '0.55rem 1rem', whiteSpace: 'nowrap', cursor: 'pointer', background: 'transparent', border: 'none', borderBottom: `2.5px solid ${activeTab === tab ? C.blue : 'transparent'}`, marginBottom: '-1.5px', color: activeTab === tab ? C.blue : C.n500 }}>{tabLabel[tab]}</button>
                         ))}
                       </div>
                     </div>
                     {/* Scrollable content body */}
-                    <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: '1.5rem 2rem 2.5rem' }}>
+                    <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: '1.5rem 2rem 2.5rem', maxWidth: 880 }}>
                     {/* Materi */}
                     {activeTab === 'materi' && (
                       <div>
