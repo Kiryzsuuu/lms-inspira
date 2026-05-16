@@ -517,7 +517,7 @@ export default function LessonPresentation() {
                     </div>
                     {/* Scrollable content body */}
                     <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden' }}>
-                      <div style={{ padding: '1.5rem 2rem 2.5rem', maxWidth: 880, margin: '0 auto' }}>
+                      <div style={{ padding: '1.5rem 2rem 2.5rem', maxWidth: 880, margin: 0 }}>
                     {/* Materi */}
                     {activeTab === 'materi' && (
                       <div>
