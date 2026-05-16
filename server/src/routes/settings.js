@@ -36,6 +36,38 @@ const HOME_DEFAULTS = {
   testimonialQuote: 'Lulusan InspiraLearn 3× lebih cepat mendapat pekerjaan dibanding rata-rata fresh graduate Indonesia.',
   ratingNum: '4.9',
   ratingLabel: 'dari 28.000+ ulasan',
+  // Footer
+  footerTagline: 'Platform belajar online untuk profesional Indonesia yang ingin naik level karir dengan skill nyata dari industri.',
+  footerSocials: [
+    { label: 'IG', href: '#' },
+    { label: 'YT', href: '#' },
+    { label: 'in', href: '#' },
+    { label: 'X', href: '#' },
+  ],
+  footerNavCols: [
+    { title: 'Produk', links: [
+      { label: 'Online Courses', href: '/courses' },
+      { label: 'Sertifikasi', href: '/' },
+      { label: 'Program Korporat', href: '/' },
+    ]},
+    { title: 'Perusahaan', links: [
+      { label: 'Tentang Kami', href: '/tentang-kami' },
+      { label: 'Blog', href: '/' },
+      { label: 'Karir', href: '/' },
+    ]},
+    { title: 'Bantuan', links: [
+      { label: 'FAQ', href: '/faq' },
+      { label: 'Hubungi Kami', href: 'mailto:support@inspiratekno.com' },
+      { label: 'Kebijakan Privasi', href: '/kebijakan-privasi' },
+      { label: 'Syarat & Ketentuan', href: '/' },
+    ]},
+  ],
+  footerBottomLinks: [
+    { label: 'Privasi', href: '#' },
+    { label: 'Syarat', href: '#' },
+    { label: 'Cookie', href: '#' },
+  ],
+  footerCopyright: 'InspiraLearn by Inspiratekno. All rights reserved.',
 };
 
 function settingsRouter({ requireAuth, requireRole }) {

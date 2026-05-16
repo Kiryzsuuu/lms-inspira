@@ -535,18 +535,77 @@ export default function Home() {
                   <span className="text-[0.85rem] font-semibold" style={{ color: 'rgba(255,255,255,.5)' }}>Sertifikat Kamu</span>
                   <span className="text-[0.68rem] font-bold px-2.5 py-1 rounded-full" style={{ background: 'rgba(15,173,168,.2)', color: '#0FADA8' }}>Verified</span>
                 </div>
-                <div className="rounded-[16px] p-6 text-center" style={{ background: 'linear-gradient(135deg, #fff9f0, #fff)', border: '1px solid rgba(255,255,255,.1)' }}>
-                  <div className="font-display font-extrabold text-[0.85rem] mb-3 tracking-[-0.03em]" style={{ color: '#0C628D' }}>InspiraLearn</div>
-                  <div className="font-display font-extrabold text-[1.15rem] mb-1" style={{ color: '#111827' }}>{S.certSampleName || 'Arya Ramadhan'}</div>
-                  <div className="text-[0.78rem] mb-4" style={{ color: '#6B7280' }}>Telah menyelesaikan dengan baik kursus</div>
-                  <div className="text-[0.95rem] font-bold mb-4" style={{ color: '#0C628D' }}>{S.certSampleCourse || 'Python untuk Data Science & ML'}</div>
-                  <div
-                    className="w-[60px] h-[60px] rounded-full mx-auto mb-3 flex items-center justify-center text-[1.5rem]"
-                    style={{ background: 'linear-gradient(135deg, #0C628D, #0FADA8)', boxShadow: '0 4px 12px rgba(12,98,141,.3)' }}
-                  >
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                {/* Real certificate design preview */}
+                <div style={{
+                  width: '100%', aspectRatio: '297/210',
+                  background: '#fff', position: 'relative', overflow: 'hidden',
+                  borderRadius: 4, fontSize: '9px',
+                  fontFamily: '"Inter","Helvetica Neue",Arial,sans-serif',
+                }}>
+                  {/* Left accent bar */}
+                  <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '2.5%', background: 'linear-gradient(180deg,#0C628D 0%,#0FADA8 50%,#F3921B 100%)' }} />
+                  {/* Top strip */}
+                  <div style={{ position: 'absolute', top: 0, left: '2.5%', right: 0, height: '2.5%', background: 'linear-gradient(90deg,#0C628D 0%,#0FADA8 60%,#F3921B 100%)' }} />
+                  {/* Content */}
+                  <div style={{ position: 'absolute', inset: 0, left: '2.5%', top: '2.5%', padding: '4.5% 5.5% 4.5% 5%', display: 'flex', flexDirection: 'column' }}>
+                    {/* Header: logo + cert number */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '3%' }}>
+                      <img src="/logo-inspira.png" alt="InspiraLearn" style={{ height: '3.8em', width: 'auto', objectFit: 'contain' }} />
+                      <div style={{ textAlign: 'right' }}>
+                        <div style={{ fontSize: '0.52em', fontWeight: 700, letterSpacing: '0.12em', color: '#9CA3AF', textTransform: 'uppercase' }}>No. Sertifikat</div>
+                        <div style={{ fontSize: '0.56em', fontWeight: 600, color: '#374151', fontFamily: 'monospace', marginTop: 1 }}>CERT-M8P2R4-K7X9</div>
+                      </div>
+                    </div>
+                    {/* Body */}
+                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                      {/* Label */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.7em', marginBottom: '2%' }}>
+                        <div style={{ height: 1.5, width: '1.8em', background: '#F3921B', flexShrink: 0 }} />
+                        <span style={{ fontSize: '0.52em', fontWeight: 700, letterSpacing: '0.16em', color: '#F3921B', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>Certificate of Completion</span>
+                        <div style={{ height: 1.5, flex: 1, background: 'linear-gradient(90deg,#F3921B,transparent)' }} />
+                      </div>
+                      <div style={{ fontSize: '0.65em', color: '#6B7280', marginBottom: '0.8%' }}>Dengan bangga diberikan kepada</div>
+                      <div style={{ fontSize: '2.1em', fontWeight: 800, color: '#0A0E1A', letterSpacing: '-0.02em', lineHeight: 1.1, marginBottom: '1.2%', fontFamily: '"Bricolage Grotesque","Inter",sans-serif' }}>
+                        {S.certSampleName || 'Arya Ramadhan'}
+                      </div>
+                      <div style={{ fontSize: '0.65em', color: '#6B7280', marginBottom: '0.6%' }}>atas keberhasilan menyelesaikan kursus</div>
+                      <div style={{ fontSize: '0.95em', fontWeight: 700, color: '#0C628D', lineHeight: 1.3, marginBottom: '3%', maxWidth: '70%' }}>
+                        {S.certSampleCourse || 'Python untuk Data Science & ML'}
+                      </div>
+                      {/* Footer row */}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', paddingTop: '2%', borderTop: '1px solid #F3F4F6' }}>
+                        <div>
+                          <div style={{ fontSize: '0.45em', fontWeight: 600, letterSpacing: '0.1em', color: '#9CA3AF', textTransform: 'uppercase', marginBottom: 2 }}>Tanggal Penyelesaian</div>
+                          <div style={{ fontSize: '0.62em', fontWeight: 600, color: '#374151' }}>1 Januari 2025</div>
+                          <div style={{ fontSize: '0.45em', color: '#9CA3AF', marginTop: 2 }}>Platform: InspiraLearn</div>
+                        </div>
+                        <div style={{ textAlign: 'center' }}>
+                          <div style={{ width: '8em', height: 0.5, background: '#D1D5DB', margin: '0 auto 3px' }} />
+                          <div style={{ fontSize: '0.58em', fontWeight: 600, color: '#374151' }}>InspiraLearn</div>
+                          <div style={{ fontSize: '0.43em', letterSpacing: '0.1em', color: '#9CA3AF', textTransform: 'uppercase', marginTop: 1 }}>Instruktur / Authorized</div>
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
+                          <svg width="38" height="38" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <defs>
+                              <linearGradient id="sgHome" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+                                <stop offset="0%" stopColor="#0C628D"/><stop offset="100%" stopColor="#0FADA8"/>
+                              </linearGradient>
+                            </defs>
+                            <circle cx="32" cy="32" r="31" fill="url(#sgHome)"/>
+                            <polyline points="18,33 27,42 46,22" stroke="white" strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+                            <text x="32" y="56" textAnchor="middle" fill="rgba(255,255,255,0.82)" fontSize="6" fontWeight="700" letterSpacing="1" fontFamily="Arial,sans-serif">VERIFIED</text>
+                          </svg>
+                          {/* QR pattern placeholder */}
+                          <div style={{ width: 28, height: 28, background: '#fff', border: '1px solid #e5e7eb', padding: 2, display: 'grid', gridTemplateColumns: 'repeat(5,1fr)', gap: 1 }}>
+                            {[1,1,1,1,1, 1,0,0,0,1, 1,0,1,0,1, 1,0,0,0,1, 1,1,1,1,1].map((v,i) => (
+                              <div key={i} style={{ background: v ? '#0C628D' : '#fff', borderRadius: 0.5 }} />
+                            ))}
+                          </div>
+                          <div style={{ fontSize: '0.38em', color: '#9CA3AF' }}>InspiraLearn</div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <div className="text-[0.65rem] tracking-[.05em]" style={{ color: '#9CA3AF' }}>ID: IL-2025-DS-0042 · Dapat diverifikasi online</div>
                 </div>
                 <div className="mt-5">
                   <div className="text-[0.7rem] mb-2" style={{ color: 'rgba(255,255,255,.35)' }}>{S.partnerCountText || 'Diakui oleh 300+ perusahaan termasuk'}</div>
