@@ -634,7 +634,7 @@ export default function CourseDetail() {
         <div className="pointer-events-none absolute bottom-0 left-1/2 w-64 h-64 rounded-full" style={{ background: 'rgba(243,146,27,0.06)', filter: 'blur(80px)' }} />
 
         <Container className="py-12 relative">
-          <div className="grid lg:grid-cols-[1fr_360px] gap-12 items-start">
+          <div className="grid md:grid-cols-[1fr_340px] gap-8 lg:gap-12 items-start">
             {/* LEFT column */}
             <div>
               {/* Breadcrumb */}
@@ -788,7 +788,7 @@ export default function CourseDetail() {
             </div>
 
             {/* RIGHT column — sticky enrollment card */}
-            <div className="lg:sticky lg:top-6 space-y-4">
+            <div className="md:sticky md:top-6 space-y-4">
               <div
                 className="bg-white rounded-[20px] border border-gray-200 overflow-hidden"
                 style={{ boxShadow: '0 8px 32px rgba(0,0,0,0.10), 0 2px 8px rgba(0,0,0,0.06)' }}
@@ -984,7 +984,7 @@ export default function CourseDetail() {
       {/* ── REVIEWS & EDIT SECTION ── */}
       <div className="py-10" style={{ background: '#F7F8FA' }}>
         <Container>
-          <div className="grid lg:grid-cols-[1fr_280px] gap-8 items-start">
+          <div className="grid md:grid-cols-[1fr_280px] gap-8 items-start">
             {/* MAIN */}
             <div>
 

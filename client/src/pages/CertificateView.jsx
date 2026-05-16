@@ -157,7 +157,7 @@ export default function CertificateView() {
       </div>
 
       {/* Certificate wrapper */}
-      <div className="py-8 px-4">
+      <div className="py-4 sm:py-8 px-3 sm:px-4">
         <div style={{ maxWidth: 960, margin: '0 auto' }}>
           <div id="cert-printable">
             <div
@@ -171,6 +171,7 @@ export default function CertificateView() {
                 fontFamily: '"Inter", "Helvetica Neue", Arial, sans-serif',
                 boxShadow: '0 20px 60px rgba(0,0,0,0.15)',
                 borderRadius: 0,
+                fontSize: 'clamp(8px, 1.65vw, 16px)',
               }}
             >
               {/* Left accent bar — no rounded */}

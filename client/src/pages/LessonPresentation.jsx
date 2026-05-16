@@ -254,6 +254,9 @@ export default function LessonPresentation() {
           .pl-bnav{padding:.65rem 1rem!important;flex-wrap:nowrap!important;gap:.5rem!important}
           .pl-crumb{padding:.5rem 1rem!important;font-size:.68rem!important}
           .pl-bnav-label{display:none!important}
+          .pl-lesson-hdr{padding:.75rem 1rem 0!important}
+          .pl-lesson-tabs{padding:0 1rem!important}
+          .pl-lesson-body{padding:1rem 1rem 5rem!important}
         }
         @media(max-width:480px){
           .pl-bnav button{font-size:.75rem!important;padding:.45rem .7rem!important}
@@ -504,12 +507,12 @@ export default function LessonPresentation() {
                   <>
                     {/* Sticky lesson header + tabs */}
                     <div style={{ flexShrink: 0, background: C.white, zIndex: 5, boxShadow: '0 1px 0 rgba(0,0,0,0.06)' }}>
-                      <div style={{ padding: '1.25rem 2rem 0' }}>
+                      <div className="pl-lesson-hdr" style={{ padding: '1.25rem 2rem 0' }}>
                         <div style={{ fontSize: '0.67rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: tm.col, marginBottom: '0.3rem' }}>{tm.lbl}</div>
-                        <div style={{ fontFamily: "'Bricolage Grotesque',sans-serif", fontSize: '1.4rem', fontWeight: 800, color: C.n950, letterSpacing: '-0.03em', lineHeight: 1.2 }}>{activeLesson.title}</div>
+                        <div style={{ fontFamily: "'Bricolage Grotesque',sans-serif", fontSize: '1.25rem', fontWeight: 800, color: C.n950, letterSpacing: '-0.03em', lineHeight: 1.2 }}>{activeLesson.title}</div>
                       </div>
                       {/* Tabs */}
-                      <div style={{ display: 'flex', flexWrap: 'wrap', borderBottom: `1.5px solid ${C.n200}`, padding: '0 2rem', marginTop: '0.85rem', overflow: 'hidden' }}>
+                      <div className="pl-lesson-tabs" style={{ display: 'flex', flexWrap: 'wrap', borderBottom: `1.5px solid ${C.n200}`, padding: '0 2rem', marginTop: '0.85rem', overflow: 'hidden' }}>
                         {tabs.map(tab => (
                           <button key={tab} onClick={() => setActiveTab(tab)} style={{ fontSize: '0.81rem', fontWeight: 600, padding: '0.55rem 1rem', whiteSpace: 'nowrap', cursor: 'pointer', background: 'transparent', border: 'none', borderBottom: `2.5px solid ${activeTab === tab ? C.blue : 'transparent'}`, marginBottom: '-1.5px', color: activeTab === tab ? C.blue : C.n500 }}>{tabLabel[tab]}</button>
                         ))}
@@ -517,7 +520,7 @@ export default function LessonPresentation() {
                     </div>
                     {/* Scrollable content body */}
                     <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden' }}>
-                      <div style={{ padding: '1.5rem 2rem 2.5rem' }}>
+                      <div className="pl-lesson-body" style={{ padding: '1.5rem 2rem 2.5rem' }}>
                     {/* Materi */}
                     {activeTab === 'materi' && (
                       <div>
