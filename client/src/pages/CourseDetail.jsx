@@ -627,20 +627,22 @@ export default function CourseDetail() {
       )}
 
       {/* ── HERO SECTION ── */}
-      <div className="bg-white relative overflow-hidden">
-        {/* Decorative blobs */}
-        <div className="pointer-events-none absolute -top-24 -left-24 w-96 h-96 rounded-full" style={{ background: 'rgba(12,98,141,0.05)', filter: 'blur(80px)' }} />
-        <div className="pointer-events-none absolute top-10 right-0 w-80 h-80 rounded-full" style={{ background: 'rgba(15,173,168,0.05)', filter: 'blur(80px)' }} />
-        <div className="pointer-events-none absolute bottom-0 left-1/2 w-64 h-64 rounded-full" style={{ background: 'rgba(243,146,27,0.06)', filter: 'blur(80px)' }} />
+      <div className="bg-white relative">
+        {/* Decorative blobs — clipped in their own layer so overflow-hidden doesn't affect sticky children */}
+        <div className="overflow-hidden absolute inset-0 pointer-events-none">
+          <div className="absolute -top-24 -left-24 w-96 h-96 rounded-full" style={{ background: 'rgba(12,98,141,0.05)', filter: 'blur(80px)' }} />
+          <div className="absolute top-10 right-0 w-80 h-80 rounded-full" style={{ background: 'rgba(15,173,168,0.05)', filter: 'blur(80px)' }} />
+          <div className="absolute bottom-0 left-1/2 w-64 h-64 rounded-full" style={{ background: 'rgba(243,146,27,0.06)', filter: 'blur(80px)' }} />
+        </div>
 
         <Container className="py-12 relative">
           <div className="grid md:grid-cols-[1fr_340px] gap-8 lg:gap-12 items-start">
             {/* LEFT column */}
             <div>
               {/* Breadcrumb */}
-              <div className="flex items-center gap-2 text-sm text-gray-500 mb-4">
-                <Link to="/courses" className="hover:text-[#0C628D] transition-colors">Courses</Link>
-                <span>/</span>
+              <div className="flex items-center gap-2 text-sm text-gray-500 mb-4 min-w-0 overflow-hidden">
+                <Link to="/courses" className="hover:text-[#0C628D] transition-colors shrink-0">Courses</Link>
+                <span className="shrink-0">/</span>
                 <span className="text-gray-700 truncate">{course.title}</span>
               </div>
 
