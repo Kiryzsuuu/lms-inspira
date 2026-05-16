@@ -516,7 +516,8 @@ export default function LessonPresentation() {
                       </div>
                     </div>
                     {/* Scrollable content body */}
-                    <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: '1.5rem 2rem 2.5rem', maxWidth: 880 }}>
+                    <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden' }}>
+                      <div style={{ padding: '1.5rem 2rem 2.5rem', maxWidth: 880, margin: '0 auto' }}>
                     {/* Materi */}
                     {activeTab === 'materi' && (
                       <div>
@@ -649,6 +650,7 @@ export default function LessonPresentation() {
                     {lockError && (
                       <div style={{ marginTop: '1rem', padding: '0.75rem', background: '#fff1f2', border: '1px solid #fecdd3', borderRadius: 9, fontSize: '0.84rem', color: '#9f1239' }}>{lockError}</div>
                     )}
+                      </div>
                   </div>
                 </>
                 );
