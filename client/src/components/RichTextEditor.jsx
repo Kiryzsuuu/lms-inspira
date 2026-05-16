@@ -350,12 +350,12 @@ export function RichTextEditor({
           </div>
         )}
 
-        {/* Editor content — scrollable with dynamic height */}
-        <div style={{ height: editorHeight, overflowY: 'auto', overflowX: 'hidden' }}>
-          <EditorContent editor={editor} style={{ minHeight: editorHeight }} />
+        {/* Editor content — grows with content, minHeight draggable */}
+        <div style={{ minHeight: editorHeight, paddingBottom: '2rem' }}>
+          <EditorContent editor={editor} />
         </div>
 
-        {/* Drag-to-resize handle */}
+        {/* Drag-to-resize handle (controls minHeight) */}
         <ResizeHandle onDrag={getHeight} />
       </div>
     </div>
