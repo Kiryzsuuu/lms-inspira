@@ -419,11 +419,11 @@ export default function LessonPresentation() {
             ) : null}
           </div>
 
-          {/* Scrollable content */}
-          <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden' }}>
-            {view === 'module-overview' && viewingModule ? (
-              /* Module overview */
-              <div className="pl-content" style={{ padding: '1.75rem 2.25rem 2.5rem', maxWidth: 820 }}>
+          {/* Content area */}
+          {view === 'module-overview' && viewingModule ? (
+            /* Module overview — simple scrollable */
+            <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden' }}>
+            <div className="pl-content" style={{ padding: '1.75rem 2.25rem 2.5rem' }}>
                 <div style={{ background: `linear-gradient(135deg,${C.blueXs},${C.white})`, border: `1px solid ${C.blueS}`, borderRadius: 14, padding: '1.4rem', marginBottom: '1.4rem' }}>
                   <div style={{ fontSize: '0.68rem', fontWeight: 700, color: C.blue, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '0.35rem' }}>Modul {vmIdx + 1} dari {modules.length}</div>
                   <div style={{ fontFamily: "'Bricolage Grotesque',sans-serif", fontSize: '1.35rem', fontWeight: 800, color: C.n950, marginBottom: '0.55rem', letterSpacing: '-0.03em' }}>{viewingModule.title}</div>
@@ -466,9 +466,11 @@ export default function LessonPresentation() {
                   ) : null;
                 })()}
               </div>
+            </div>
             ) : !allowed ? (
-              /* Access denied */
-              <div className="pl-content" style={{ padding: '1.75rem 2.25rem', maxWidth: 820 }}>
+            /* Access denied — simple scrollable */
+            <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden' }}>
+              <div className="pl-content" style={{ padding: '1.75rem 2.25rem' }}>
                 {!isActiveCourse && (
                   <div style={{ padding: '1rem', background: C.amberXs, border: '1px solid #fde68a', borderRadius: 9, color: '#92400e', fontSize: '0.86rem' }}>
                     Silakan mulai kursus ini terlebih dahulu.{' '}
@@ -482,32 +484,39 @@ export default function LessonPresentation() {
                 )}
                 {isActiveCourse && !isPaywalled && (
                   <div style={{ padding: '1rem', background: C.amberXs, border: '1px solid #fde68a', borderRadius: 9, color: '#92400e', fontSize: '0.86rem' }}>
-                    ⚠️ Selesaikan materi sebelumnya terlebih dahulu.
+                    Selesaikan materi sebelumnya terlebih dahulu.
                   </div>
                 )}
               </div>
+            </div>
             ) : !activeLesson ? (
-              <div style={{ padding: '1.75rem 2.25rem', color: C.n500, fontSize: '0.88rem' }}>Materi tidak ditemukan.</div>
+            <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: '1.75rem 2.25rem' }}>
+              <div style={{ color: C.n500, fontSize: '0.88rem' }}>Materi tidak ditemukan.</div>
+            </div>
             ) : (
-              /* Lesson content */
+              /* Lesson view — sticky header+tabs, scrollable content body */
               (() => {
                 const lType = getLessonType(activeLesson);
                 const tm = TM[lType];
                 const tabs = ['materi', 'catatan', ...(activeLesson.attachments?.length ? ['lampiran'] : []), 'diskusi'];
                 const tabLabel = { materi: 'Materi', catatan: 'Catatan Saya', lampiran: `Lampiran (${activeLesson.attachments?.length || 0})`, diskusi: 'Diskusi' };
                 return (
-                  <div className="pl-content" style={{ padding: '1.75rem 2.25rem 2.5rem', maxWidth: 820 }}>
-                    {/* Header */}
-                    <div style={{ marginBottom: '1.5rem' }}>
-                      <div style={{ fontSize: '0.67rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: tm.col, marginBottom: '0.35rem' }}>{tm.lbl}</div>
-                      <div style={{ fontFamily: "'Bricolage Grotesque',sans-serif", fontSize: '1.5rem', fontWeight: 800, color: C.n950, letterSpacing: '-0.03em', lineHeight: 1.2 }}>{activeLesson.title}</div>
+                  <>
+                    {/* Sticky lesson header + tabs */}
+                    <div style={{ flexShrink: 0, background: C.white, zIndex: 5, boxShadow: '0 1px 0 rgba(0,0,0,0.06)' }}>
+                      <div style={{ padding: '1.25rem 2rem 0' }}>
+                        <div style={{ fontSize: '0.67rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: tm.col, marginBottom: '0.3rem' }}>{tm.lbl}</div>
+                        <div style={{ fontFamily: "'Bricolage Grotesque',sans-serif", fontSize: '1.4rem', fontWeight: 800, color: C.n950, letterSpacing: '-0.03em', lineHeight: 1.2 }}>{activeLesson.title}</div>
+                      </div>
+                      {/* Tabs */}
+                      <div style={{ display: 'flex', borderBottom: `1.5px solid ${C.n200}`, padding: '0 2rem', marginTop: '0.85rem', overflowX: 'auto' }}>
+                        {tabs.map(tab => (
+                          <button key={tab} onClick={() => setActiveTab(tab)} style={{ fontSize: '0.81rem', fontWeight: 600, padding: '0.55rem 1rem', whiteSpace: 'nowrap', cursor: 'pointer', background: 'transparent', border: 'none', borderBottom: `2.5px solid ${activeTab === tab ? C.blue : 'transparent'}`, marginBottom: '-1.5px', color: activeTab === tab ? C.blue : C.n500 }}>{tabLabel[tab]}</button>
+                        ))}
+                      </div>
                     </div>
-                    {/* Tabs */}
-                    <div style={{ display: 'flex', borderBottom: `1.5px solid ${C.n200}`, marginBottom: '1.5rem', overflowX: 'auto' }}>
-                      {tabs.map(tab => (
-                        <button key={tab} onClick={() => setActiveTab(tab)} style={{ fontSize: '0.81rem', fontWeight: 600, padding: '0.6rem 1rem', whiteSpace: 'nowrap', cursor: 'pointer', background: 'transparent', border: 'none', borderBottom: `2.5px solid ${activeTab === tab ? C.blue : 'transparent'}`, marginBottom: '-1.5px', color: activeTab === tab ? C.blue : C.n500 }}>{tabLabel[tab]}</button>
-                      ))}
-                    </div>
+                    {/* Scrollable content body */}
+                    <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: '1.5rem 2rem 2.5rem' }}>
                     {/* Materi */}
                     {activeTab === 'materi' && (
                       <div>
@@ -641,10 +650,10 @@ export default function LessonPresentation() {
                       <div style={{ marginTop: '1rem', padding: '0.75rem', background: '#fff1f2', border: '1px solid #fecdd3', borderRadius: 9, fontSize: '0.84rem', color: '#9f1239' }}>{lockError}</div>
                     )}
                   </div>
+                </>
                 );
               })()
             )}
-          </div>
 
           {/* Bottom nav */}
           <div className="pl-bnav" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.82rem 2.25rem', borderTop: `1px solid ${C.n200}`, background: C.white, flexShrink: 0, gap: '0.75rem' }}>

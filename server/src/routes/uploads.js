@@ -72,6 +72,19 @@ function uploadsRouter({ requireAuth, requireRole }) {
     }
   );
 
+  // Signature upload — accessible to all authenticated users (teacher/admin use for certificates)
+  router.post(
+    '/signature',
+    requireAuth,
+    upload.single('file'),
+    (req, res) => {
+      if (!req.file) return res.status(400).json({ error: { message: 'File is required' } });
+      const baseUrl = `${req.protocol}://${req.get('host')}`;
+      const url = `${baseUrl}/uploads/${encodeURIComponent(req.file.filename)}`;
+      res.status(201).json({ url });
+    }
+  );
+
   router.post(
     '/pdf',
     requireAuth,

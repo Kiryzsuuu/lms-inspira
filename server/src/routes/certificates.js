@@ -1,5 +1,6 @@
 const express = require('express');
 const { Certificate } = require('../models/Certificate');
+const { CertificateLog } = require('../models/CertificateLog');
 const { Course } = require('../models/Course');
 const { User } = require('../models/User');
 const { Lesson } = require('../models/Lesson');
@@ -12,12 +13,34 @@ const { HttpError } = require('../utils/errors');
 function certificatesRouter({ requireAuth, requireRole }) {
   const router = express.Router();
 
-  // Generate certificate number
   function generateCertificateNumber() {
     const timestamp = Date.now().toString(36).toUpperCase();
     const random = Math.random().toString(36).substring(2, 8).toUpperCase();
     return `CERT-${timestamp}-${random}`;
   }
+
+  // Public: verify certificate by number
+  router.get(
+    '/verify/:certificateNumber',
+    asyncHandler(async (req, res) => {
+      const certificate = await Certificate.findOne({
+        certificateNumber: req.params.certificateNumber,
+      })
+        .populate('userId', 'name fullName')
+        .populate('courseId', 'title');
+
+      if (!certificate) throw new HttpError(404, 'Certificate not found');
+
+      res.json({
+        valid: true,
+        certificateNumber: certificate.certificateNumber,
+        studentName: certificate.metadata?.userName,
+        courseName: certificate.metadata?.courseName,
+        completionDate: certificate.completionDate,
+        issuedAt: certificate.issuedAt || certificate.createdAt,
+      });
+    })
+  );
 
   // Student: get my certificates
   router.get(
@@ -42,23 +65,33 @@ function certificatesRouter({ requireAuth, requireRole }) {
       }).populate('courseId', 'title');
 
       if (!certificate) throw new HttpError(404, 'Certificate not found');
+
+      // Log view
+      CertificateLog.create({
+        certificateId: certificate._id,
+        certificateNumber: certificate.certificateNumber,
+        userId: req.user.sub,
+        courseId: req.params.courseId,
+        action: 'viewed',
+        ip: req.ip || '',
+      }).catch(() => {});
+
       res.json({ certificate });
     })
   );
 
-  // Student: request certificate (auto-generated when course completed)
+  // Student: generate certificate
   router.post(
     '/generate/:courseId',
     requireAuth,
     requireRole('student'),
     asyncHandler(async (req, res) => {
-      const course = await Course.findById(req.params.courseId).populate('ownerId', 'fullName name');
+      const course = await Course.findById(req.params.courseId).populate('ownerId', 'fullName name signatureUrl');
       if (!course) throw new HttpError(404, 'Course not found');
 
       const user = await User.findById(req.user.sub);
       if (!user) throw new HttpError(401, 'Unauthorized');
 
-      // Check eligibility via lesson progress (same logic as /progress/course/:id/certificate)
       const lessons = await Lesson.find({ courseId: course._id, isPublished: true }).select('_id');
       if (lessons.length === 0) throw new HttpError(409, 'Course belum memiliki materi');
 
@@ -71,7 +104,6 @@ function certificatesRouter({ requireAuth, requireRole }) {
 
       const lessonsEligible = completedCount >= lessons.length;
 
-      // Check quiz eligibility
       const quizzes = await Quiz.find({ courseId: course._id, isPublished: true }).select('_id');
       let quizzesEligible = true;
       if (quizzes.length > 0) {
@@ -87,11 +119,12 @@ function certificatesRouter({ requireAuth, requireRole }) {
         throw new HttpError(409, 'Selesaikan semua materi dan quiz terlebih dahulu');
       }
 
-      // Check if certificate already exists
       let certificate = await Certificate.findOne({
         userId: user._id,
         courseId: course._id,
       });
+
+      const isNew = !certificate;
 
       if (!certificate) {
         certificate = await Certificate.create({
@@ -102,12 +135,23 @@ function certificatesRouter({ requireAuth, requireRole }) {
           metadata: {
             userName: user.fullName || user.name,
             courseName: course.title,
-            instructorName: course.ownerId?.fullName || course.ownerId?.name || 'LMS Inspira',
+            instructorName: course.ownerId?.fullName || course.ownerId?.name || 'InspiraLearn',
+            instructorSignatureUrl: course.ownerId?.signatureUrl || '',
           },
         });
+
+        // Log generation
+        CertificateLog.create({
+          certificateId: certificate._id,
+          certificateNumber: certificate.certificateNumber,
+          userId: user._id,
+          courseId: course._id,
+          action: 'generated',
+          ip: req.ip || '',
+        }).catch(() => {});
       }
 
-      res.json({ certificate });
+      res.json({ certificate, isNew });
     })
   );
 
@@ -123,6 +167,21 @@ function certificatesRouter({ requireAuth, requireRole }) {
         .sort({ issuedAt: -1 })
         .limit(100);
       res.json({ certificates });
+    })
+  );
+
+  // Admin: certificate logs
+  router.get(
+    '/logs',
+    requireAuth,
+    requireRole('admin'),
+    asyncHandler(async (req, res) => {
+      const logs = await CertificateLog.find()
+        .populate('userId', 'name fullName email')
+        .populate('courseId', 'title')
+        .sort({ createdAt: -1 })
+        .limit(200);
+      res.json({ logs });
     })
   );
 

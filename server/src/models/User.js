@@ -11,6 +11,7 @@ const userSchema = new mongoose.Schema(
     role: { type: String, enum: ROLES, default: 'student', index: true },
 
     avatarUrl: { type: String, default: '' },
+    signatureUrl: { type: String, default: '' },
 
     // Profile informasi tambahan
     institution: { type: String, trim: true },

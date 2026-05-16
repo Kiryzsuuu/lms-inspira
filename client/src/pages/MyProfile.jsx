@@ -25,7 +25,7 @@ const EDUCATION_LEVELS = ['SD/MI', 'SMP/MTs', 'SMA/SMK/MA', 'D3', 'S1', 'S2', 'S
 const REFERRAL_SOURCES = ['Media Sosial', 'Rekomendasi', 'Search Engine', 'Teman/Keluarga', 'Lainnya'];
 
 export default function MyProfile() {
-  const { api, user: authUser, logout } = useAuth();
+  const { api, user: authUser, role, logout } = useAuth();
   const nav = useNavigate();
   const [activeTab, setActiveTab] = useState('profile'); // profile, courses, certificates, testimonial
   const [loading, setLoading] = useState(true);
@@ -63,6 +63,9 @@ export default function MyProfile() {
 
   // Avatar upload
   const [avatarUploading, setAvatarUploading] = useState(false);
+
+  // Signature upload (teacher/admin)
+  const [signatureUploading, setSignatureUploading] = useState(false);
 
   // Logout confirmation
   const [logoutOpen, setLogoutOpen] = useState(false);
@@ -194,6 +197,28 @@ export default function MyProfile() {
       setError(e?.response?.data?.error?.message || 'Gagal upload foto');
     } finally {
       setAvatarUploading(false);
+    }
+  }
+
+  async function uploadSignature(file) {
+    if (!file) return;
+    setSignatureUploading(true);
+    setError('');
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const uploadRes = await api.post('/uploads/signature', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      const signatureUrl = uploadRes.data.url;
+      const res = await api.put('/auth/me', { signatureUrl });
+      setUser(res.data.user);
+      setSuccess('Tanda tangan berhasil diperbarui');
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (e) {
+      setError(e?.response?.data?.error?.message || 'Gagal upload tanda tangan');
+    } finally {
+      setSignatureUploading(false);
     }
   }
 
@@ -392,6 +417,49 @@ export default function MyProfile() {
                   </div>
                 </div>
               </Card>
+
+              {/* Signature upload — only for teacher/admin */}
+              {(role === 'teacher' || role === 'admin') && (
+                <Card className="p-5 border border-slate-200 shadow-sm">
+                  <h2 className="text-base font-bold text-slate-900 mb-3">Tanda Tangan Instruktur</h2>
+                  <p className="text-xs text-slate-500 mb-4">Tanda tangan ini akan muncul di sertifikat course yang Anda ampu.</p>
+                  <div className="flex items-center gap-5">
+                    <div className="flex-shrink-0">
+                      {user?.signatureUrl ? (
+                        <img
+                          src={user.signatureUrl}
+                          alt="Tanda Tangan"
+                          className="h-16 max-w-[160px] object-contain border border-slate-200 rounded-lg bg-white p-1"
+                        />
+                      ) : (
+                        <div
+                          className="h-16 w-40 flex items-center justify-center rounded-lg border border-dashed border-slate-300"
+                          style={{ background: '#F8FAFC', color: '#94A3B8', fontSize: '0.78rem' }}
+                        >
+                          Belum ada tanda tangan
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <label
+                        htmlFor="signature-upload"
+                        className="inline-flex items-center gap-1.5 text-xs font-semibold cursor-pointer px-3 py-1.5 rounded-[8px] transition-colors"
+                        style={{ background: '#EBF6FC', color: '#0C628D' }}
+                      >
+                        {signatureUploading ? 'Mengupload...' : user?.signatureUrl ? 'Ganti Tanda Tangan' : 'Upload Tanda Tangan'}
+                      </label>
+                      <input
+                        id="signature-upload"
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => uploadSignature(e.target.files?.[0])}
+                      />
+                      <p className="text-xs text-slate-400 mt-2">PNG/JPG transparan, maks 5MB</p>
+                    </div>
+                  </div>
+                </Card>
+              )}
 
               <div className="grid gap-6 lg:grid-cols-2">
                 {/* Left Column */}
