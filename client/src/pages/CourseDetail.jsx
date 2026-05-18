@@ -927,8 +927,8 @@ export default function CourseDetail() {
                 </div>
               </div>
 
-              {/* Edit Media Preview — hidden in preview mode */}
-              {!isStudent && !isPreview && (
+              {/* Edit Media Preview — teacher/admin only, hidden in preview mode */}
+              {isAuthed && (role === 'teacher' || role === 'admin') && !isPreview && (
                 <div className="bg-white rounded-[16px] border border-gray-200 p-5">
                   <div className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-3">Edit Media Preview</div>
                   <div className="space-y-3">
@@ -1027,7 +1027,7 @@ export default function CourseDetail() {
               </div>
 
               {/* Teacher/admin edit detail section */}
-              {!isStudent && !isPreview && (
+              {isAuthed && (role === 'teacher' || role === 'admin') && !isPreview && (
                 <div className="mt-10">
                   <button
                     onClick={() => setEditPanelOpen((v) => !v)}
