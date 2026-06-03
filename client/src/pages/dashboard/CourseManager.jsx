@@ -336,7 +336,10 @@ export default function CourseManager() {
     e.preventDefault();
     setError('');
     try {
-      const res = await api.post('/courses', courseForm);
+      const payload = { ...courseForm };
+      if (!payload.templateId) delete payload.templateId;
+      if (!payload.categoryId) delete payload.categoryId;
+      const res = await api.post('/courses', payload);
       await loadCourses();
       setSelectedId(res.data.course._id);
       setCourseForm({ title: '', description: '', coverImageUrl: '', priceIdr: 0, isPublished: false, tags: [], categoryId: '', templateId: '' });
