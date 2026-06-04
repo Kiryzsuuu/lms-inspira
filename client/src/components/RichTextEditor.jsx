@@ -116,6 +116,45 @@ function ResizeHandle({ onDrag }) {
   );
 }
 
+const MAX_ROWS = 10;
+const MAX_COLS = 10;
+
+function TablePicker({ onPick, onClose }) {
+  const [hover, setHover] = useState({ r: 0, c: 0 });
+  return (
+    <div
+      style={{
+        position: 'absolute', zIndex: 100, background: '#fff',
+        border: '1.5px solid #e2e8f0', borderRadius: 8,
+        boxShadow: '0 4px 16px rgba(0,0,0,0.12)', padding: 10, top: 32, left: 0,
+      }}
+      onMouseLeave={() => setHover({ r: 0, c: 0 })}
+    >
+      <div style={{ display: 'grid', gridTemplateColumns: `repeat(${MAX_COLS}, 18px)`, gap: 2, marginBottom: 6 }}>
+        {Array.from({ length: MAX_ROWS * MAX_COLS }, (_, i) => {
+          const r = Math.floor(i / MAX_COLS) + 1;
+          const c = (i % MAX_COLS) + 1;
+          const active = r <= hover.r && c <= hover.c;
+          return (
+            <div
+              key={i}
+              onMouseEnter={() => setHover({ r, c })}
+              onClick={() => { onPick(hover.r, hover.c); onClose(); }}
+              style={{
+                width: 18, height: 18, border: `1.5px solid ${active ? '#0C628D' : '#e2e8f0'}`,
+                background: active ? '#e0f0fa' : '#f8fafc', borderRadius: 2, cursor: 'pointer',
+              }}
+            />
+          );
+        })}
+      </div>
+      <div style={{ fontSize: '0.75rem', textAlign: 'center', color: '#64748b', fontWeight: 600 }}>
+        {hover.r > 0 && hover.c > 0 ? `${hover.r} × ${hover.c}` : 'Pilih ukuran tabel'}
+      </div>
+    </div>
+  );
+}
+
 export function RichTextEditor({
   label,
   valueHtml,
@@ -127,6 +166,7 @@ export function RichTextEditor({
   const [imgUploading, setImgUploading] = useState(false);
   const [linkDraft, setLinkDraft] = useState('');
   const [showLink, setShowLink] = useState(false);
+  const [showTablePicker, setShowTablePicker] = useState(false);
   const [editorHeight, setEditorHeight] = useState(minHeight);
   const containerRef = useRef(null);
 
@@ -340,10 +380,18 @@ export function RichTextEditor({
           <Sep />
 
           {/* Table */}
-          <Btn title="Insert Table" active={editor.isActive('table')}
-            onClick={() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()}>
-            <Ico d={ICONS.table} />
-          </Btn>
+          <div style={{ position: 'relative' }}>
+            <Btn title="Insert Table" active={editor.isActive('table') || showTablePicker}
+              onClick={() => setShowTablePicker(s => !s)}>
+              <Ico d={ICONS.table} />
+            </Btn>
+            {showTablePicker && !editor.isActive('table') && (
+              <TablePicker
+                onPick={(rows, cols) => editor.chain().focus().insertTable({ rows, cols, withHeaderRow: true }).run()}
+                onClose={() => setShowTablePicker(false)}
+              />
+            )}
+          </div>
           {editor.isActive('table') && (<>
             <Btn title="Add Column Right" onClick={() => editor.chain().focus().addColumnAfter().run()}>
               <Ico d={ICONS.addColR} />
