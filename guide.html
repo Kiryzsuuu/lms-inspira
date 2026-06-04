@@ -1,0 +1,1828 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Panduan Pengguna InspiraLearn</title>
+<style>
+  :root {
+    --blue: #0C628D;
+    --teal: #0FADA8;
+    --orange: #F3921B;
+    --dark: #0A0E1A;
+    --gray: #6B7280;
+    --light: #F7F8FA;
+    --border: #E5E7EB;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    font-size: 10.5pt;
+    color: #1F2937;
+    line-height: 1.65;
+    background: #fff;
+  }
+
+  /* ── PAGE BREAKS ── */
+  .page-break { page-break-after: always; break-after: page; }
+  .no-break { page-break-inside: avoid; break-inside: avoid; }
+
+  /* ── COVER PAGE ── */
+  .cover {
+    width: 100%;
+    min-height: 100vh;
+    background: linear-gradient(135deg, var(--dark) 0%, #0C2D4A 60%, #0C628D 100%);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 60px 40px;
+    position: relative;
+    overflow: hidden;
+  }
+  .cover::before {
+    content: '';
+    position: absolute;
+    top: -100px; right: -100px;
+    width: 400px; height: 400px;
+    border-radius: 50%;
+    background: rgba(15,173,168,0.12);
+  }
+  .cover::after {
+    content: '';
+    position: absolute;
+    bottom: -80px; left: -80px;
+    width: 300px; height: 300px;
+    border-radius: 50%;
+    background: rgba(243,146,27,0.08);
+  }
+  .cover-logo {
+    width: 180px;
+    margin-bottom: 40px;
+  }
+  .cover-badge {
+    display: inline-block;
+    background: rgba(15,173,168,0.25);
+    border: 1px solid rgba(15,173,168,0.4);
+    color: #0FADA8;
+    font-size: 8pt;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 6px 18px;
+    border-radius: 20px;
+    margin-bottom: 24px;
+  }
+  .cover h1 {
+    font-size: 38pt;
+    font-weight: 900;
+    color: #fff;
+    line-height: 1.15;
+    margin-bottom: 16px;
+    letter-spacing: -0.02em;
+  }
+  .cover h1 span { color: var(--teal); }
+  .cover-subtitle {
+    font-size: 13pt;
+    color: rgba(255,255,255,0.65);
+    max-width: 480px;
+    margin-bottom: 48px;
+  }
+  .cover-divider {
+    width: 60px; height: 3px;
+    background: linear-gradient(90deg, var(--teal), var(--orange));
+    border-radius: 2px;
+    margin: 0 auto 40px;
+  }
+  .cover-meta {
+    font-size: 9pt;
+    color: rgba(255,255,255,0.4);
+    letter-spacing: 0.05em;
+  }
+  .cover-version {
+    position: absolute;
+    bottom: 30px;
+    right: 40px;
+    font-size: 8pt;
+    color: rgba(255,255,255,0.3);
+  }
+
+  /* ── TABLE OF CONTENTS ── */
+  .toc-page {
+    padding: 60px 50px;
+  }
+  .toc-title {
+    font-size: 22pt;
+    font-weight: 800;
+    color: var(--dark);
+    margin-bottom: 8px;
+    letter-spacing: -0.02em;
+  }
+  .toc-subtitle {
+    font-size: 10pt;
+    color: var(--gray);
+    margin-bottom: 36px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid var(--border);
+  }
+  .toc-section { margin-bottom: 20px; }
+  .toc-section-title {
+    font-size: 9pt;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--blue);
+    margin-bottom: 6px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid #EBF6FC;
+  }
+  .toc-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 3px 0;
+    font-size: 9.5pt;
+    color: #374151;
+  }
+  .toc-item:hover { color: var(--blue); }
+  .toc-item-name { display: flex; align-items: baseline; gap: 8px; }
+  .toc-item-num {
+    font-size: 8pt;
+    font-weight: 700;
+    color: var(--blue);
+    width: 22px;
+    flex-shrink: 0;
+  }
+  .toc-dots {
+    flex: 1;
+    border-bottom: 1px dotted #D1D5DB;
+    margin: 0 8px;
+    position: relative;
+    top: -3px;
+  }
+  .toc-page-num {
+    font-size: 8.5pt;
+    font-weight: 600;
+    color: var(--gray);
+    min-width: 24px;
+    text-align: right;
+  }
+
+  /* ── SECTION HEADERS ── */
+  .chapter {
+    padding: 48px 50px 40px;
+  }
+  .chapter-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 32px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid var(--border);
+  }
+  .chapter-num {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, var(--blue), var(--teal));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16pt;
+    font-weight: 900;
+    color: #fff;
+    flex-shrink: 0;
+  }
+  .chapter-title {
+    font-size: 20pt;
+    font-weight: 800;
+    color: var(--dark);
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+  }
+  .chapter-desc {
+    font-size: 9.5pt;
+    color: var(--gray);
+    margin-top: 4px;
+  }
+
+  /* ── ROLE BADGE ── */
+  .role-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 7.5pt;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 3px 10px;
+    border-radius: 20px;
+  }
+  .role-student { background: #E0F0FA; color: #0C628D; }
+  .role-teacher { background: #FEF3E2; color: #D97C0D; }
+  .role-admin { background: #FFE5F3; color: #BE185D; }
+  .role-all { background: #F0FDE4; color: #15803D; }
+
+  /* ── FEATURE SECTIONS ── */
+  h2 {
+    font-size: 14pt;
+    font-weight: 800;
+    color: var(--dark);
+    margin: 28px 0 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  h2::before {
+    content: '';
+    display: inline-block;
+    width: 4px;
+    height: 18px;
+    background: linear-gradient(180deg, var(--blue), var(--teal));
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+  h3 {
+    font-size: 11pt;
+    font-weight: 700;
+    color: #1F2937;
+    margin: 20px 0 8px;
+  }
+  p { margin-bottom: 10px; color: #374151; }
+
+  /* ── STEP LIST ── */
+  .steps { margin: 12px 0 16px; }
+  .step {
+    display: flex;
+    gap: 14px;
+    margin-bottom: 10px;
+    align-items: flex-start;
+  }
+  .step-num {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--blue), var(--teal));
+    color: #fff;
+    font-size: 8pt;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+  .step-content { flex: 1; }
+  .step-title { font-weight: 700; font-size: 10pt; color: #1F2937; }
+  .step-desc { font-size: 9.5pt; color: var(--gray); margin-top: 2px; }
+
+  /* ── INFO BOX ── */
+  .info-box {
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin: 14px 0;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+  }
+  .info-box.tip { background: #F0FDF4; border-left: 4px solid #22C55E; }
+  .info-box.warning { background: #FFFBEB; border-left: 4px solid var(--orange); }
+  .info-box.info { background: #EFF6FF; border-left: 4px solid var(--blue); }
+  .info-box-icon { font-size: 14pt; flex-shrink: 0; line-height: 1; }
+  .info-box-title { font-size: 9pt; font-weight: 800; margin-bottom: 3px; }
+  .info-box.tip .info-box-title { color: #15803D; }
+  .info-box.warning .info-box-title { color: #92400E; }
+  .info-box.info .info-box-title { color: #1D4ED8; }
+  .info-box p { font-size: 9pt; margin: 0; color: #374151; }
+
+  /* ── FEATURE GRID ── */
+  .feature-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin: 14px 0;
+  }
+  .feature-card {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+    background: var(--light);
+  }
+  .feature-card-title {
+    font-size: 9.5pt;
+    font-weight: 800;
+    color: var(--dark);
+    margin-bottom: 5px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .feature-card p { font-size: 9pt; color: var(--gray); margin: 0; }
+
+  /* ── TABLE ── */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 14px 0;
+    font-size: 9pt;
+  }
+  th {
+    background: linear-gradient(135deg, var(--blue), #0A527A);
+    color: #fff;
+    font-weight: 700;
+    text-align: left;
+    padding: 10px 12px;
+    font-size: 8.5pt;
+    letter-spacing: 0.03em;
+  }
+  th:first-child { border-radius: 8px 0 0 0; }
+  th:last-child { border-radius: 0 8px 0 0; }
+  td {
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--border);
+    color: #374151;
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: #F9FAFB; }
+  tr:last-child td { border-bottom: none; }
+
+  /* ── FIELD DOCS ── */
+  .field-list { margin: 10px 0; }
+  .field-item {
+    display: flex;
+    gap: 10px;
+    padding: 7px 0;
+    border-bottom: 1px solid #F3F4F6;
+    align-items: baseline;
+  }
+  .field-name {
+    font-size: 8.5pt;
+    font-weight: 700;
+    color: var(--blue);
+    font-family: 'Courier New', monospace;
+    background: #EBF6FC;
+    padding: 1px 7px;
+    border-radius: 4px;
+    min-width: 130px;
+    flex-shrink: 0;
+  }
+  .field-desc { font-size: 9pt; color: #374151; flex: 1; }
+
+  /* ── INLINE BADGE ── */
+  .badge {
+    display: inline-block;
+    font-size: 7.5pt;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 20px;
+  }
+  .badge-required { background: #FFE4E6; color: #BE123C; }
+  .badge-optional { background: #F3F4F6; color: #6B7280; }
+
+  /* ── NAV PATH ── */
+  .nav-path {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: #F3F4F6;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 8.5pt;
+    font-family: 'Courier New', monospace;
+    color: #374151;
+    margin: 4px 0;
+  }
+  .nav-path span { color: var(--gray); }
+
+  /* ── SECTION DIVIDER ── */
+  .section-divider {
+    margin: 28px 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .section-divider::before,
+  .section-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+  .section-divider-text {
+    font-size: 8pt;
+    font-weight: 700;
+    color: var(--gray);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  /* ── PRINT STYLES ── */
+  @media print {
+    body { font-size: 10pt; }
+    .cover { min-height: 100vh; }
+    h2 { margin-top: 20px; }
+    .no-break { page-break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════════ -->
+<!-- COVER PAGE -->
+<!-- ══════════════════════════════════════════════════════════ -->
+<div class="cover page-break">
+  <img src="https://lms.inspiratekno.com/logo-putih.png"
+       onerror="this.style.display='none'"
+       class="cover-logo" alt="InspiraLearn">
+  <div style="font-size:36pt;font-weight:900;color:#fff;margin-bottom:16px;letter-spacing:-0.02em;">
+    Inspira<span style="color:#0FADA8;">Learn</span>
+  </div>
+  <div class="cover-badge">Panduan Pengguna Lengkap</div>
+  <h1>Panduan<br><span>Penggunaan</span><br>Platform</h1>
+  <p class="cover-subtitle">Dokumentasi lengkap untuk Siswa, Pengajar, dan Administrator platform belajar online InspiraLearn.</p>
+  <div class="cover-divider"></div>
+  <div class="cover-meta">
+    Versi 1.0 &nbsp;·&nbsp; Mei 2026 &nbsp;·&nbsp; InspiraLearn by Inspiratekno
+  </div>
+  <div class="cover-version">Dokumen Konfidensial</div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════ -->
+<!-- TABLE OF CONTENTS -->
+<!-- ══════════════════════════════════════════════════════════ -->
+<div class="toc-page page-break">
+  <div class="toc-title">Daftar Isi</div>
+  <div class="toc-subtitle">Navigasi cepat ke setiap bagian panduan</div>
+
+  <div class="toc-section">
+    <div class="toc-section-title">Pendahuluan</div>
+    <div class="toc-item"><div class="toc-item-name"><span class="toc-item-num">1</span> Tentang Platform InspiraLearn</div><div class="toc-dots"></div><div class="toc-page-num">3</div></div>
+    <div class="toc-item"><div class="toc-item-name"><span class="toc-item-num">2</span> Peran Pengguna</div><div class="toc-dots"></div><div class="toc-page-num">3</div></div>
+  </div>
+
+  <div class="toc-section">
+    <div class="toc-section-title">Akun &amp; Autentikasi</div>
+    <div class="toc-item"><div class="toc-item-name"><span class="toc-item-num">3</span> Registrasi Akun</div><div class="toc-dots"></div><div class="toc-page-num">4</div></div>
+    <div class="toc-item"><div class="toc-item-name"><span class="toc-item-num">4</span> Login</div><div class="toc-dots"></div><div class="toc-page-num">4</div></div>
+    <div class="toc-item"><div class="toc-item-name"><span class="toc-item-num">5</span> Lupa Password &amp; Reset via OTP</div><div class="toc-dots"></div><div class="toc-page-num">5</div></div>
+  </div>
+
+  <div class="toc-section">
+    <div class="toc-section-title">Untuk Siswa (Student)</div>
+    <div class="toc-item"><div class="toc-item-name"><span class="toc-item-num">6</span> Beranda &amp; Navigasi</div><div class="toc-dots"></div><div class="toc-page-num">6</div></div>
+    <div class="toc-item"><div class="toc-item-name"><span class="toc-item-num">7</span> Katalog &amp; Pencarian Kursus</div><div class="toc-dots"></div><div class="toc-page-num">6</div></div>
+    <div class="toc-item"><div class="toc-item-name"><span class="toc-item-num">8</span> Detail Kursus &amp; Pendaftaran</div><div class="toc-dots"></div><div class="toc-page-num">7</div></div>
+    <div class="toc-item"><div class="toc-item-name"><span class="toc-item-num">9</span> Keranjang &amp; Pembayaran</div><div class="toc-dots"></div><div class="toc-page-num">8</div></div>
+    <div class="toc-item"><div class="toc-item-name"><span class="toc-item-num">10</span> Belajar: Materi &amp; Video</div><div class="toc-dots"></div><div class="toc-page-num">8</div></div>
+    <div class="toc-item"><div class="toc-item-name"><span class="toc-item-num">11</span> Quiz</div><div class="toc-dots"></div><div class="toc-page-num">9</div></div>
+    <div class="toc-item"><div class="toc-item-name"><span class="toc-item-num">12</span> Tugas &amp; Assignment</div><div class="toc-dots"></div><div class="toc-page-num">10</div></div>
+    <div class="toc-item"><div class="toc-item-name"><span class="toc-item-num">13</span> Sertifikat</div><div class="toc-dots"></div><div class="toc-page-num">10</div></div>
+    <div class="toc-item"><div class="toc-item-name"><span class="toc-item-num">14</span> Profil Saya</div><div class="toc-dots"></div><div class="toc-page-num">11</div></div>
+  </div>
+
+  <div class="toc-section">
+    <div class="toc-section-title">Untuk Pengajar (Teacher)</div>
+    <div class="toc-item"><div class="toc-item-name"><span class="toc-item-num">15</span> Dashboard Pengajar</div><div class="toc-dots"></div><div class="toc-page-num">12</div></div>
+    <div class="toc-item"><div class="toc-item-name"><span class="toc-item-num">16</span> Manajemen Kursus</div><div class="toc-dots"></div><div class="toc-page-num">12</div></div>
+    <div class="toc-item"><div class="toc-item-name"><span class="toc-item-num">17</span> Manajemen Modul &amp; Materi</div><div class="toc-dots"></div><div class="toc-page-num">14</div></div>
+    <div class="toc-item"><div class="toc-item-name"><span class="toc-item-num">18</span> Quiz &amp; Soal</div><div class="toc-dots"></div><div class="toc-page-num">15</div></div>
+    <div class="toc-item"><div class="toc-item-name"><span class="toc-item-num">19</span> Statistik Kursus &amp; Royalti</div><div class="toc-dots"></div><div class="toc-page-num">16</div></div>
+  </div>
+
+  <div class="toc-section">
+    <div class="toc-section-title">Untuk Administrator</div>
+    <div class="toc-item"><div class="toc-item-name"><span class="toc-item-num">20</span> Manajemen Pengguna</div><div class="toc-dots"></div><div class="toc-page-num">17</div></div>
+    <div class="toc-item"><div class="toc-item-name"><span class="toc-item-num">21</span> Manajemen Kupon</div><div class="toc-dots"></div><div class="toc-page-num">18</div></div>
+    <div class="toc-item"><div class="toc-item-name"><span class="toc-item-num">22</span> Manajemen Kategori</div><div class="toc-dots"></div><div class="toc-page-num">19</div></div>
+    <div class="toc-item"><div class="toc-item-name"><span class="toc-item-num">23</span> Pengaturan Situs</div><div class="toc-dots"></div><div class="toc-page-num">19</div></div>
+    <div class="toc-item"><div class="toc-item-name"><span class="toc-item-num">24</span> Akuntansi &amp; Laporan Keuangan</div><div class="toc-dots"></div><div class="toc-page-num">21</div></div>
+    <div class="toc-item"><div class="toc-item-name"><span class="toc-item-num">25</span> Manajemen Testimonial</div><div class="toc-dots"></div><div class="toc-page-num">22</div></div>
+    <div class="toc-item"><div class="toc-item-name"><span class="toc-item-num">26</span> Pemantauan Progress Siswa</div><div class="toc-dots"></div><div class="toc-page-num">22</div></div>
+    <div class="toc-item"><div class="toc-item-name"><span class="toc-item-num">27</span> Activity Log</div><div class="toc-dots"></div><div class="toc-page-num">23</div></div>
+    <div class="toc-item"><div class="toc-item-name"><span class="toc-item-num">28</span> Hero &amp; Konten Homepage</div><div class="toc-dots"></div><div class="toc-page-num">23</div></div>
+    <div class="toc-item"><div class="toc-item-name"><span class="toc-item-num">29</span> About &amp; Template Kursus</div><div class="toc-dots"></div><div class="toc-page-num">24</div></div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════ -->
+<!-- BAB 1: PENDAHULUAN -->
+<!-- ══════════════════════════════════════════════════════════ -->
+<div class="chapter">
+  <div class="chapter-header">
+    <div class="chapter-num">1</div>
+    <div>
+      <div class="chapter-title">Pendahuluan</div>
+      <div class="chapter-desc">Tentang platform dan peran pengguna</div>
+    </div>
+  </div>
+
+  <h2>Tentang InspiraLearn</h2>
+  <p>
+    <strong>InspiraLearn</strong> adalah platform belajar online (Learning Management System / LMS) yang dirancang untuk profesional Indonesia. Platform ini memungkinkan instruktur membuat dan menjual kursus berkualitas tinggi, sementara siswa dapat mengakses materi pembelajaran, quiz, tugas, dan mendapatkan sertifikat digital yang terverifikasi.
+  </p>
+  <div class="feature-grid">
+    <div class="feature-card">
+      <div class="feature-card-title">🎓 Kursus Terstruktur</div>
+      <p>Materi disusun dalam modul dan lesson dengan berbagai tipe konten: artikel, video, quiz, dan proyek.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-card-title">📜 Sertifikat Digital</div>
+      <p>Sertifikat penyelesaian dengan QR code verifikasi yang dapat diunduh sebagai PDF.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-card-title">💳 Pembayaran Aman</div>
+      <p>Integrasi Midtrans untuk pembayaran kursus berbayar dengan berbagai metode pembayaran.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-card-title">📊 Dashboard Lengkap</div>
+      <p>Admin dan pengajar memiliki dasbor analitik untuk memantau performa kursus dan keuangan.</p>
+    </div>
+  </div>
+
+  <h2>Peran Pengguna</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Peran</th>
+        <th>Deskripsi</th>
+        <th>Akses Utama</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="role-badge role-student">Student</span></td>
+        <td>Pelajar yang mendaftar dan mengikuti kursus</td>
+        <td>Browse kursus, belajar, quiz, sertifikat, profil</td>
+      </tr>
+      <tr>
+        <td><span class="role-badge role-teacher">Teacher</span></td>
+        <td>Instruktur yang membuat dan mengelola kursus</td>
+        <td>Semua akses Student + buat kursus, kelola materi, lihat statistik, royalti</td>
+      </tr>
+      <tr>
+        <td><span class="role-badge role-admin">Admin</span></td>
+        <td>Administrator penuh platform</td>
+        <td>Semua akses + kelola pengguna, kupon, keuangan, pengaturan situs</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="info-box info">
+    <div class="info-box-icon">ℹ️</div>
+    <div>
+      <div class="info-box-title">Catatan Peran</div>
+      <p>Peran pengguna ditentukan oleh Admin. Pengguna baru yang mendaftar secara default mendapatkan peran <strong>Student</strong>. Untuk menjadi Teacher atau Admin, hubungi administrator platform.</p>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════ -->
+<!-- BAB 2: AUTENTIKASI -->
+<!-- ══════════════════════════════════════════════════════════ -->
+<div class="chapter page-break">
+  <div class="chapter-header">
+    <div class="chapter-num">2</div>
+    <div>
+      <div class="chapter-title">Akun &amp; Autentikasi</div>
+      <div class="chapter-desc">Registrasi, login, dan pemulihan password</div>
+    </div>
+  </div>
+
+  <h2>Registrasi Akun</h2>
+  <span class="role-badge role-all">Semua Pengguna</span>
+  <p style="margin-top:10px;">Untuk menggunakan fitur penuh InspiraLearn, Anda perlu membuat akun terlebih dahulu.</p>
+  <div class="nav-path">Beranda → <span>»</span> Klik tombol <strong>Daftar</strong> / <strong>Register</strong></div>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-content">
+        <div class="step-title">Isi Data Diri</div>
+        <div class="step-desc">Masukkan nama lengkap, alamat email aktif, dan password (minimal 6 karakter).</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-content">
+        <div class="step-title">Pilih Jenjang Pendidikan</div>
+        <div class="step-desc">Pilih dari SD/MI, SMP/MTs, SMA/SMK/MA, D3, S1, S2, atau S3.</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-content">
+        <div class="step-title">Sumber Referral</div>
+        <div class="step-desc">Pilih bagaimana Anda mengetahui InspiraLearn (Media Sosial, Rekomendasi, Search Engine, dll).</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-content">
+        <div class="step-title">Klik Daftar</div>
+        <div class="step-desc">Akun Anda langsung aktif dan Anda akan diarahkan ke halaman utama.</div>
+      </div>
+    </div>
+  </div>
+
+  <h2>Login</h2>
+  <span class="role-badge role-all">Semua Pengguna</span>
+  <div class="nav-path" style="margin-top:10px;">Beranda → <span>»</span> Tombol <strong>Login</strong></div>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-content">
+        <div class="step-title">Masukkan Email &amp; Password</div>
+        <div class="step-desc">Gunakan email dan password yang terdaftar.</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-content">
+        <div class="step-title">Klik Masuk</div>
+        <div class="step-desc">Anda akan diarahkan ke halaman kursus. Token autentikasi disimpan secara aman di browser.</div>
+      </div>
+    </div>
+  </div>
+  <div class="info-box tip">
+    <div class="info-box-icon">💡</div>
+    <div>
+      <div class="info-box-title">Tetap Login</div>
+      <p>Sesi login akan bertahan selama beberapa hari. Klik <strong>Keluar</strong> dari menu profil jika menggunakan perangkat bersama.</p>
+    </div>
+  </div>
+
+  <h2>Lupa Password</h2>
+  <span class="role-badge role-all">Semua Pengguna</span>
+  <div class="nav-path" style="margin-top:10px;">Halaman Login → <span>»</span> <strong>Lupa Password?</strong></div>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-content">
+        <div class="step-title">Masukkan Email Terdaftar</div>
+        <div class="step-desc">Sistem akan mengirimkan kode OTP (One-Time Password) ke email Anda.</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-content">
+        <div class="step-title">Verifikasi OTP</div>
+        <div class="step-desc">Buka email, salin kode 6-digit OTP, dan masukkan di halaman verifikasi. OTP berlaku 10 menit.</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-content">
+        <div class="step-title">Buat Password Baru</div>
+        <div class="step-desc">Masukkan password baru dan konfirmasi. Password langsung diperbarui dan Anda bisa login.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════ -->
+<!-- BAB 3: UNTUK SISWA -->
+<!-- ══════════════════════════════════════════════════════════ -->
+<div class="chapter page-break">
+  <div class="chapter-header">
+    <div class="chapter-num">3</div>
+    <div>
+      <div class="chapter-title">Untuk Siswa (Student)</div>
+      <div class="chapter-desc">Panduan lengkap belajar di InspiraLearn</div>
+    </div>
+  </div>
+
+  <h2>Beranda &amp; Navigasi</h2>
+  <span class="role-badge role-all">Semua Pengguna</span>
+  <p style="margin-top:10px;">Beranda menampilkan konten unggulan platform dan merupakan titik masuk utama.</p>
+  <div class="feature-grid">
+    <div class="feature-card">
+      <div class="feature-card-title">🏠 Hero Section</div>
+      <p>Tagline utama platform, statistik pengguna, dan tombol CTA untuk mulai belajar.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-card-title">📚 Kursus Unggulan</div>
+      <p>Menampilkan kursus-kursus terpilih dari berbagai kategori.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-card-title">🏆 Sertifikat Preview</div>
+      <p>Contoh tampilan sertifikat yang akan Anda dapatkan setelah menyelesaikan kursus.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-card-title">💬 Testimoni Alumni</div>
+      <p>Ulasan dari pelajar yang telah menyelesaikan kursus di platform.</p>
+    </div>
+  </div>
+  <p>Navigasi utama terdiri dari: <strong>Beranda</strong> · <strong>Courses</strong> · <strong>Keranjang</strong> · <strong>Profil</strong>. Di perangkat mobile, gunakan menu hamburger (☰) di pojok kanan atas.</p>
+
+  <h2>Katalog &amp; Pencarian Kursus</h2>
+  <span class="role-badge role-all">Semua Pengguna</span>
+  <div class="nav-path" style="margin-top:10px;">Menu → <span>»</span> <strong>Courses</strong></div>
+  <p style="margin-top:10px;">Halaman katalog menampilkan semua kursus yang tersedia di platform.</p>
+  <h3>Fitur Pencarian &amp; Filter</h3>
+  <div class="field-list">
+    <div class="field-item">
+      <div class="field-name">Search Bar</div>
+      <div class="field-desc">Cari kursus berdasarkan judul atau deskripsi secara real-time.</div>
+    </div>
+    <div class="field-item">
+      <div class="field-name">Filter Semua</div>
+      <div class="field-desc">Tampilkan seluruh kursus yang tersedia.</div>
+    </div>
+    <div class="field-item">
+      <div class="field-name">Filter Gratis</div>
+      <div class="field-desc">Tampilkan hanya kursus yang dapat diakses tanpa biaya.</div>
+    </div>
+    <div class="field-item">
+      <div class="field-name">Filter Berbayar</div>
+      <div class="field-desc">Tampilkan kursus premium dengan harga yang telah ditentukan.</div>
+    </div>
+  </div>
+  <p>Setiap kartu kursus menampilkan: thumbnail, judul, deskripsi singkat, harga, dan status (Gratis / Premium / Berlangsung / Selesai).</p>
+
+  <h2>Detail Kursus &amp; Pendaftaran</h2>
+  <span class="role-badge role-student">Student</span>
+  <div class="nav-path" style="margin-top:10px;">Katalog → <span>»</span> Klik kartu kursus</div>
+  <p style="margin-top:10px;">Halaman detail kursus berisi informasi lengkap sebelum Anda mendaftar.</p>
+  <div class="feature-grid">
+    <div class="feature-card">
+      <div class="feature-card-title">📋 Informasi Kursus</div>
+      <p>Judul, deskripsi lengkap, tag/kategori, instruktur, dan statistik kursus.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-card-title">📖 Kurikulum</div>
+      <p>Daftar lengkap modul dan materi yang akan dipelajari, termasuk tipe konten (video, artikel, quiz).</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-card-title">🎯 Yang Akan Dipelajari</div>
+      <p>Daftar kompetensi dan skill yang akan dikuasai setelah menyelesaikan kursus.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-card-title">⭐ Ulasan</div>
+      <p>Rating dan testimoni dari siswa yang telah mengambil kursus ini.</p>
+    </div>
+  </div>
+  <h3>Cara Mendaftar Kursus</h3>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-content">
+        <div class="step-title">Kursus Gratis</div>
+        <div class="step-desc">Klik tombol <strong>"Mulai Belajar Gratis"</strong>. Anda langsung terdaftar dan dapat mengakses semua materi.</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-content">
+        <div class="step-title">Kursus Berbayar</div>
+        <div class="step-desc">Klik <strong>"Tambah ke Cart"</strong> untuk memasukkan kursus ke keranjang, lalu lakukan pembayaran.</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-content">
+        <div class="step-title">Kursus Aktif</div>
+        <div class="step-desc">Jika sudah terdaftar, tombol berubah menjadi <strong>"Lanjutkan Belajar"</strong> untuk melanjutkan dari posisi terakhir.</div>
+      </div>
+    </div>
+  </div>
+  <div class="info-box warning">
+    <div class="info-box-icon">⚠️</div>
+    <div>
+      <div class="info-box-title">Kursus Aktif Sekaligus</div>
+      <p>Anda hanya dapat memiliki satu kursus aktif dalam satu waktu. Untuk memulai kursus baru, selesaikan atau hentikan kursus yang sedang aktif terlebih dahulu.</p>
+    </div>
+  </div>
+</div>
+
+
+<div class="chapter page-break">
+  <h2>Keranjang &amp; Pembayaran</h2>
+  <span class="role-badge role-student">Student</span>
+  <div class="nav-path" style="margin-top:10px;">Navbar → <span>»</span> Ikon Keranjang 🛒</div>
+  <p style="margin-top:10px;">Sistem keranjang belanja memungkinkan Anda mengelola kursus yang akan dibeli sebelum melakukan pembayaran.</p>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-content">
+        <div class="step-title">Tambah ke Keranjang</div>
+        <div class="step-desc">Dari halaman detail kursus atau katalog, klik tombol "Tambah ke Keranjang".</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-content">
+        <div class="step-title">Terapkan Kupon (Opsional)</div>
+        <div class="step-desc">Masukkan kode kupon diskon yang valid untuk mendapatkan potongan harga.</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-content">
+        <div class="step-title">Klik Bayar Sekarang</div>
+        <div class="step-desc">Sistem akan mengarahkan ke halaman pembayaran Midtrans dengan berbagai pilihan metode (transfer bank, dompet digital, kartu kredit, dll).</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-content">
+        <div class="step-title">Akses Kursus</div>
+        <div class="step-desc">Setelah pembayaran berhasil, kursus langsung dapat diakses dari halaman detail atau profil Anda.</div>
+      </div>
+    </div>
+  </div>
+  <div class="info-box tip">
+    <div class="info-box-icon">💡</div>
+    <div>
+      <div class="info-box-title">Garansi Uang Kembali</div>
+      <p>Platform menjamin uang kembali dalam 30 hari tanpa syarat jika Anda tidak puas dengan kursus yang dibeli. Hubungi support untuk klaim.</p>
+    </div>
+  </div>
+
+  <h2>Belajar: Materi &amp; Video</h2>
+  <span class="role-badge role-student">Student</span>
+  <div class="nav-path" style="margin-top:10px;">Detail Kursus → <span>»</span> <strong>Mulai Belajar</strong> → <span>»</span> Pilih Materi</div>
+  <p style="margin-top:10px;">Halaman LessonPresentation adalah antarmuka utama pembelajaran dengan tata letak dua-kolom: sidebar materi di kiri dan konten di kanan.</p>
+  <h3>Komponen Halaman Belajar</h3>
+  <div class="field-list">
+    <div class="field-item">
+      <div class="field-name">Sidebar Materi</div>
+      <div class="field-desc">Daftar semua materi dalam kursus, dikelompokkan per modul. Dapat ditampilkan/disembunyikan. Ikon gembok (🔒) menandakan materi yang belum dapat diakses.</div>
+    </div>
+    <div class="field-item">
+      <div class="field-name">Konten Utama</div>
+      <div class="field-desc">Area tampilan materi: teks/artikel (rich text), video embed, lampiran file, atau quiz terintegrasi.</div>
+    </div>
+    <div class="field-item">
+      <div class="field-name">Tab Navigasi</div>
+      <div class="field-desc">Tab Materi, Lampiran, dan Diskusi untuk berpindah antar konten dalam satu lesson.</div>
+    </div>
+    <div class="field-item">
+      <div class="field-name">Tombol Selesaikan</div>
+      <div class="field-desc">Klik "Tandai Selesai" setelah membaca/menonton materi untuk membuka lesson berikutnya dan mencatat progress.</div>
+    </div>
+    <div class="field-item">
+      <div class="field-name">Navigasi Prev/Next</div>
+      <div class="field-desc">Tombol ◀ Sebelumnya dan Berikutnya ▶ untuk berpindah antar materi secara berurutan.</div>
+    </div>
+  </div>
+  <h3>Tipe Konten Lesson</h3>
+  <table>
+    <thead>
+      <tr><th>Tipe</th><th>Ikon</th><th>Deskripsi</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Artikel</td><td>📄</td><td>Materi teks dengan format rich text (judul, paragraf, gambar, list, tabel)</td></tr>
+      <tr><td>Video</td><td>🎬</td><td>Video embed dari YouTube atau platform lain via iframe</td></tr>
+      <tr><td>Quiz</td><td>📝</td><td>Kuis yang terintegrasi langsung dalam lesson</td></tr>
+      <tr><td>Proyek</td><td>🏗️</td><td>Tugas/assignment yang memerlukan pengumpulan jawaban atau file</td></tr>
+    </tbody>
+  </table>
+  <div class="info-box info">
+    <div class="info-box-icon">ℹ️</div>
+    <div>
+      <div class="info-box-title">Sistem Belajar Berurutan</div>
+      <p>Materi dibuka secara berurutan — Anda harus menyelesaikan materi sebelumnya untuk membuka materi berikutnya. Ini memastikan pemahaman yang terstruktur.</p>
+    </div>
+  </div>
+
+  <h2>Quiz</h2>
+  <span class="role-badge role-student">Student</span>
+  <div class="nav-path" style="margin-top:10px;">Halaman Belajar → <span>»</span> Materi bertipe Quiz</div>
+  <p style="margin-top:10px;">Quiz adalah evaluasi pemahaman yang harus diselesaikan untuk melanjutkan materi berikutnya.</p>
+  <div class="feature-grid">
+    <div class="feature-card">
+      <div class="feature-card-title">⏱️ Timer</div>
+      <p>Quiz memiliki batas waktu (jika diatur instruktur). Timer ditampilkan di pojok dan akan berjalan mundur.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-card-title">📌 Pin Soal</div>
+      <p>Tandai soal yang ingin ditinjau kembali dengan tombol pin. Soal yang di-pin muncul di panel navigasi khusus.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-card-title">🔀 Soal Acak</div>
+      <p>Urutan soal dapat diacak oleh instruktur untuk keamanan ujian.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-card-title">📊 Hasil Langsung</div>
+      <p>Setelah submit, nilai ditampilkan langsung beserta jawaban yang benar untuk soal pilihan ganda.</p>
+    </div>
+  </div>
+  <h3>Tipe Soal</h3>
+  <div class="field-list">
+    <div class="field-item">
+      <div class="field-name">Pilihan Ganda (MCQ)</div>
+      <div class="field-desc">Pilih satu jawaban yang paling benar dari 4 pilihan yang disediakan.</div>
+    </div>
+    <div class="field-item">
+      <div class="field-name">Essay</div>
+      <div class="field-desc">Jawaban uraian yang diketik secara bebas. Dinilai oleh instruktur secara manual.</div>
+    </div>
+    <div class="field-item">
+      <div class="field-name">Menjodohkan</div>
+      <div class="field-desc">Pasangkan item di kolom kiri dengan item yang sesuai di kolom kanan.</div>
+    </div>
+  </div>
+</div>
+
+
+<div class="chapter page-break">
+  <h2>Tugas &amp; Assignment</h2>
+  <span class="role-badge role-student">Student</span>
+  <div class="nav-path" style="margin-top:10px;">Halaman Belajar → <span>»</span> Materi bertipe Proyek/Tugas</div>
+  <p style="margin-top:10px;">Assignment adalah tugas praktik yang menguji kemampuan Anda secara langsung.</p>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-content">
+        <div class="step-title">Baca Instruksi Tugas</div>
+        <div class="step-desc">Pelajari deskripsi tugas, rubrik penilaian, dan tenggat waktu (jika ada).</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-content">
+        <div class="step-title">Isi Jawaban Teks (Opsional)</div>
+        <div class="step-desc">Ketik penjelasan, analisis, atau jawaban di kotak teks yang tersedia.</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-content">
+        <div class="step-title">Upload File (Opsional)</div>
+        <div class="step-desc">Lampirkan file pendukung seperti dokumen, gambar, atau kode program.</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-content">
+        <div class="step-title">Submit Tugas</div>
+        <div class="step-desc">Klik "Kumpulkan" untuk mengirimkan jawaban. Instruktur akan memberikan penilaian dan feedback.</div>
+      </div>
+    </div>
+  </div>
+
+  <h2>Sertifikat</h2>
+  <span class="role-badge role-student">Student</span>
+  <div class="nav-path" style="margin-top:10px;">Profil Saya → <span>»</span> Tab <strong>Sertifikat</strong></div>
+  <p style="margin-top:10px;">Sertifikat digital dikeluarkan secara otomatis setelah Anda menyelesaikan semua persyaratan kursus.</p>
+  <h3>Syarat Mendapatkan Sertifikat</h3>
+  <div class="field-list">
+    <div class="field-item">
+      <div class="field-name">Materi 100%</div>
+      <div class="field-desc">Semua lesson harus ditandai selesai (termasuk menonton video dan membaca artikel).</div>
+    </div>
+    <div class="field-item">
+      <div class="field-name">Quiz Lulus</div>
+      <div class="field-desc">Semua quiz dalam kursus harus dikerjakan dan mencapai nilai minimum yang ditetapkan.</div>
+    </div>
+  </div>
+  <h3>Informasi pada Sertifikat</h3>
+  <div class="feature-grid">
+    <div class="feature-card">
+      <div class="feature-card-title">👤 Nama Peserta</div>
+      <p>Nama lengkap sesuai data profil Anda di platform.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-card-title">📚 Nama Kursus</div>
+      <p>Judul kursus yang telah diselesaikan.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-card-title">📅 Tanggal Penyelesaian</div>
+      <p>Tanggal ketika Anda berhasil menyelesaikan seluruh kursus.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-card-title">✍️ Tanda Tangan</div>
+      <p>Tanda tangan digital instruktur kursus sebagai otentikasi.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-card-title">🔢 Nomor Sertifikat</div>
+      <p>Kode unik yang dapat digunakan untuk verifikasi keaslian sertifikat.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-card-title">📱 QR Code</div>
+      <p>Kode QR yang dapat di-scan untuk verifikasi online di halaman verify.</p>
+    </div>
+  </div>
+  <h3>Mengunduh Sertifikat</h3>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-content">
+        <div class="step-title">Buka Halaman Sertifikat</div>
+        <div class="step-desc">Dari Profil → Tab Sertifikat, klik kursus yang sudah selesai, atau langsung akses dari halaman detail kursus.</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-content">
+        <div class="step-title">Klik "Unduh PDF"</div>
+        <div class="step-desc">Sertifikat akan dirender sebagai gambar beresolusi tinggi dan disimpan sebagai file PDF format landscape A4.</div>
+      </div>
+    </div>
+  </div>
+  <div class="info-box tip">
+    <div class="info-box-icon">💡</div>
+    <div>
+      <div class="info-box-title">Verifikasi Sertifikat</div>
+      <p>Siapapun dapat memverifikasi keaslian sertifikat dengan scan QR Code atau mengunjungi halaman <strong>/verify/[nomor-sertifikat]</strong>.</p>
+    </div>
+  </div>
+
+  <h2>Profil Saya</h2>
+  <span class="role-badge role-all">Semua Pengguna</span>
+  <div class="nav-path" style="margin-top:10px;">Navbar → <span>»</span> Avatar / Nama → <span>»</span> <strong>Profil</strong></div>
+  <p style="margin-top:10px;">Halaman profil memiliki 4 tab untuk mengelola informasi dan aktivitas Anda.</p>
+  <table>
+    <thead>
+      <tr><th>Tab</th><th>Fitur</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Profil</strong></td>
+        <td>Edit nama, foto profil, jenjang pendidikan, dan sumber referral. Ubah email dan password.</td>
+      </tr>
+      <tr>
+        <td><strong>Kursus Saya</strong></td>
+        <td>Daftar semua kursus yang diikuti beserta progress penyelesaian.</td>
+      </tr>
+      <tr>
+        <td><strong>Sertifikat</strong></td>
+        <td>Koleksi sertifikat yang telah diperoleh. Klik untuk melihat dan mengunduh.</td>
+      </tr>
+      <tr>
+        <td><strong>Testimoni</strong></td>
+        <td>Tulis, edit, atau hapus ulasan/testimoni Anda tentang pengalaman belajar di platform.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════ -->
+<!-- BAB 4: UNTUK PENGAJAR -->
+<!-- ══════════════════════════════════════════════════════════ -->
+<div class="chapter page-break">
+  <div class="chapter-header">
+    <div class="chapter-num">4</div>
+    <div>
+      <div class="chapter-title">Untuk Pengajar (Teacher)</div>
+      <div class="chapter-desc">Membuat dan mengelola kursus</div>
+    </div>
+  </div>
+
+  <h2>Dashboard Pengajar</h2>
+  <span class="role-badge role-teacher">Teacher</span>
+  <span class="role-badge role-admin" style="margin-left:6px;">Admin</span>
+  <div class="nav-path" style="margin-top:10px;">Navbar → <span>»</span> Menu → <span>»</span> <strong>Dashboard</strong></div>
+  <p style="margin-top:10px;">Dashboard adalah pusat kontrol untuk pengajar dan administrator, memberikan akses cepat ke semua fitur manajemen.</p>
+  <div class="feature-grid">
+    <div class="feature-card">
+      <div class="feature-card-title">📚 Course Manager</div>
+      <p>Buat dan kelola kursus, modul, materi, dan quiz.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-card-title">📊 Course Stats</div>
+      <p>Statistik enrollment dan engagement kursus Anda.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-card-title">💰 Royalti</div>
+      <p>Pantau pendapatan royalti dari kursus yang terjual.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-card-title">🏦 Question Bank</div>
+      <p>Kelola bank soal yang dapat digunakan di berbagai quiz.</p>
+    </div>
+  </div>
+
+  <h2>Manajemen Kursus</h2>
+  <span class="role-badge role-teacher">Teacher</span>
+  <span class="role-badge role-admin" style="margin-left:6px;">Admin</span>
+  <div class="nav-path" style="margin-top:10px;">Dashboard → <span>»</span> <strong>Course Manager</strong></div>
+  <p style="margin-top:10px;">Course Manager adalah fitur utama untuk membuat dan mengelola seluruh konten kursus.</p>
+
+  <h3>Membuat Kursus Baru</h3>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-content">
+        <div class="step-title">Klik "Buat Kursus Baru"</div>
+        <div class="step-desc">Di sidebar Course Manager, klik tombol untuk membuat kursus baru.</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-content">
+        <div class="step-title">Isi Informasi Dasar</div>
+        <div class="step-desc">Lengkapi judul, deskripsi (rich text editor), harga (0 untuk gratis), kategori, dan tag.</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-content">
+        <div class="step-title">Upload Cover Image</div>
+        <div class="step-desc">Upload gambar sampul kursus. Disarankan rasio 16:9, minimal 1280×720 piksel.</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-content">
+        <div class="step-title">Pilih Template (Opsional)</div>
+        <div class="step-desc">Gunakan template kursus yang sudah ada untuk mempercepat pembuatan struktur modul dan materi.</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">5</div>
+      <div class="step-content">
+        <div class="step-title">Simpan sebagai Draft</div>
+        <div class="step-desc">Kursus tersimpan sebagai draft (belum publik). Lanjutkan dengan menambah modul dan materi.</div>
+      </div>
+    </div>
+  </div>
+
+  <h3>Kolom Informasi Kursus</h3>
+  <div class="field-list">
+    <div class="field-item">
+      <div class="field-name">Judul <span class="badge badge-required">Wajib</span></div>
+      <div class="field-desc">Judul kursus yang akan ditampilkan di katalog dan halaman detail.</div>
+    </div>
+    <div class="field-item">
+      <div class="field-name">Deskripsi</div>
+      <div class="field-desc">Penjelasan lengkap kursus menggunakan rich text editor (mendukung heading, list, bold, italic, link).</div>
+    </div>
+    <div class="field-item">
+      <div class="field-name">Harga (IDR)</div>
+      <div class="field-desc">Harga kursus dalam Rupiah. Isi 0 untuk menjadikan kursus gratis.</div>
+    </div>
+    <div class="field-item">
+      <div class="field-name">Tag</div>
+      <div class="field-desc">Kata kunci untuk memudahkan pencarian. Ketik tag lalu tekan Enter atau koma untuk menambah.</div>
+    </div>
+    <div class="field-item">
+      <div class="field-name">Kategori</div>
+      <div class="field-desc">Pilih kategori kursus dari daftar yang telah dibuat admin.</div>
+    </div>
+    <div class="field-item">
+      <div class="field-name">Yang Akan Dipelajari</div>
+      <div class="field-desc">Daftar poin kompetensi yang akan dikuasai siswa setelah menyelesaikan kursus.</div>
+    </div>
+    <div class="field-item">
+      <div class="field-name">Prasyarat</div>
+      <div class="field-desc">Pengetahuan atau skill yang dibutuhkan sebelum mengambil kursus ini.</div>
+    </div>
+    <div class="field-item">
+      <div class="field-name">Target Audiens</div>
+      <div class="field-desc">Deskripsi siapa yang cocok mengambil kursus ini.</div>
+    </div>
+    <div class="field-item">
+      <div class="field-name">Status Publish</div>
+      <div class="field-desc">Toggle untuk mempublikasikan kursus agar terlihat di katalog, atau menyimpannya sebagai draft.</div>
+    </div>
+  </div>
+
+  <h3>Edit Media Preview</h3>
+  <p>Setelah kursus dibuat, Anda dapat menambahkan media preview yang ditampilkan di halaman detail kursus:</p>
+  <div class="field-list">
+    <div class="field-item">
+      <div class="field-name">URL Video Preview</div>
+      <div class="field-desc">Link YouTube embed (format: https://www.youtube.com/embed/VIDEO_ID) untuk video trailer kursus.</div>
+    </div>
+    <div class="field-item">
+      <div class="field-name">URL Cover Image</div>
+      <div class="field-desc">URL gambar sampul kursus. Bisa diupload ulang dari halaman ini.</div>
+    </div>
+  </div>
+</div>
+
+
+<div class="chapter page-break">
+  <h2>Manajemen Modul &amp; Materi</h2>
+  <span class="role-badge role-teacher">Teacher</span>
+  <div class="nav-path" style="margin-top:10px;">Course Manager → <span>»</span> Pilih Kursus → <span>»</span> Tab <strong>Modul &amp; Materi</strong></div>
+
+  <h3>Membuat Modul</h3>
+  <p>Modul adalah kelompok materi yang berkaitan. Contoh: "Bab 1: Pengantar Python", "Bab 2: Struktur Data".</p>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-content">
+        <div class="step-title">Isi Judul Modul</div>
+        <div class="step-desc">Berikan nama yang jelas dan deskriptif untuk modul.</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-content">
+        <div class="step-title">Atur Urutan (Order)</div>
+        <div class="step-desc">Tentukan posisi modul dalam kursus. Modul dengan order lebih kecil tampil lebih dulu.</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-content">
+        <div class="step-title">Set Status Publish</div>
+        <div class="step-desc">Modul yang belum siap dapat disimpan sebagai draft agar tidak terlihat siswa.</div>
+      </div>
+    </div>
+  </div>
+
+  <h3>Membuat Materi (Lesson)</h3>
+  <p>Setiap lesson adalah satu unit pembelajaran dalam modul. Lesson mendukung konten berlapis (content blocks).</p>
+  <div class="field-list">
+    <div class="field-item">
+      <div class="field-name">Judul Lesson <span class="badge badge-required">Wajib</span></div>
+      <div class="field-desc">Nama materi yang akan ditampilkan di sidebar dan daftar kurikulum.</div>
+    </div>
+    <div class="field-item">
+      <div class="field-name">Modul</div>
+      <div class="field-desc">Pilih modul tempat lesson ini dimasukkan.</div>
+    </div>
+    <div class="field-item">
+      <div class="field-name">Konten HTML</div>
+      <div class="field-desc">Isi materi menggunakan rich text editor. Mendukung heading, paragraf, gambar, tabel, code block, list, dan link.</div>
+    </div>
+    <div class="field-item">
+      <div class="field-name">Video Embed URL</div>
+      <div class="field-desc">Tambahkan video pembelajaran. Gunakan link embed YouTube atau platform video lainnya.</div>
+    </div>
+    <div class="field-item">
+      <div class="field-name">Lampiran</div>
+      <div class="field-desc">Upload file PDF, dokumen, atau tambahkan link eksternal sebagai lampiran materi.</div>
+    </div>
+    <div class="field-item">
+      <div class="field-name">Content Blocks</div>
+      <div class="field-desc">Atur susunan konten: blok "Materi" dan "Lampiran" dapat diurutkan ulang dengan drag &amp; drop.</div>
+    </div>
+    <div class="field-item">
+      <div class="field-name">Urutan (Order)</div>
+      <div class="field-desc">Posisi lesson dalam modul. Lesson yang lebih kecil nilainya tampil lebih dulu.</div>
+    </div>
+  </div>
+  <div class="info-box tip">
+    <div class="info-box-icon">💡</div>
+    <div>
+      <div class="info-box-title">Template Lesson</div>
+      <p>Editor dimulai dengan template default yang mencakup bagian: <em>Tujuan Pembelajaran, Materi, Ringkasan, dan Latihan</em>. Hapus atau modifikasi sesuai kebutuhan.</p>
+    </div>
+  </div>
+
+  <h2>Quiz &amp; Soal</h2>
+  <span class="role-badge role-teacher">Teacher</span>
+  <div class="nav-path" style="margin-top:10px;">Course Manager → <span>»</span> Tab <strong>Quiz</strong></div>
+
+  <h3>Membuat Quiz</h3>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-content">
+        <div class="step-title">Isi Data Quiz</div>
+        <div class="step-desc">Judul quiz, deskripsi/instruksi, dan link ke lesson terkait.</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-content">
+        <div class="step-title">Atur Waktu</div>
+        <div class="step-desc">Batas waktu pengerjaan dalam detik (0 = tanpa batas waktu).</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-content">
+        <div class="step-title">Pilihan Tambahan</div>
+        <div class="step-desc">Aktifkan "Acak Urutan Soal" untuk keamanan ujian. Set status publish.</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-content">
+        <div class="step-title">Tambah Soal Manual</div>
+        <div class="step-desc">Buat soal satu per satu: pilih tipe (MCQ/Essay/Menjodohkan), isi pertanyaan, dan jawaban.</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">5</div>
+      <div class="step-content">
+        <div class="step-title">Import dari Bank Soal</div>
+        <div class="step-desc">Pilih koleksi bank soal, tentukan jumlah soal, dan filter berdasarkan tipe soal yang diinginkan.</div>
+      </div>
+    </div>
+  </div>
+
+  <h3>Membuat Soal Pilihan Ganda (MCQ)</h3>
+  <div class="field-list">
+    <div class="field-item">
+      <div class="field-name">Pertanyaan</div>
+      <div class="field-desc">Teks soal menggunakan rich text editor. Dapat menyertakan gambar pendukung.</div>
+    </div>
+    <div class="field-item">
+      <div class="field-name">Pilihan A–D</div>
+      <div class="field-desc">Isi 4 pilihan jawaban. Pastikan hanya satu jawaban yang benar.</div>
+    </div>
+    <div class="field-item">
+      <div class="field-name">Jawaban Benar</div>
+      <div class="field-desc">Pilih satu dari A/B/C/D sebagai kunci jawaban.</div>
+    </div>
+    <div class="field-item">
+      <div class="field-name">Rubrik</div>
+      <div class="field-desc">Penjelasan mengapa jawaban tersebut benar (opsional, ditampilkan setelah siswa submit).</div>
+    </div>
+  </div>
+
+  <h2>Statistik Kursus &amp; Royalti</h2>
+  <span class="role-badge role-teacher">Teacher</span>
+  <div class="nav-path" style="margin-top:10px;">Dashboard → <span>»</span> <strong>Course Stats</strong> atau <strong>Royalti</strong></div>
+  <div class="feature-grid">
+    <div class="feature-card">
+      <div class="feature-card-title">📈 Course Stats</div>
+      <p>Lihat jumlah enrollment, tingkat penyelesaian, dan engagement siswa per kursus.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-card-title">💵 Royalti</div>
+      <p>Pantau total pendapatan, jumlah pending dan yang sudah dibayar dari hasil penjualan kursus.</p>
+    </div>
+  </div>
+  <p>Di halaman Royalti, Anda dapat melihat rincian setiap transaksi, termasuk tanggal penjualan, nama kursus, dan status pembayaran royalti (Pending / Paid).</p>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════ -->
+<!-- BAB 5: UNTUK ADMIN -->
+<!-- ══════════════════════════════════════════════════════════ -->
+<div class="chapter page-break">
+  <div class="chapter-header">
+    <div class="chapter-num">5</div>
+    <div>
+      <div class="chapter-title">Untuk Administrator</div>
+      <div class="chapter-desc">Manajemen penuh platform InspiraLearn</div>
+    </div>
+  </div>
+
+  <div class="info-box warning">
+    <div class="info-box-icon">⚠️</div>
+    <div>
+      <div class="info-box-title">Hak Akses Admin</div>
+      <p>Semua fitur di bagian ini hanya dapat diakses oleh pengguna dengan peran <strong>Admin</strong>. Perubahan yang dilakukan bersifat permanen dan dapat memengaruhi seluruh pengguna platform.</p>
+    </div>
+  </div>
+
+  <h2>Manajemen Pengguna</h2>
+  <span class="role-badge role-admin">Admin</span>
+  <div class="nav-path" style="margin-top:10px;">Dashboard → <span>»</span> <strong>User Manager</strong></div>
+  <p style="margin-top:10px;">Admin dapat melihat, mengedit, dan menghapus semua akun pengguna di platform.</p>
+  <div class="feature-grid">
+    <div class="feature-card">
+      <div class="feature-card-title">👥 Daftar Pengguna</div>
+      <p>Semua pengguna ditampilkan dengan info nama, email, peran, dan tanggal bergabung. Diurutkan dari terbaru.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-card-title">🔄 Ubah Peran</div>
+      <p>Ubah peran pengguna antara Student, Teacher, dan Admin. Perubahan langsung berlaku.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-card-title">💹 Rasio Royalti</div>
+      <p>Atur persentase royalti untuk setiap teacher (0–100%). Digunakan untuk menghitung pendapatan teacher.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-card-title">🔑 Reset Password</div>
+      <p>Generate link reset password untuk pengguna yang bermasalah, lalu salin link untuk diberikan ke pengguna.</p>
+    </div>
+  </div>
+  <h3>Mengelola Skills Teacher</h3>
+  <p>Klik expand (▼) pada pengguna dengan peran Teacher untuk mengedit daftar skill/keahlian. Skill ini ditampilkan di halaman profil instruktur pada halaman detail kursus.</p>
+  <div class="info-box warning">
+    <div class="info-box-icon">⚠️</div>
+    <div>
+      <div class="info-box-title">Hapus Pengguna</div>
+      <p>Menghapus pengguna bersifat <strong>permanen</strong> dan tidak dapat dibatalkan. Semua data terkait (progress, sertifikat) akan ikut terhapus.</p>
+    </div>
+  </div>
+
+  <h2>Manajemen Kupon</h2>
+  <span class="role-badge role-admin">Admin</span>
+  <div class="nav-path" style="margin-top:10px;">Dashboard → <span>»</span> <strong>Coupon Manager</strong></div>
+  <p style="margin-top:10px;">Buat dan kelola kode kupon diskon untuk promosi kursus berbayar.</p>
+  <h3>Membuat Kupon Baru</h3>
+  <div class="field-list">
+    <div class="field-item">
+      <div class="field-name">Kode Kupon <span class="badge badge-required">Wajib</span></div>
+      <div class="field-desc">Kode unik yang dimasukkan siswa saat checkout. Contoh: BELAJAR50, NEWUSER25.</div>
+    </div>
+    <div class="field-item">
+      <div class="field-name">Deskripsi</div>
+      <div class="field-desc">Catatan internal tentang tujuan kupon ini (tidak terlihat oleh siswa).</div>
+    </div>
+    <div class="field-item">
+      <div class="field-name">Tipe Diskon</div>
+      <div class="field-desc"><strong>Persentase (%)</strong> – potongan berdasarkan persen dari harga. <strong>Nominal (Rp)</strong> – potongan harga tetap.</div>
+    </div>
+    <div class="field-item">
+      <div class="field-name">Nilai Diskon</div>
+      <div class="field-desc">Angka diskon. Untuk tipe persentase: 10 = diskon 10%. Untuk nominal: 50000 = diskon Rp 50.000.</div>
+    </div>
+    <div class="field-item">
+      <div class="field-name">Maks. Penggunaan/User</div>
+      <div class="field-desc">Berapa kali satu pengguna dapat menggunakan kupon ini (default: 1 kali).</div>
+    </div>
+    <div class="field-item">
+      <div class="field-name">Maks. Total Penggunaan</div>
+      <div class="field-desc">Total kupon yang dapat digunakan di seluruh platform. Kosongkan untuk tanpa batas.</div>
+    </div>
+    <div class="field-item">
+      <div class="field-name">Berlaku Dari / Hingga</div>
+      <div class="field-desc">Periode validitas kupon. Di luar periode ini, kupon tidak dapat digunakan.</div>
+    </div>
+    <div class="field-item">
+      <div class="field-name">Minimum Pembelian</div>
+      <div class="field-desc">Harga minimum transaksi agar kupon dapat diterapkan.</div>
+    </div>
+  </div>
+</div>
+
+
+<div class="chapter page-break">
+  <h2>Manajemen Kategori</h2>
+  <span class="role-badge role-admin">Admin</span>
+  <div class="nav-path" style="margin-top:10px;">Dashboard → <span>»</span> <strong>Category Manager</strong></div>
+  <p style="margin-top:10px;">Kategori digunakan untuk mengorganisir kursus agar mudah ditemukan oleh siswa.</p>
+  <div class="field-list">
+    <div class="field-item">
+      <div class="field-name">Nama Kategori</div>
+      <div class="field-desc">Nama yang ditampilkan di katalog dan halaman detail kursus. Contoh: "Data Science", "UI/UX Design".</div>
+    </div>
+    <div class="field-item">
+      <div class="field-name">Warna</div>
+      <div class="field-desc">Warna aksen kategori dalam format hex. Digunakan untuk badge dan label visual.</div>
+    </div>
+    <div class="field-item">
+      <div class="field-name">Ikon</div>
+      <div class="field-desc">Emoji atau karakter untuk merepresentasikan kategori secara visual.</div>
+    </div>
+    <div class="field-item">
+      <div class="field-name">Urutan</div>
+      <div class="field-desc">Menentukan posisi kategori dalam daftar. Nilai lebih kecil = tampil lebih dulu.</div>
+    </div>
+  </div>
+
+  <h2>Pengaturan Situs (Site Settings)</h2>
+  <span class="role-badge role-admin">Admin</span>
+  <div class="nav-path" style="margin-top:10px;">Dashboard → <span>»</span> <strong>Site Settings</strong></div>
+  <p style="margin-top:10px;">Site Settings mengatur tampilan dan konten yang terlihat oleh semua pengunjung di halaman utama dan footer. Perubahan langsung terlihat di website tanpa perlu deploy ulang.</p>
+
+  <h3>Section 1: Hero (Banner Utama)</h3>
+  <div class="field-list">
+    <div class="field-item">
+      <div class="field-name">Badge Prefix</div>
+      <div class="field-desc">Teks label di atas judul hero. Contoh: "Platform Belajar #1 Indonesia".</div>
+    </div>
+    <div class="field-item">
+      <div class="field-name">Judul Hero</div>
+      <div class="field-desc">Judul besar di hero section (baris 1). Contoh: "Kuasai Skill yang Dibutuhkan".</div>
+    </div>
+    <div class="field-item">
+      <div class="field-name">Aksen Hero</div>
+      <div class="field-desc">Baris judul kedua dengan warna aksen (teal). Contoh: "Industri Sekarang".</div>
+    </div>
+    <div class="field-item">
+      <div class="field-name">Deskripsi Hero</div>
+      <div class="field-desc">Paragraf penjelasan singkat di bawah judul hero.</div>
+    </div>
+  </div>
+
+  <h3>Section 2: Badge Notifikasi</h3>
+  <div class="field-list">
+    <div class="field-item">
+      <div class="field-name">Badge 1 Title &amp; Sub</div>
+      <div class="field-desc">Badge pertama di hero (contoh: "Sertifikat Diterima" / "Gojek · Tokopedia").</div>
+    </div>
+    <div class="field-item">
+      <div class="field-name">Badge 2 Title &amp; Sub</div>
+      <div class="field-desc">Badge kedua di hero (contoh: "Baru bergabung" / "Nama Pengguna · 2 menit lalu").</div>
+    </div>
+  </div>
+
+  <h3>Section 3: Statistik Platform</h3>
+  <p>Tampilkan 4 angka statistik di homepage (jumlah kursus, pelajar, instruktur, tingkat kepuasan). Setiap statistik terdiri dari angka (contoh: "50K+") dan label (contoh: "Pelajar Aktif").</p>
+
+  <h3>Section 4: Ticker Items</h3>
+  <p>Teks yang berjalan di banner ticker (scrolling text). Isi dengan nama-nama topik atau kategori yang tersedia di platform. Setiap item dipisah dengan baris baru.</p>
+
+  <h3>Section 5: Preview Sertifikat</h3>
+  <div class="field-list">
+    <div class="field-item">
+      <div class="field-name">Nama Contoh</div>
+      <div class="field-desc">Nama yang ditampilkan pada sertifikat contoh di homepage.</div>
+    </div>
+    <div class="field-item">
+      <div class="field-name">Kursus Contoh</div>
+      <div class="field-desc">Judul kursus yang ditampilkan pada sertifikat contoh.</div>
+    </div>
+  </div>
+
+  <h3>Section 6: Mitra &amp; Partner</h3>
+  <div class="field-list">
+    <div class="field-item">
+      <div class="field-name">Partner Count Text</div>
+      <div class="field-desc">Teks pengantar daftar partner (contoh: "Diakui oleh 300+ perusahaan termasuk").</div>
+    </div>
+    <div class="field-item">
+      <div class="field-name">Daftar Partner</div>
+      <div class="field-desc">Nama-nama perusahaan partner yang tampil di homepage. Pisahkan dengan baris baru.</div>
+    </div>
+  </div>
+
+  <h3>Section 7: Testimonial</h3>
+  <div class="field-list">
+    <div class="field-item">
+      <div class="field-name">Statistik Pelajar</div>
+      <div class="field-desc">Angka total pelajar (contoh: "50K+") dan labelnya.</div>
+    </div>
+    <div class="field-item">
+      <div class="field-name">Kutipan Testimonial</div>
+      <div class="field-desc">Quote featured yang ditampilkan di section testimonial homepage.</div>
+    </div>
+    <div class="field-item">
+      <div class="field-name">Rating &amp; Label</div>
+      <div class="field-desc">Nilai rating dan keterangan sumber ulasan (contoh: "4.9" · "dari 28.000+ ulasan").</div>
+    </div>
+  </div>
+
+  <h3>Section 8: Footer</h3>
+  <div class="field-list">
+    <div class="field-item">
+      <div class="field-name">Tagline Footer</div>
+      <div class="field-desc">Deskripsi singkat platform yang muncul di kolom pertama footer.</div>
+    </div>
+    <div class="field-item">
+      <div class="field-name">Sosial Media</div>
+      <div class="field-desc">Label (IG, YT, in, X) dan URL untuk setiap ikon sosial media di footer. Klik tombol + untuk menambah, × untuk menghapus.</div>
+    </div>
+    <div class="field-item">
+      <div class="field-name">Kolom Navigasi</div>
+      <div class="field-desc">Kelola 3 kolom navigasi footer (Produk, Perusahaan, Bantuan). Setiap kolom memiliki judul dan daftar link dengan label &amp; URL.</div>
+    </div>
+    <div class="field-item">
+      <div class="field-name">Link Bawah</div>
+      <div class="field-desc">Link di bagian paling bawah footer (Privasi, Syarat, Cookie) beserta URL tujuannya.</div>
+    </div>
+    <div class="field-item">
+      <div class="field-name">Copyright</div>
+      <div class="field-desc">Teks hak cipta yang muncul di bagian bawah footer. Tahun ditambahkan otomatis.</div>
+    </div>
+  </div>
+  <div class="info-box tip">
+    <div class="info-box-icon">💡</div>
+    <div>
+      <div class="info-box-title">Menyimpan Pengaturan</div>
+      <p>Klik tombol <strong>"Simpan Semua Pengaturan"</strong> di bawah halaman untuk menyimpan semua perubahan sekaligus. Refresh halaman publik untuk melihat perubahan.</p>
+    </div>
+  </div>
+</div>
+
+
+<div class="chapter page-break">
+  <h2>Akuntansi &amp; Laporan Keuangan</h2>
+  <span class="role-badge role-admin">Admin</span>
+  <div class="nav-path" style="margin-top:10px;">Dashboard → <span>»</span> <strong>Akuntansi</strong></div>
+  <p style="margin-top:10px;">Dashboard keuangan menampilkan semua transaksi dan ringkasan pendapatan platform.</p>
+  <div class="feature-grid">
+    <div class="feature-card">
+      <div class="feature-card-title">📊 Ringkasan (Summary)</div>
+      <p>Total pendapatan, jumlah transaksi, dan grafik pendapatan harian dalam rentang tanggal yang dipilih.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-card-title">📋 Daftar Transaksi</div>
+      <p>Semua order/pembayaran dengan detail: ID order, nama siswa, kursus, jumlah, status, dan tanggal.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-card-title">📚 Per Kursus</div>
+      <p>Breakdown pendapatan dan jumlah enrollment per kursus dalam periode yang dipilih.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-card-title">📅 Filter Tanggal</div>
+      <p>Filter data berdasarkan rentang tanggal. Default: 30 hari terakhir.</p>
+    </div>
+  </div>
+  <h3>Filter &amp; Status Transaksi</h3>
+  <table>
+    <thead>
+      <tr><th>Status</th><th>Arti</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><strong>Pending</strong></td><td>Pembayaran dibuat namun belum dikonfirmasi oleh payment gateway</td></tr>
+      <tr><td><strong>Settlement</strong></td><td>Pembayaran berhasil dan sudah dikonfirmasi — kursus aktif untuk siswa</td></tr>
+      <tr><td><strong>Cancel</strong></td><td>Pembayaran dibatalkan oleh siswa atau expired</td></tr>
+      <tr><td><strong>Expire</strong></td><td>Batas waktu pembayaran terlewati tanpa konfirmasi</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Manajemen Testimonial</h2>
+  <span class="role-badge role-admin">Admin</span>
+  <div class="nav-path" style="margin-top:10px;">Dashboard → <span>»</span> <strong>Testimonial Manager</strong></div>
+  <p style="margin-top:10px;">Moderasi ulasan/testimoni yang dikirim oleh siswa sebelum ditampilkan ke publik.</p>
+  <div class="field-list">
+    <div class="field-item">
+      <div class="field-name">Status Pending</div>
+      <div class="field-desc">Testimoni baru yang menunggu review admin. Tampil dalam antrian persetujuan.</div>
+    </div>
+    <div class="field-item">
+      <div class="field-name">Setujui (Approve)</div>
+      <div class="field-desc">Testimoni yang disetujui akan tampil di homepage dan halaman About.</div>
+    </div>
+    <div class="field-item">
+      <div class="field-name">Tolak (Reject)</div>
+      <div class="field-desc">Testimoni yang ditolak tidak akan ditampilkan ke publik. Pengirim tidak mendapat notifikasi.</div>
+    </div>
+  </div>
+  <div class="info-box info">
+    <div class="info-box-icon">ℹ️</div>
+    <div>
+      <div class="info-box-title">Moderasi Konten</div>
+      <p>Tinjau setiap testimoni untuk memastikan tidak mengandung konten tidak pantas, informasi palsu, atau promosi tidak relevan sebelum menyetujuinya.</p>
+    </div>
+  </div>
+
+  <h2>Pemantauan Progress Siswa</h2>
+  <span class="role-badge role-admin">Admin</span>
+  <span class="role-badge role-teacher" style="margin-left:6px;">Teacher</span>
+  <div class="nav-path" style="margin-top:10px;">Dashboard → <span>»</span> <strong>Student Progress</strong></div>
+  <p style="margin-top:10px;">Monitor perkembangan belajar setiap siswa secara individual.</p>
+  <div class="feature-grid">
+    <div class="feature-card">
+      <div class="feature-card-title">🔍 Cari Siswa</div>
+      <p>Cari berdasarkan nama atau email untuk melihat progress spesifik seorang siswa.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-card-title">📊 Progress per Kursus</div>
+      <p>Persentase penyelesaian, jumlah materi selesai dari total, dan status keseluruhan kursus.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-card-title">✅ Detail Lesson</div>
+      <p>Lihat lesson mana yang sudah dan belum diselesaikan, beserta timestamp penyelesaian.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-card-title">🏆 Status Sertifikat</div>
+      <p>Apakah siswa sudah memenuhi syarat untuk mendapatkan sertifikat kursus.</p>
+    </div>
+  </div>
+
+  <h2>Activity Log</h2>
+  <span class="role-badge role-admin">Admin</span>
+  <div class="nav-path" style="margin-top:10px;">Dashboard → <span>»</span> <strong>Activity Log</strong></div>
+  <p style="margin-top:10px;">Rekam jejak semua aktivitas yang terjadi di platform untuk keperluan audit dan monitoring keamanan.</p>
+  <p>Log mencatat: <strong>siapa</strong> yang melakukan aksi, <strong>apa</strong> yang dilakukan (buat/edit/hapus/publish), <strong>pada resource apa</strong>, dan <strong>kapan</strong>. Log diurutkan dari aktivitas terbaru.</p>
+
+  <h2>Hero Manager &amp; Konten Homepage</h2>
+  <span class="role-badge role-admin">Admin</span>
+  <div class="nav-path" style="margin-top:10px;">Dashboard → <span>»</span> <strong>Hero Manager</strong></div>
+  <p style="margin-top:10px;">Kelola slide/banner hero section di halaman utama. Berbeda dengan Site Settings yang mengatur teks statis, Hero Manager mengelola slide dinamis.</p>
+  <div class="field-list">
+    <div class="field-item">
+      <div class="field-name">Judul Slide</div>
+      <div class="field-desc">Teks headline untuk slide hero tertentu.</div>
+    </div>
+    <div class="field-item">
+      <div class="field-name">Subtitle</div>
+      <div class="field-desc">Teks pendukung di bawah judul slide.</div>
+    </div>
+    <div class="field-item">
+      <div class="field-name">Background Image</div>
+      <div class="field-desc">Gambar latar belakang untuk slide hero.</div>
+    </div>
+    <div class="field-item">
+      <div class="field-name">CTA Button</div>
+      <div class="field-desc">Teks dan URL tombol call-to-action pada slide.</div>
+    </div>
+    <div class="field-item">
+      <div class="field-name">Urutan &amp; Status</div>
+      <div class="field-desc">Atur urutan tampil slide dan aktifkan/nonaktifkan slide tertentu.</div>
+    </div>
+  </div>
+
+  <h2>About Manager &amp; Template Kursus</h2>
+  <span class="role-badge role-admin">Admin</span>
+
+  <h3>About Manager</h3>
+  <div class="nav-path">Dashboard → <span>»</span> <strong>About Manager</strong></div>
+  <p style="margin-top:10px;">Kelola konten halaman "Tentang Kami": deskripsi platform, visi misi, dan profil tim instruktur yang ditampilkan kepada publik.</p>
+
+  <h3>Template Kursus</h3>
+  <div class="nav-path">Dashboard → <span>»</span> <strong>Course Template Manager</strong></div>
+  <p style="margin-top:10px;">Buat template struktur kursus yang dapat digunakan pengajar sebagai kerangka awal saat membuat kursus baru. Template berisi struktur modul dan lesson yang sudah dirancang sebelumnya.</p>
+  <div class="field-list">
+    <div class="field-item">
+      <div class="field-name">Nama Template</div>
+      <div class="field-desc">Nama template yang dipilih saat membuat kursus baru.</div>
+    </div>
+    <div class="field-item">
+      <div class="field-name">Struktur Modul</div>
+      <div class="field-desc">Definisi modul-modul dan lesson di dalamnya yang akan di-clone ke kursus baru.</div>
+    </div>
+  </div>
+
+  <h3>Question Bank Manager</h3>
+  <div class="nav-path">Dashboard → <span>»</span> <strong>Question Bank</strong></div>
+  <p style="margin-top:10px;">Bank soal adalah koleksi pertanyaan yang dapat digunakan kembali di berbagai quiz. Sangat berguna untuk membuat quiz yang bervariasi tanpa harus membuat soal baru setiap kali.</p>
+  <div class="feature-grid">
+    <div class="feature-card">
+      <div class="feature-card-title">📁 Koleksi</div>
+      <p>Organisir soal ke dalam koleksi/folder berdasarkan topik atau mata pelajaran.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-card-title">➕ Tambah Soal</div>
+      <p>Buat soal MCQ, essay, atau menjodohkan dan simpan ke koleksi tertentu.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-card-title">🔁 Import ke Quiz</div>
+      <p>Dari Course Manager, pilih koleksi bank soal dan jumlah soal yang ingin diimport ke quiz.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-card-title">🗑️ Kelola Soal</div>
+      <p>Edit atau hapus soal yang sudah tidak relevan dari bank soal.</p>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════ -->
+<!-- PENUTUP -->
+<!-- ══════════════════════════════════════════════════════════ -->
+<div class="chapter page-break">
+  <div class="chapter-header">
+    <div class="chapter-num">6</div>
+    <div>
+      <div class="chapter-title">Bantuan &amp; Kontak</div>
+      <div class="chapter-desc">Dukungan teknis dan informasi kontak</div>
+    </div>
+  </div>
+
+  <h2>Pertanyaan Umum (FAQ)</h2>
+  <div class="no-break">
+    <h3>Bagaimana cara mendapatkan sertifikat?</h3>
+    <p>Selesaikan semua materi (100%) dan kerjakan semua quiz yang ada dalam kursus. Sertifikat akan otomatis tersedia di tab Sertifikat profil Anda.</p>
+  </div>
+  <div class="no-break">
+    <h3>Apakah kursus bisa diakses selamanya?</h3>
+    <p>Ya. Setelah mendaftar atau membeli kursus, Anda mendapatkan akses seumur hidup tanpa biaya berlangganan tambahan.</p>
+  </div>
+  <div class="no-break">
+    <h3>Bagaimana jika lupa password?</h3>
+    <p>Klik "Lupa Password?" di halaman login, masukkan email Anda, dan ikuti petunjuk reset melalui OTP yang dikirim ke email.</p>
+  </div>
+  <div class="no-break">
+    <h3>Apakah bisa mengambil lebih dari satu kursus?</h3>
+    <p>Anda dapat mendaftar ke banyak kursus, tetapi hanya satu kursus yang dapat berstatus "aktif" (sedang dikerjakan) dalam satu waktu. Selesaikan kursus aktif terlebih dahulu untuk memulai yang baru.</p>
+  </div>
+  <div class="no-break">
+    <h3>Bagaimana cara menjadi instruktur/teacher?</h3>
+    <p>Hubungi administrator platform untuk mengubah peran akun Anda menjadi Teacher.</p>
+  </div>
+  <div class="no-break">
+    <h3>Metode pembayaran apa yang tersedia?</h3>
+    <p>Platform menggunakan Midtrans sebagai payment gateway yang mendukung: transfer bank (BCA, BNI, BRI, Mandiri), QRIS, GoPay, OVO, Dana, ShopeePay, Indomaret, Alfamart, dan kartu kredit/debit.</p>
+  </div>
+
+  <div class="section-divider">
+    <div class="section-divider-text">Kontak Dukungan</div>
+  </div>
+
+  <div class="feature-grid">
+    <div class="feature-card">
+      <div class="feature-card-title">📧 Email Support</div>
+      <p>support@inspiratekno.com<br>Respons dalam 1×24 jam kerja.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-card-title">❓ Halaman FAQ</div>
+      <p>Kunjungi <strong>/faq</strong> untuk daftar pertanyaan yang sering diajukan beserta jawabannya.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-card-title">🔒 Kebijakan Privasi</div>
+      <p>Baca kebijakan penggunaan data di halaman <strong>/kebijakan-privasi</strong>.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-card-title">📱 Media Sosial</div>
+      <p>Ikuti InspiraLearn di Instagram, YouTube, LinkedIn, dan Twitter untuk update terbaru.</p>
+    </div>
+  </div>
+
+  <div style="margin-top: 60px; padding: 30px; background: linear-gradient(135deg, var(--dark), #0C2D4A); border-radius: 16px; text-align: center;">
+    <div style="font-size: 28pt; font-weight: 900; color: #fff; margin-bottom: 8px;">
+      Inspira<span style="color: #0FADA8;">Learn</span>
+    </div>
+    <div style="font-size: 10pt; color: rgba(255,255,255,0.5); margin-bottom: 20px;">
+      Platform belajar online untuk profesional Indonesia
+    </div>
+    <div style="width: 40px; height: 3px; background: linear-gradient(90deg, #0FADA8, #F3921B); border-radius: 2px; margin: 0 auto 20px;"></div>
+    <div style="font-size: 8.5pt; color: rgba(255,255,255,0.35);">
+      Dokumen ini dibuat untuk keperluan internal dan panduan pengguna.<br>
+      © 2026 InspiraLearn by Inspiratekno. All rights reserved.
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
