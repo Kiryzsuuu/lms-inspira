@@ -163,3 +163,43 @@
   .reveal-delay-2 { transition-delay: .16s; }
   .reveal-delay-3 { transition-delay: .24s; }
 }
+
+/* ===== TIPTAP TABLE STYLES ===== */
+.ProseMirror table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 1rem 0;
+  font-size: 0.9rem;
+}
+.ProseMirror table td,
+.ProseMirror table th {
+  border: 1.5px solid #cbd5e1;
+  padding: 6px 10px;
+  min-width: 60px;
+  vertical-align: top;
+  position: relative;
+}
+.ProseMirror table th {
+  background: #f1f5f9;
+  font-weight: 700;
+  text-align: left;
+}
+.ProseMirror table .selectedCell::after {
+  background: rgba(12, 98, 141, 0.12);
+  content: '';
+  left: 0; right: 0; top: 0; bottom: 0;
+  pointer-events: none;
+  position: absolute;
+  z-index: 2;
+}
+.ProseMirror table .column-resize-handle {
+  background-color: #0C628D;
+  bottom: -2px;
+  position: absolute;
+  right: -2px;
+  top: 0;
+  width: 3px;
+  pointer-events: none;
+}
+.tableWrapper { overflow-x: auto; }
+

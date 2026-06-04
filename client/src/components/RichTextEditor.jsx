@@ -6,6 +6,10 @@ import Link from '@tiptap/extension-link';
 import Image from '@tiptap/extension-image';
 import TextAlign from '@tiptap/extension-text-align';
 import Highlight from '@tiptap/extension-highlight';
+import Table from '@tiptap/extension-table';
+import TableRow from '@tiptap/extension-table-row';
+import TableCell from '@tiptap/extension-table-cell';
+import TableHeader from '@tiptap/extension-table-header';
 import { Label } from './ui';
 
 // ── SVG icon helpers ──────────────────────────────────────────────────────────
@@ -38,6 +42,12 @@ const ICONS = {
   undo:        'M3 7v6h6M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13',
   redo:        'M21 7v6h-6M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3L21 13',
   clear:       'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm5 13.59L15.59 17 12 13.41 8.41 17 7 15.59 10.59 12 7 8.41 8.41 7 12 10.59 15.59 7 17 8.41 13.41 12 17 15.59z',
+  table:       'M3 3h18v18H3zM3 9h18M3 15h18M9 3v18M15 3v18',
+  addColR:     'M14 3h7v18h-7zM3 12h7M6.5 8.5v7',
+  addRowB:     'M3 14v7h18v-7zM12 3v7M8.5 6.5h7',
+  delCol:      'M14 3h7v18h-7zM3 10l6 4-6 4',
+  delRow:      'M3 14v7h18v-7zM10 3l4 6-4 6',
+  mergeCells:  'M3 3h8v8H3zM13 3h8v8h-8zM3 13h8v8H3zM13 13h8v8h-8zM9 7h6M12 4v6',
 };
 
 function Btn({ active, disabled, title, onClick, children }) {
@@ -141,6 +151,10 @@ export function RichTextEditor({
     Image.configure({ inline: false, allowBase64: false }),
     TextAlign.configure({ types: ['heading', 'paragraph'] }),
     Highlight.configure({ multicolor: false }),
+    Table.configure({ resizable: true }),
+    TableRow,
+    TableCell,
+    TableHeader,
   ], []);
 
   const editor = useEditor({
@@ -323,6 +337,33 @@ export function RichTextEditor({
           <Btn title="Clear Formatting" onClick={() => editor.chain().focus().clearNodes().unsetAllMarks().run()}>
             <span style={{ fontSize: 10, fontWeight: 700, color: '#94a3b8' }}>Tx</span>
           </Btn>
+          <Sep />
+
+          {/* Table */}
+          <Btn title="Insert Table" active={editor.isActive('table')}
+            onClick={() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()}>
+            <Ico d={ICONS.table} />
+          </Btn>
+          {editor.isActive('table') && (<>
+            <Btn title="Add Column Right" onClick={() => editor.chain().focus().addColumnAfter().run()}>
+              <Ico d={ICONS.addColR} />
+            </Btn>
+            <Btn title="Add Row Below" onClick={() => editor.chain().focus().addRowAfter().run()}>
+              <Ico d={ICONS.addRowB} />
+            </Btn>
+            <Btn title="Delete Column" onClick={() => editor.chain().focus().deleteColumn().run()}>
+              <Ico d={ICONS.delCol} />
+            </Btn>
+            <Btn title="Delete Row" onClick={() => editor.chain().focus().deleteRow().run()}>
+              <Ico d={ICONS.delRow} />
+            </Btn>
+            <Btn title="Merge/Split Cells" onClick={() => editor.chain().focus().mergeOrSplit().run()}>
+              <Ico d={ICONS.mergeCells} />
+            </Btn>
+            <Btn title="Delete Table" onClick={() => editor.chain().focus().deleteTable().run()}>
+              <span style={{ fontSize: 9, fontWeight: 700, color: '#ef4444' }}>✕Tbl</span>
+            </Btn>
+          </>)}
         </div>
 
         {/* Link input bar */}
