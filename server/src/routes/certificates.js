@@ -66,15 +66,12 @@ function certificatesRouter({ requireAuth, requireRole }) {
 
       if (!certificate) throw new HttpError(404, 'Certificate not found');
 
-      // Always sync userName from the current user record so stale or incorrect
-      // names stored at generation time are corrected automatically.
-      const user = await User.findById(req.user.sub).select('fullName name');
-      if (user) {
-        const freshName = user.fullName || user.name;
-        if (freshName && freshName !== certificate.metadata?.userName) {
-          certificate.metadata = { ...certificate.metadata, userName: freshName };
-          await certificate.save();
-        }
+      // Always sync userName from fullName so stale/incorrect names are corrected.
+      // Only update if fullName is set — never fall back to username/name field.
+      const user = await User.findById(req.user.sub).select('fullName');
+      if (user?.fullName && user.fullName !== certificate.metadata?.userName) {
+        certificate.metadata = { ...certificate.metadata, userName: user.fullName };
+        await certificate.save();
       }
 
       // Log view
@@ -144,7 +141,7 @@ function certificatesRouter({ requireAuth, requireRole }) {
           certificateNumber: generateCertificateNumber(),
           completionDate: new Date(),
           metadata: {
-            userName: user.fullName || user.name,
+            userName: user.fullName || '',
             courseName: course.title,
             instructorName: course.ownerId?.fullName || course.ownerId?.name || 'InspiraLearn',
             instructorSignatureUrl: course.ownerId?.signatureUrl || '',

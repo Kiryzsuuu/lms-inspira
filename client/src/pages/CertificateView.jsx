@@ -5,7 +5,7 @@ import { useAuth } from '../lib/auth';
 
 export default function CertificateView() {
   const { courseId } = useParams();
-  const { api, isAuthed } = useAuth();
+  const { api, isAuthed, user } = useAuth();
   const nav = useNavigate();
   const [certificate, setCertificate] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -251,7 +251,7 @@ export default function CertificateView() {
                     marginBottom: '1.8%',
                     fontFamily: '"Bricolage Grotesque", "Inter", Arial, sans-serif',
                   }}>
-                    {certificate.metadata?.userName || 'Nama Peserta'}
+                    {user?.fullName || certificate.metadata?.userName || 'Nama Peserta'}
                   </div>
 
                   <div style={{ fontSize: '0.72em', color: '#6B7280', marginBottom: '0.8%' }}>
