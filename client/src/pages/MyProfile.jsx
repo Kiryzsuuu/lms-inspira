@@ -171,7 +171,7 @@ export default function MyProfile() {
       };
       const res = await api.put('/auth/me', updates);
       setUser(res.data.user);
-      setEditingProfile(false);
+      setProfileData(res.data.user);
       setSuccess('Profil berhasil diperbarui');
       setTimeout(() => setSuccess(''), 3000);
     } catch (e) {
@@ -466,9 +466,9 @@ export default function MyProfile() {
 
               <div className="grid gap-6 lg:grid-cols-2">
                 {/* Left Column */}
-                <div className="space-y-6 flex flex-col">
+                <div className="space-y-6">
                   {/* Informasi Dasar */}
-                  <Card className="p-6 border border-slate-200 shadow-sm hover:shadow-md transition-shadow flex-1">
+                  <Card className="p-6 border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
                     <h2 className="text-lg font-bold text-slate-900 mb-4">Informasi Dasar</h2>
                     <div className="mt-4 space-y-4 text-sm">
                       <div className="pb-3 border-b border-slate-100">
@@ -487,7 +487,7 @@ export default function MyProfile() {
                   </Card>
 
                   {/* Profil Pribadi */}
-                  <Card className="p-6 border border-slate-200 shadow-sm hover:shadow-md transition-shadow flex-1">
+                  <Card className="p-6 border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
                     <div className="flex items-center justify-between gap-4 mb-4">
                       <h2 className="text-lg font-bold text-slate-900">Profil Pribadi</h2>
                     </div>
@@ -566,9 +566,9 @@ export default function MyProfile() {
                 </div>
 
                 {/* Right Column */}
-                <div className="space-y-6 flex flex-col">
+                <div className="space-y-6">
                   {/* Email Management */}
-                  <Card className="p-6 border border-slate-200 shadow-sm hover:shadow-md transition-shadow flex-1">
+                  <Card className="p-6 border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
                     <div className="flex items-center justify-between gap-4 mb-4">
                       <h2 className="text-lg font-bold text-slate-900">Update Email</h2>
                       {!editingEmail && (
@@ -622,7 +622,7 @@ export default function MyProfile() {
                   </Card>
 
                   {/* Password Management */}
-                  <Card className="p-6 border border-slate-200 shadow-sm hover:shadow-md transition-shadow flex-1">
+                  <Card className="p-6 border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
                     <div className="flex items-center justify-between gap-4 mb-4">
                       <h2 className="text-lg font-bold text-slate-900">Update Password</h2>
                       {!editingPassword && (
