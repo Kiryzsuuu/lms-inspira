@@ -66,6 +66,17 @@ function certificatesRouter({ requireAuth, requireRole }) {
 
       if (!certificate) throw new HttpError(404, 'Certificate not found');
 
+      // Always sync userName from the current user record so stale or incorrect
+      // names stored at generation time are corrected automatically.
+      const user = await User.findById(req.user.sub).select('fullName name');
+      if (user) {
+        const freshName = user.fullName || user.name;
+        if (freshName && freshName !== certificate.metadata?.userName) {
+          certificate.metadata = { ...certificate.metadata, userName: freshName };
+          await certificate.save();
+        }
+      }
+
       // Log view
       CertificateLog.create({
         certificateId: certificate._id,
