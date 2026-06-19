@@ -54,6 +54,10 @@ export default function Register() {
     try {
       if (!formData.name.trim()) throw new Error('Username harus diisi');
       if (!formData.fullName.trim()) throw new Error('Nama Lengkap harus diisi');
+      if (!/^[a-zA-Z\s.'-]{2,}$/.test(formData.fullName.trim()))
+        throw new Error('Nama Lengkap hanya boleh berisi huruf dan spasi (bukan email/password)');
+      if (formData.fullName.trim().split(/\s+/).length < 2)
+        throw new Error('Nama Lengkap harus terdiri dari minimal 2 kata');
       if (!formData.email.trim()) throw new Error('Email harus diisi');
       if (!formData.password.trim()) throw new Error('Password harus diisi');
 

@@ -389,36 +389,38 @@ function quizzesRouter({ requireAuth, requireRole }) {
       }
 
       const questionsRaw = await Question.find({ quizId: quiz._id }).sort({ order: 1, createdAt: 1 });
-      const questionsSorted = quiz.randomizeQuestions ? shuffleCopy(questionsRaw) : questionsRaw;
+      if (!questionsRaw.length) throw new HttpError(409, 'Quiz belum memiliki pertanyaan');
 
       // Resume: find latest in-progress attempt (not submitted)
       let attempt = await Attempt.findOne({ quizId: quiz._id, userId: req.user.sub, submittedAt: { $exists: false } })
         .sort({ createdAt: -1 });
 
-      // If the attempt has no question order (older data), initialize it
+      // If the attempt has no question order (older data), restore from current questions
+      // Use the non-randomized order for old data to keep it stable
       if (attempt && (!Array.isArray(attempt.questionOrder) || attempt.questionOrder.length === 0)) {
-        attempt.questionOrder = questionsSorted.map((q) => q._id);
+        attempt.questionOrder = questionsRaw.map((q) => q._id);
         if (!attempt.startedAt) attempt.startedAt = new Date();
         await attempt.save();
       }
 
-      // Start new attempt if none
+      // Start new attempt if none — shuffle only at this point so order is locked in
       if (!attempt) {
+        const orderedForNew = quiz.randomizeQuestions ? shuffleCopy(questionsRaw) : questionsRaw;
         attempt = await Attempt.create({
           quizId: quiz._id,
           userId: req.user.sub,
           startedAt: new Date(),
-          questionOrder: questionsSorted.map((q) => q._id),
+          questionOrder: orderedForNew.map((q) => q._id),
           answers: [],
         });
       }
 
-      // Build questions array based on saved order (stable resume)
+      // Build questions array based on saved order (stable resume, never re-shuffle)
       const byQid = new Map(questionsRaw.map((q) => [String(q._id), q]));
       const orderedQuestions = (attempt.questionOrder || [])
         .map((qid) => byQid.get(String(qid)))
         .filter(Boolean);
-      const questions = orderedQuestions.length ? orderedQuestions : questionsSorted;
+      const questions = orderedQuestions.length ? orderedQuestions : questionsRaw;
 
       const serverNow = new Date();
       const timeLimitSec = Number(quiz.timeLimitSec || 0);
@@ -570,8 +572,9 @@ function quizzesRouter({ requireAuth, requireRole }) {
       }
 
       let score = 0;
+      // maxScore = auto-gradable (MCQ) questions only; essay/matching are graded manually
       let maxScore = 0;
-
+      let totalQuestions = questions.length;
       for (const q of questions) {
         if ((q.type || 'mcq') === 'mcq') maxScore += 1;
       }
@@ -631,6 +634,7 @@ function quizzesRouter({ requireAuth, requireRole }) {
       }));
       attempt.score = score;
       attempt.maxScore = maxScore;
+      attempt.totalQuestions = totalQuestions;
       attempt.submittedAt = new Date();
       await attempt.save();
 

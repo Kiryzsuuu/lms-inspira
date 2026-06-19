@@ -219,6 +219,10 @@ function assignmentsRouter({ requireAuth, requireRole }) {
     asyncHandler(async (req, res) => {
       const assignment = await Assignment.findById(req.params.assignmentId);
       if (!assignment) throw new HttpError(404, 'Assignment not found');
+      if (req.user.role === 'teacher') {
+        const course = await Course.findById(assignment.courseId);
+        if (!course || String(course.ownerId) !== String(req.user.sub)) throw new HttpError(403, 'Forbidden');
+      }
 
       const { attemptId, score, feedback, grade } = req.body;
       if (score === undefined || typeof score !== 'number') throw new HttpError(400, 'Score required');
@@ -264,6 +268,10 @@ function assignmentsRouter({ requireAuth, requireRole }) {
     asyncHandler(async (req, res) => {
       const assignment = await Assignment.findById(req.params.assignmentId);
       if (!assignment) throw new HttpError(404, 'Assignment not found');
+      if (req.user.role === 'teacher') {
+        const course = await Course.findById(assignment.courseId);
+        if (!course || String(course.ownerId) !== String(req.user.sub)) throw new HttpError(403, 'Forbidden');
+      }
 
       const { attemptId } = req.body;
       const attempt = await AssignmentAttempt.findByIdAndUpdate(

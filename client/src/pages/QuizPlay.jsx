@@ -21,6 +21,8 @@ export default function QuizPlay() {
   const [gradingByQuestionId, setGradingByQuestionId] = useState({});
   const [navInfo, setNavInfo] = useState({ courseId: null, lessonId: null, nextLessonId: null });
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [autoSubmitMsg, setAutoSubmitMsg] = useState('');
+  const [quizError, setQuizError] = useState('');
   const [remainingSec, setRemainingSec] = useState(0);
   const autoSubmittedRef = useRef(false);
   const [attemptId, setAttemptId] = useState(null);
@@ -84,9 +86,12 @@ export default function QuizPlay() {
           nextLessonId: null,
         });
       })
-      .catch(() => {
+      .catch((e) => {
+        const status = e?.response?.status;
+        const msg = e?.response?.data?.error?.message || 'Gagal memuat quiz';
         setQuiz(null);
         setQuestions([]);
+        setQuizError(status === 404 ? 'Quiz tidak ditemukan atau telah dihapus.' : msg);
       });
   }, [quizId, isAuthed]);
 
@@ -124,8 +129,8 @@ export default function QuizPlay() {
     if (remainingSec !== 0) return;
     if (autoSubmittedRef.current) return;
     autoSubmittedRef.current = true;
-    // Auto-submit when timer runs out
-    submit();
+    setAutoSubmitMsg('Waktu habis! Quiz otomatis dikumpulkan.');
+    submit().catch(() => {});
   }, [quiz, remainingSec, result, submitting]);
 
   function isQuestionAnswered(q) {
@@ -234,10 +239,10 @@ export default function QuizPlay() {
       <section className="py-10">
         <Container>
           <Card className="p-8">
-            <div className="text-sm text-slate-600">Quiz tidak ditemukan / belum dipublish.</div>
+            <div className="text-sm text-slate-600">{quizError || 'Quiz tidak ditemukan / belum dipublish.'}</div>
             <div className="mt-4">
               <Link to="/courses">
-                <Button variant="outline">Kembali</Button>
+                <Button variant="outline">Kembali ke Daftar Course</Button>
               </Link>
             </div>
           </Card>
@@ -276,6 +281,12 @@ export default function QuizPlay() {
             await submit();
           }}
         />
+
+        {autoSubmitMsg && (
+          <div className="mb-4 rounded-[10px] px-4 py-3 text-sm font-semibold bg-amber-50 border border-amber-200 text-amber-800">
+            {autoSubmitMsg}
+          </div>
+        )}
 
         <div className="flex items-end justify-between gap-4">
           <div>

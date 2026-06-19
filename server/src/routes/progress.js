@@ -64,6 +64,16 @@ function progressRouter({ requireAuth }) {
       const lesson = await Lesson.findById(req.params.lessonId);
       if (!lesson || !lesson.isPublished) throw new HttpError(404, 'Lesson not found');
 
+      // Verify student has access to this course (purchased or free)
+      const course = await Course.findById(lesson.courseId).select('priceIdr');
+      if (!course) throw new HttpError(404, 'Course not found');
+      if ((course.priceIdr || 0) > 0) {
+        const user = await User.findById(req.user.sub).select('purchasedCourseIds activeCourseId');
+        const hasPurchased = (user?.purchasedCourseIds || []).some((id) => String(id) === String(course._id));
+        const isActive = String(user?.activeCourseId) === String(course._id);
+        if (!hasPurchased && !isActive) throw new HttpError(403, 'Course belum dibeli');
+      }
+
       await LessonProgress.findOneAndUpdate(
         { userId: req.user.sub, courseId: lesson.courseId, lessonId: lesson._id },
         { $set: { isCompleted: true, completedAt: new Date() } },

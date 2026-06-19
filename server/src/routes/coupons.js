@@ -106,7 +106,7 @@ function couponsRouter({ requireAuth, requireRole }) {
     requireAuth,
     requireRole('student'),
     asyncHandler(async (req, res) => {
-      const { code, totalAmount, courseIds } = req.body;
+      const { code, totalAmount, courseIds, referralDiscountAmount } = req.body;
 
       if (!code) throw new HttpError(400, 'Code harus diisi');
 
@@ -132,8 +132,9 @@ function couponsRouter({ requireAuth, requireRole }) {
         throw new HttpError(400, 'Anda sudah mencapai batas penggunaan coupon ini');
       }
 
-      // Check minimum purchase amount
-      if (totalAmount < coupon.minPurchaseAmount) {
+      // Check minimum purchase amount against base after referral (mirrors checkout logic)
+      const baseAfterReferral = Math.max(0, (totalAmount || 0) - (referralDiscountAmount || 0));
+      if (baseAfterReferral < coupon.minPurchaseAmount) {
         throw new HttpError(400, `Minimum pembelian adalah Rp ${coupon.minPurchaseAmount}`);
       }
 

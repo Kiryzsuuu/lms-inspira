@@ -106,9 +106,12 @@ export default function Cart() {
 
     setValidateCouponLoading(true);
     try {
+      const hasReferral = user?.referredBy && !user?.isFirstPurchaseDone;
+      const referralDiscountAmount = hasReferral ? Math.round(totalIdr * 0.05) : 0;
       const res = await api.post('/coupons/validate', {
         code: couponCode,
         totalAmount: totalIdr,
+        referralDiscountAmount,
         courseIds: items.map((it) => it.course._id),
       });
 

@@ -414,6 +414,9 @@ function reportsRouter({ requireAuth, requireRole }) {
     asyncHandler(async (req, res) => {
       const course = await Course.findById(req.params.courseId);
       if (!course) throw new HttpError(404, 'Course not found');
+      if (req.user.role === 'teacher' && String(course.ownerId) !== String(req.user.sub)) {
+        throw new HttpError(403, 'Forbidden');
+      }
 
       // Find all students who have this course
       const students = await User.find({
@@ -422,7 +425,7 @@ function reportsRouter({ requireAuth, requireRole }) {
           { completedCourseIds: course._id },
           { purchasedCourseIds: course._id },
         ],
-      }).select('name email activeCourseId completedCourseIds').sort({ createdAt: -1 });
+      }).select('name fullName email activeCourseId completedCourseIds purchasedCourseIds').sort({ createdAt: -1 });
 
       const lessons = await Lesson.find({ courseId: course._id }).sort({ order: 1 });
 
@@ -441,7 +444,8 @@ function reportsRouter({ requireAuth, requireRole }) {
             name: student.name,
             email: student.email,
             isActive: String(student.activeCourseId) === String(course._id),
-            isCompleted: student.completedCourseIds?.includes(course._id),
+            isCompleted: (student.completedCourseIds || []).some((id) => String(id) === String(course._id)),
+            hasPurchased: (student.purchasedCourseIds || []).some((id) => String(id) === String(course._id)),
             progress: {
               lessonsCompleted: completedLessons,
               lessonsTotal: lessons.length,
@@ -463,6 +467,9 @@ function reportsRouter({ requireAuth, requireRole }) {
     asyncHandler(async (req, res) => {
       const course = await Course.findById(req.params.courseId);
       if (!course) throw new HttpError(404, 'Course not found');
+      if (req.user.role === 'teacher' && String(course.ownerId) !== String(req.user.sub)) {
+        throw new HttpError(403, 'Forbidden');
+      }
 
       const student = await User.findById(req.params.studentId).select('name email');
       if (!student) throw new HttpError(404, 'Student not found');

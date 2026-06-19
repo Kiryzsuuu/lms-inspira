@@ -67,6 +67,13 @@ function paymentsRouter({ requireAuth, requireRole, midtrans }) {
 
       const courses = await Course.find({ _id: { $in: ids }, isPublished: true }).lean();
       if (!courses.length) throw new HttpError(400, 'Cart kosong');
+      if (courses.length !== ids.length) {
+        // Some courses were unpublished or deleted — remove them from cart
+        const foundIds = new Set(courses.map((c) => String(c._id)));
+        const validItems = (cart.items || []).filter((i) => foundIds.has(String(i.courseId)));
+        await Cart.updateOne({ userId: req.user.sub }, { $set: { items: validItems } });
+        throw new HttpError(400, 'Beberapa course di cart sudah tidak tersedia. Cart telah diperbarui, silakan cek kembali.');
+      }
 
       const user = await User.findById(req.user.sub).lean();
       if (!user) throw new HttpError(401, 'Unauthorized');
@@ -131,13 +138,15 @@ function paymentsRouter({ requireAuth, requireRole, midtrans }) {
           if (!isApplicable) throw new HttpError(400, 'Coupon tidak berlaku untuk course yang dipilih');
         }
 
+        // Apply coupon on amount after referral discount
+        const baseAfterReferral = Math.max(0, amountIdr - referralDiscountAmount);
         let couponDiscount = 0;
         if (coupon.discountType === 'percentage') {
-          couponDiscount = Math.round((amountIdr * coupon.discountValue) / 100);
+          couponDiscount = Math.round((baseAfterReferral * coupon.discountValue) / 100);
         } else if (coupon.discountType === 'fixed') {
           couponDiscount = coupon.discountValue;
         } else if (coupon.discountType === 'free') {
-          couponDiscount = amountIdr;
+          couponDiscount = baseAfterReferral;
         }
 
         discountAmount = referralDiscountAmount + couponDiscount;
@@ -148,6 +157,28 @@ function paymentsRouter({ requireAuth, requireRole, midtrans }) {
           discountAmount: couponDiscount,
           finalAmountIdr,
         };
+      }
+
+      // If coupon/referral brings total to 0, grant access directly without Midtrans
+      if (finalAmountIdr === 0) {
+        await User.updateOne(
+          { _id: req.user.sub },
+          { $addToSet: { purchasedCourseIds: { $each: payable.map((c) => c._id) } } }
+        );
+        if (hasReferral) {
+          await User.updateOne({ _id: req.user.sub }, { $set: { isFirstPurchaseDone: true } });
+        }
+        if (couponData?.couponId) {
+          await Coupon.updateOne(
+            { _id: couponData.couponId },
+            {
+              $inc: { currentUsageCount: 1 },
+              $push: { usageLog: { $each: [{ userId: req.user.sub, usedAt: new Date() }], $slice: -1000 } },
+            }
+          );
+        }
+        await Cart.updateOne({ userId: req.user.sub }, { $set: { items: [] } });
+        return res.json({ ok: true, paid: true, finalAmountIdr: 0, message: 'Course berhasil diperoleh dengan diskon 100%' });
       }
 
       const items = payable.map((c) => ({
@@ -370,7 +401,7 @@ function paymentsRouter({ requireAuth, requireRole, midtrans }) {
             { _id: order.coupon.couponId },
             {
               $inc: { currentUsageCount: 1 },
-              $push: { usageLog: { userId: order.userId, orderId: order._id, usedAt: new Date() } },
+              $push: { usageLog: { $each: [{ userId: order.userId, orderId: order._id, usedAt: new Date() }], $slice: -1000 } },
             }
           );
         }

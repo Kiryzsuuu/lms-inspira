@@ -439,6 +439,12 @@ export default function CourseDetail() {
   async function addToCart() {
     setLockError('');
     try {
+      const cartRes = await api.get('/cart');
+      const already = (cartRes.data.items || []).some((i) => String(i.course?._id || i.courseId) === String(id));
+      if (already) {
+        nav('/cart');
+        return;
+      }
       await api.post('/cart/items', { courseId: id });
       window.dispatchEvent(new Event('cart:changed'));
       nav('/cart');

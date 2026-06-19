@@ -81,8 +81,15 @@ export default function LessonPresentation() {
   const [comments, setComments] = useState([]);
   const [commentText, setCommentText] = useState('');
   const [commentPosting, setCommentPosting] = useState(false);
+  const [courseError, setCourseError] = useState('');
 
   useEffect(() => {
+    setCourseError('');
+    setCourse(null);
+    setModules([]);
+    setLessons([]);
+    setLessonProgress({});
+    setCert({ eligible: false, completed: 0, total: 0 });
     api.get(`/courses/${id}`)
       .then(res => {
         setCourse(res.data.course);
@@ -94,7 +101,10 @@ export default function LessonPresentation() {
         if (active?.moduleId) setOpenMods(new Set([String(active.moduleId)]));
         else if (mods.length > 0) setOpenMods(new Set([String(mods[0]._id)]));
       })
-      .catch(() => {});
+      .catch((err) => {
+        if (err?.response?.status === 404) setCourseError('Course tidak ditemukan.');
+        else setCourseError('Gagal memuat course. Silakan coba lagi.');
+      });
   }, [id, api]);
 
   useEffect(() => {
@@ -223,7 +233,14 @@ export default function LessonPresentation() {
   if (!course) {
     return (
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: C.n200 }}>
-        <div style={{ color: C.n500, fontSize: '0.9rem' }}>Memuat kursus...</div>
+        {courseError ? (
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ color: '#B91C1C', fontSize: '0.9rem', marginBottom: '0.75rem' }}>{courseError}</div>
+            <a href="/courses" style={{ color: C.blue, fontSize: '0.85rem', fontWeight: 600 }}>Kembali ke Daftar Course</a>
+          </div>
+        ) : (
+          <div style={{ color: C.n500, fontSize: '0.9rem' }}>Memuat kursus...</div>
+        )}
       </div>
     );
   }

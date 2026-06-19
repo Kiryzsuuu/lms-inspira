@@ -33,6 +33,7 @@ const attemptSchema = new mongoose.Schema(
     },
     score: { type: Number, default: 0 },
     maxScore: { type: Number, default: 0 },
+    totalQuestions: { type: Number, default: 0 },
     submittedAt: { type: Date },
   },
   { timestamps: true }

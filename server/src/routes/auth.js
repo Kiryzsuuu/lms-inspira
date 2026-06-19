@@ -90,7 +90,7 @@ function authRouter({ jwtSecret }) {
       const env = getEnv();
       const schema = z.object({
         name: z.string().min(2),
-        fullName: z.string().min(2),
+        fullName: z.string().min(2).regex(/^[a-zA-Z\s.'-]+$/, 'Nama Lengkap hanya boleh berisi huruf dan spasi'),
         email: z.string().email(),
         password: z.string().min(6),
         whatsappNumber: z.string().optional(),
@@ -148,10 +148,7 @@ function authRouter({ jwtSecret }) {
       if (!user || user.emailVerified) return res.json({ ok: true });
 
       const out = await createAndSendOtp(env, { email: normalizedEmail, type: 'register' });
-      if (process.env.NODE_ENV !== 'production') {
-        return res.json({ ok: true, devOtp: out.devOtp });
-      }
-      return res.json({ ok: true });
+      return res.json({ ok: true, ...(out.devOtp ? { devOtp: out.devOtp } : {}) });
     })
   );
 
@@ -214,7 +211,17 @@ function authRouter({ jwtSecret }) {
         expiresIn: '7d',
       });
 
-      res.json({ token });
+      res.json({
+        token,
+        user: {
+          _id: String(user._id),
+          name: user.name,
+          fullName: user.fullName || '',
+          email: user.email,
+          role: user.role,
+          emailVerified: user.emailVerified,
+        },
+      });
     })
   );
 

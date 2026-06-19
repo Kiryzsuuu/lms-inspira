@@ -142,6 +142,10 @@ export default function MyProfile() {
   }
 
   useEffect(() => {
+    // Reset state when user identity changes (e.g. logout + login as different account)
+    setUser(null);
+    setProfileData({});
+    setCourses([]);
     async function init() {
       setLoading(true);
       await loadProfile();
@@ -150,7 +154,7 @@ export default function MyProfile() {
     }
     init();
     loadMyTestimonial();
-  }, []);
+  }, [authUser?._id]);
 
   async function saveProfile() {
     setError('');

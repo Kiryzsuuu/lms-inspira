@@ -163,13 +163,19 @@ function certificatesRouter({ requireAuth, requireRole }) {
     })
   );
 
-  // Admin/Teacher: list all certificates
+  // Admin/Teacher: list certificates (teacher only sees their own courses)
   router.get(
     '/all',
     requireAuth,
     requireRole('admin', 'teacher'),
     asyncHandler(async (req, res) => {
-      const certificates = await Certificate.find()
+      let filter = {};
+      if (req.user.role === 'teacher') {
+        const { Course } = require('../models/Course');
+        const teacherCourses = await Course.find({ ownerId: req.user.sub }).select('_id');
+        filter = { courseId: { $in: teacherCourses.map((c) => c._id) } };
+      }
+      const certificates = await Certificate.find(filter)
         .populate('userId', 'name email fullName')
         .populate('courseId', 'title')
         .sort({ issuedAt: -1 })
