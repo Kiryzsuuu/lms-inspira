@@ -156,6 +156,17 @@ export default function CertificateView() {
         </Container>
       </div>
 
+      {/* Warning banner if fullName is missing */}
+      {!user?.fullName && (
+        <div className="bg-amber-50 border-b border-amber-200 px-4 py-3 text-center text-sm text-amber-800">
+          Nama lengkap Anda belum diisi.{' '}
+          <a href="/my-profile" className="font-semibold underline hover:text-amber-900">
+            Lengkapi profil Anda
+          </a>{' '}
+          agar nama yang benar muncul di sertifikat ini.
+        </div>
+      )}
+
       {/* Certificate wrapper */}
       <div className="py-4 sm:py-8 px-3 sm:px-4">
         <div style={{ maxWidth: 960, margin: '0 auto' }}>
@@ -251,7 +262,11 @@ export default function CertificateView() {
                     marginBottom: '1.8%',
                     fontFamily: '"Bricolage Grotesque", "Inter", Arial, sans-serif',
                   }}>
-                    {user?.fullName || certificate.metadata?.userName || 'Nama Peserta'}
+                    {user?.fullName || (
+                      <span style={{ color: '#EF4444', fontSize: '0.6em', fontWeight: 600 }}>
+                        ⚠ Nama lengkap belum diisi — cek Profil Anda
+                      </span>
+                    )}
                   </div>
 
                   <div style={{ fontSize: '0.72em', color: '#6B7280', marginBottom: '0.8%' }}>

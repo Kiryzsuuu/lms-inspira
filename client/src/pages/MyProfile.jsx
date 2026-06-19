@@ -34,7 +34,6 @@ export default function MyProfile() {
 
   // Profile data
   const [user, setUser] = useState(null);
-  const [editingProfile, setEditingProfile] = useState(false);
   const [profileData, setProfileData] = useState({});
 
   // Email update
@@ -487,120 +486,78 @@ export default function MyProfile() {
                   <Card className="p-6 border border-slate-200 shadow-sm hover:shadow-md transition-shadow flex-1">
                     <div className="flex items-center justify-between gap-4 mb-4">
                       <h2 className="text-lg font-bold text-slate-900">Profil Pribadi</h2>
-                      {!editingProfile && (
-                        <Button
-                          variant="outline"
-                          onClick={() => setEditingProfile(true)}
-                          className="shrink-0 text-sm"
-                        >
-                          Edit
-                        </Button>
-                      )}
                     </div>
-
-                    {editingProfile ? (
-                      <div className="mt-4 space-y-4">
-                        <div>
-                          <Label>Nama Lengkap</Label>
-                          <Input
-                            value={profileData.fullName || ''}
-                            onChange={(e) => setProfileData((p) => ({ ...p, fullName: e.target.value }))}
-                          />
-                        </div>
-                        <div>
-                          <Label>Asal Lembaga/Instansi</Label>
-                          <Input
-                            value={profileData.institution || ''}
-                            onChange={(e) => setProfileData((p) => ({ ...p, institution: e.target.value }))}
-                          />
-                        </div>
-                        <div>
-                          <Label>No WhatsApp</Label>
-                          <Input
-                            value={profileData.whatsappNumber || ''}
-                            onChange={(e) => setProfileData((p) => ({ ...p, whatsappNumber: e.target.value }))}
-                          />
-                        </div>
-                        <div>
-                          <Label>Dari mana tahunya tentang kami?</Label>
-                          <select
-                            value={profileData.referralSource || ''}
-                            onChange={(e) => setProfileData((p) => ({ ...p, referralSource: e.target.value }))}
-                            className="w-full border border-slate-200 bg-white px-3 py-2 text-sm rounded focus:outline-none focus:ring-2 focus:ring-orange-400"
-                          >
-                            <option value="">Pilih sumber</option>
-                            {REFERRAL_SOURCES.map((src) => (
-                              <option key={src} value={src}>
-                                {src}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                        <div>
-                          <Label>Alasan</Label>
-                          <textarea
-                            value={profileData.reason || ''}
-                            onChange={(e) => setProfileData((p) => ({ ...p, reason: e.target.value }))}
-                            className="w-full border border-slate-200 px-3 py-2 text-sm rounded focus:outline-none focus:ring-2 focus:ring-orange-400"
-                            rows={3}
-                          />
-                        </div>
-                        <div>
-                          <Label>Pendidikan Terakhir</Label>
-                          <select
-                            value={profileData.educationLevel || ''}
-                            onChange={(e) => setProfileData((p) => ({ ...p, educationLevel: e.target.value }))}
-                            className="w-full border border-slate-200 bg-white px-3 py-2 text-sm rounded focus:outline-none focus:ring-2 focus:ring-orange-400"
-                          >
-                            <option value="">Pilih tingkat pendidikan</option>
-                            {EDUCATION_LEVELS.map((level) => (
-                              <option key={level} value={level}>
-                                {level}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                        <div className="flex gap-2 pt-2">
-                          <Button
-                            onClick={saveProfile}
-                            disabled={loading}
-                            className="bg-[#F3921B] text-white hover:bg-[#D97C0D]"
-                          >
-                            Simpan
-                          </Button>
-                          <Button
-                            variant="outline"
-                            onClick={() => {
-                              setEditingProfile(false);
-                              setProfileData(user);
-                            }}
-                          >
-                            Batal
-                          </Button>
-                        </div>
+                    <div className="space-y-4">
+                      <div>
+                        <Label>Nama Lengkap</Label>
+                        <Input
+                          value={profileData.fullName || ''}
+                          onChange={(e) => setProfileData((p) => ({ ...p, fullName: e.target.value }))}
+                        />
                       </div>
-                    ) : (
-                      <div className="mt-4 space-y-3 text-sm">
-                        <div>
-                          <span className="font-semibold text-slate-700">Nama Lengkap:</span> {profileData.fullName || '-'}
-                        </div>
-                        <div>
-                          <span className="font-semibold text-slate-700">Asal Lembaga:</span> {profileData.institution || '-'}
-                        </div>
-                        <div>
-                          <span className="font-semibold text-slate-700">No WhatsApp:</span> {profileData.whatsappNumber || '-'}
-                        </div>
-                        <div>
-                          <span className="font-semibold text-slate-700">Dari mana tahunya:</span> {profileData.referralSource || '-'}
-                        </div>
-                        <div>
-                          <span className="font-semibold text-slate-700">Alasan:</span> {profileData.reason || '-'}
-                        </div>
-                        <div>
-                          <span className="font-semibold text-slate-700">Pendidikan Terakhir:</span> {profileData.educationLevel || '-'}
-                        </div>
+                      <div>
+                        <Label>Asal Lembaga/Instansi</Label>
+                        <Input
+                          value={profileData.institution || ''}
+                          onChange={(e) => setProfileData((p) => ({ ...p, institution: e.target.value }))}
+                        />
                       </div>
-                    )}
+                      <div>
+                        <Label>No WhatsApp</Label>
+                        <Input
+                          value={profileData.whatsappNumber || ''}
+                          onChange={(e) => setProfileData((p) => ({ ...p, whatsappNumber: e.target.value }))}
+                        />
+                      </div>
+                      <div>
+                        <Label>Dari mana tahunya tentang kami?</Label>
+                        <select
+                          value={profileData.referralSource || ''}
+                          onChange={(e) => setProfileData((p) => ({ ...p, referralSource: e.target.value }))}
+                          className="w-full border border-slate-200 bg-white px-3 py-2 text-sm rounded focus:outline-none focus:ring-2 focus:ring-orange-400"
+                        >
+                          <option value="">Pilih sumber</option>
+                          {REFERRAL_SOURCES.map((src) => (
+                            <option key={src} value={src}>
+                              {src}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <Label>Alasan</Label>
+                        <textarea
+                          value={profileData.reason || ''}
+                          onChange={(e) => setProfileData((p) => ({ ...p, reason: e.target.value }))}
+                          className="w-full border border-slate-200 px-3 py-2 text-sm rounded focus:outline-none focus:ring-2 focus:ring-orange-400"
+                          rows={3}
+                        />
+                      </div>
+                      <div>
+                        <Label>Pendidikan Terakhir</Label>
+                        <select
+                          value={profileData.educationLevel || ''}
+                          onChange={(e) => setProfileData((p) => ({ ...p, educationLevel: e.target.value }))}
+                          className="w-full border border-slate-200 bg-white px-3 py-2 text-sm rounded focus:outline-none focus:ring-2 focus:ring-orange-400"
+                        >
+                          <option value="">Pilih tingkat pendidikan</option>
+                          {EDUCATION_LEVELS.map((level) => (
+                            <option key={level} value={level}>
+                              {level}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="flex gap-2 pt-2">
+                        <Button
+                          onClick={saveProfile}
+                          disabled={loading}
+                          className="bg-[#F3921B] text-white hover:bg-[#D97C0D]"
+                        >
+                          {loading ? 'Menyimpan...' : 'Simpan Profil'}
+                        </Button>
+                      </div>
+                    </div>
                   </Card>
                 </div>
 

@@ -50,18 +50,19 @@ function adminRouter({ requireAuth, requireRole }) {
     asyncHandler(async (req, res) => {
       const schema = z.object({
         name: z.string().min(2),
+        fullName: z.string().min(2).optional(),
         email: z.string().email(),
         password: z.string().min(6),
         role: z.enum(ROLES),
         royaltyRatio: z.coerce.number().min(0).max(1).optional().default(0),
       });
-      const { name, email, password, role, royaltyRatio } = schema.parse(req.body);
+      const { name, fullName, email, password, role, royaltyRatio } = schema.parse(req.body);
 
       const existing = await User.findOne({ email });
       if (existing) throw new HttpError(409, 'Email already registered');
 
       const passwordHash = await bcrypt.hash(password, 10);
-      const userData = { name, email, passwordHash, role, royaltyRatio, emailVerified: true };
+      const userData = { name, fullName: fullName || name, email, passwordHash, role, royaltyRatio, emailVerified: true };
 
       // Auto-generate referral code for teacher/admin
       if (role === 'teacher' || role === 'admin') {
