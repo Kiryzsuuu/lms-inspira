@@ -12,7 +12,6 @@ export default function OtpVerify() {
   const { api, setToken, refreshUser, token } = useAuth();
   const nav = useNavigate();
   const q = useQuery();
-  const loc = useLocation();
 
   const flow = q.get('flow') || '';
   const email = q.get('email') || '';
@@ -21,8 +20,6 @@ export default function OtpVerify() {
   const [status, setStatus] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-
-  const devOtp = loc?.state?.devOtp || '';
 
   async function submit(e) {
     e.preventDefault();
@@ -92,13 +89,6 @@ export default function OtpVerify() {
               {loading ? 'Memverifikasi...' : 'Verifikasi'}
             </Button>
           </form>
-
-          {devOtp ? (
-            <div className="mt-6 bg-slate-50 p-4 text-xs text-slate-700">
-              <div className="font-semibold">Dev OTP (SMTP belum dikonfigurasi):</div>
-              <div className="mt-1 font-mono text-slate-900">{devOtp}</div>
-            </div>
-          ) : null}
 
           <div className="mt-4 text-sm text-slate-600">
             <Link to="/login" className="font-semibold text-slate-900 hover:underline">

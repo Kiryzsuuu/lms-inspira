@@ -646,6 +646,26 @@ export default function CourseDetail() {
                 <span className="text-gray-700 truncate">{course.title}</span>
               </div>
 
+              {/* Teacher/admin quick actions */}
+              {isAuthed && (role === 'teacher' || role === 'admin') && !isPreview && (
+                <div className="flex flex-wrap items-center gap-2 mb-4">
+                  <button
+                    type="button"
+                    onClick={() => window.open(`/courses/${id}?preview=1`, '_blank')}
+                    className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full border border-[#0C628D] text-[#0C628D] hover:bg-[#EBF6FC] transition-colors"
+                  >
+                    Preview sebagai Siswa
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => window.open('/dashboard/courses', '_blank')}
+                    className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full border border-gray-300 text-gray-600 hover:bg-gray-50 transition-colors"
+                  >
+                    Buka CourseManager
+                  </button>
+                </div>
+              )}
+
               {/* Tag pills */}
               {(course.tags || []).length > 0 && (
                 <div className="flex flex-wrap gap-2 mb-4">

@@ -36,18 +36,28 @@ function authRouter({ jwtSecret }) {
       meta: meta || undefined,
     });
 
+    // Only expose the code in the API response when OTP debugging is explicitly
+    // enabled. Gated solely on DEBUG_OTP (never NODE_ENV) so a server that is
+    // accidentally not running in "production" mode can never leak codes.
+    const debugOtp = process.env.DEBUG_OTP === 'true';
+
+    if (!hasSmtpConfigured(env)) {
+      // No email transport. In debug mode return the code for local testing;
+      // otherwise fail loudly so the email service gets configured instead of
+      // silently leaving users with no way to receive their code.
+      if (debugOtp) return { ok: true, devOtp: code, expiresAt };
+      throw new HttpError(500, 'Layanan email belum dikonfigurasi. Hubungi administrator.');
+    }
+
     try {
       await sendOTP(env, { userEmail: normalizedEmail, code, type: type === 'reset_password' ? 'password' : type === 'email_change' ? 'email' : type === 'password_change' ? 'password' : 'register' });
     } catch (e) {
-      // If SMTP is misconfigured, don't leak details.
-      if (process.env.NODE_ENV === 'production') throw new HttpError(500, 'Gagal mengirim OTP');
+      // Don't leak SMTP error details to the client.
+      if (debugOtp) return { ok: true, devOtp: code, expiresAt };
+      throw new HttpError(500, 'Gagal mengirim OTP');
     }
 
-    // Return devOtp in development or when DEBUG_OTP is enabled
-    const shouldShowDevOtp = process.env.NODE_ENV !== 'production' || process.env.DEBUG_OTP === 'true';
-    if (shouldShowDevOtp) {
-      return { ok: true, devOtp: code, expiresAt };
-    }
+    if (debugOtp) return { ok: true, devOtp: code, expiresAt };
 
     return { ok: true };
   }

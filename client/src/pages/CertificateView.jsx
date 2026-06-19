@@ -103,7 +103,7 @@ export default function CertificateView() {
           <div className="bg-rose-50 border border-rose-200 rounded-[14px] p-6 max-w-md mx-auto">
             <h2 className="text-lg font-bold text-rose-900 mb-2">Error</h2>
             <p className="text-sm text-rose-700 mb-4">{error || 'Sertifikat tidak ditemukan'}</p>
-            <Button variant="outline" onClick={() => nav('/')}>Kembali ke Home</Button>
+            <Button variant="outline" onClick={() => nav(`/courses/${courseId}`)}>Kembali ke Course</Button>
           </div>
         </Container>
       </section>
@@ -139,9 +139,9 @@ export default function CertificateView() {
                 variant="outline"
                 className="text-sm"
                 style={{ borderColor: 'rgba(255,255,255,0.4)', color: '#fff', background: 'rgba(255,255,255,0.12)' }}
-                onClick={() => nav('/')}
+                onClick={() => nav(`/courses/${courseId}`)}
               >
-                Home
+                Kembali ke Course
               </Button>
               <button
                 onClick={handleDownload}
